@@ -1,0 +1,90 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.login {
+  height: 100vh;
+  background-size: cover;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login::after {
+  content: "";
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 0;
+}
+.content-section {
+  z-index: 15;
+  background: white;
+  padding: 4rem 3rem;
+  border-radius: 15px;
+}
+
+.login-btn {
+  border: 2px solid #515151;
+  width: 100%;
+  padding: 0.5rem 1.5rem;
+  margin: 20px 0 50px 0;
+  border-radius: 100vw;
+  background: none;
+  text-transform: uppercase;
+  color: #515151;
+  opacity: 0.6;
+  transition: opacity 250ms ease;
+}
+.login-btn:hover {
+  opacity: 1;
+}
+.register {
+  height: 100vh;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.reg-content-section {
+  z-index: 15;
+  background: white;
+  padding: 2rem 3rem;
+  border-radius: 15px;
+}
+
+.circular_image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    /* commented for demo
+    float: left;
+    margin-left: 125px;
+    margin-top: 20px;
+    */
+    
+    /*for demo*/
+    display:inline-block;
+    vertical-align:middle;
+  }
+  .circular_image img{
+    width:100%;
+  }
+.shot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display:inline-block;
+  vertical-align:middle;
+}
+.shot img{
+  width:100%;
+}

@@ -1,0 +1,459 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'videos/main.css' %}"/>
+    <link rel="stylesheet" href="{% static 'videos/styles.css' %}"/>
+    <link rel="shortcut icon" href="{% static 'videos/favicon.ico' %}" >
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link href="https://unpkg.com/@videojs/themes@1/dist/sea/index.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/9c1018d8da.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/share.js@1.0.4/dist/share.min.js"></script>
+
+    <link href="https://vjs.zencdn.net/7.8.3/video-js.css" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="{% static 'users/style.css' %}">
+
+    <!-- If you'd like to support IE8 (for Video.js versions prior to v7) -->
+  	<script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+
+    <title>Glomble</title>
+  </head>
+  <body style="overflow-x: hidden;">
+    {% include 'videos/navigation.html' %}
+    {% block content %}
+    {% endblock content %}
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+    <script>
+      function showmore() {
+  var dots = document.getElementById("dots");
+  var moreText = document.getElementById("more");
+  var btnText = document.getElementById("myBtn");
+
+  if (dots.style.display === "none") {
+    dots.style.display = "inline";
+    btnText.innerHTML = "Read more".bold().italics();
+    moreText.style.display = "none";
+  } else {
+    dots.style.display = "none";
+    btnText.innerHTML = "Read less".bold().italics();
+    moreText.style.display = "inline";
+  }
+}
+    </script>
+    <script>
+    $(document).ready(function() {
+    // Attach a click event listener to the like button
+    $(".like-button").click(function(e) {
+        e.preventDefault();
+        
+        var likeButton = $(this);
+        var dislikeButton = likeButton.siblings(".dislike-button");
+        var url = likeButton.data("url");
+        var liked = likeButton.data("liked");
+        
+        // Toggle the like button icon and update the UI immediately
+        likeButton.find("i").toggleClass("far fa-thumbs-up fa fa-thumbs-up");
+        likeButton.data("liked", !liked);
+        
+        // Toggle the dislike button icon and reset it to "off"
+        dislikeButton.find("i").removeClass("fa fa-thumbs-down").addClass("far fa-thumbs-down");
+        dislikeButton.data("disliked", false);
+        
+        // Send the AJAX request in the background
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            },
+            success: function(data) {
+                // Update the like count
+                dislikeButton.find("span").text(data.dislikes_count);
+                likeButton.find("span").text(data.likes_count);
+            },
+            error: function() {
+                // If the request fails, revert the UI back to its previous state
+                likeButton.find("i").toggleClass("fa fa-thumbs-up far fa-thumbs-up");
+                likeButton.data("liked", !liked);
+                
+                // Reset the dislike button to its previous state
+                dislikeButton.find("i").removeClass("far fa-thumbs-down").addClass("far fa-thumbs-down");
+                dislikeButton.data("disliked", !disliked);
+            },
+        });
+    });
+
+    // Attach a click event listener to the dislike button
+    $(".dislike-button").click(function(e) {
+        e.preventDefault();
+        
+        var dislikeButton = $(this);
+        var likeButton = dislikeButton.siblings(".like-button");
+        var url = dislikeButton.data("url");
+        var disliked = dislikeButton.data("disliked");
+        
+        // Toggle the dislike button icon and update the UI immediately
+        dislikeButton.find("i").toggleClass("far fa-thumbs-down fa fa-thumbs-down");
+        dislikeButton.data("disliked", !disliked);
+        
+        // Toggle the like button icon and reset it to "off"
+        likeButton.find("i").removeClass("fa fa-thumbs-up").addClass("far fa-thumbs-up");
+        likeButton.data("liked", false);
+        
+        // Send the AJAX request in the background
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            },
+            success: function(data) {
+                // Update the dislike count
+                dislikeButton.find("span").text(data.dislikes_count);
+                likeButton.find("span").text(data.likes_count);
+            },
+            error: function() {
+                // If the request fails, revert the UI back to its previous state
+                dislikeButton.find("i").toggleClass("fa fa-thumbs-down far fa-thumbs-down");
+                dislikeButton.data("disliked", !disliked);
+                
+                // Reset the like button to its previous state
+                likeButton.find("i").removeClass("far fa-thumbs-up").addClass("far fa-thumbs-up");
+                likeButton.data("liked", !liked);
+            },
+        });
+    });
+});
+    </script>
+    <script>
+      $(document).ready(function() {
+      // Attach a click event listener to the like button
+      $(".comment-like-button").click(function(e) {
+          e.preventDefault();
+          
+          var likeButton = $(this);
+          var dislikeButton = likeButton.siblings(".comment-dislike-button");
+          var url = likeButton.data("url");
+          var liked = likeButton.data("liked");
+          
+          // Toggle the like button icon and update the UI immediately
+          likeButton.find("i").toggleClass("far fa-thumbs-up fa fa-thumbs-up");
+          likeButton.data("liked", !liked);
+          
+          // Toggle the dislike button icon and reset it to "off"
+          dislikeButton.find("i").removeClass("fa fa-thumbs-down").addClass("far fa-thumbs-down");
+          dislikeButton.data("disliked", false);
+          
+          // Send the AJAX request in the background
+          $.ajax({
+              type: "POST",
+              url: url,
+              data: {
+                  csrfmiddlewaretoken: "{{ csrf_token }}",
+              },
+              success: function(data) {
+                  // Update the like count
+                  dislikeButton.find("span").text(data.dislikes_count);
+                  likeButton.find("span").text(data.likes_count);
+              },
+              error: function() {
+                  // If the request fails, revert the UI back to its previous state
+                  likeButton.find("i").toggleClass("fa fa-thumbs-up far fa-thumbs-up");
+                  likeButton.data("liked", !liked);
+                  
+                  // Reset the dislike button to its previous state
+                  dislikeButton.find("i").removeClass("far fa-thumbs-down").addClass("far fa-thumbs-down");
+                  dislikeButton.data("disliked", !disliked);
+              },
+          });
+      });
+  
+      // Attach a click event listener to the dislike button
+      $(".comment-dislike-button").click(function(e) {
+          e.preventDefault();
+          
+          var dislikeButton = $(this);
+          var likeButton = dislikeButton.siblings(".comment-like-button");
+          var url = dislikeButton.data("url");
+          var disliked = dislikeButton.data("disliked");
+          
+          // Toggle the dislike button icon and update the UI immediately
+          dislikeButton.find("i").toggleClass("far fa-thumbs-down fa fa-thumbs-down");
+          dislikeButton.data("disliked", !disliked);
+          
+          // Toggle the like button icon and reset it to "off"
+          likeButton.find("i").removeClass("fa fa-thumbs-up").addClass("far fa-thumbs-up");
+          likeButton.data("liked", false);
+          
+          // Send the AJAX request in the background
+          $.ajax({
+              type: "POST",
+              url: url,
+              data: {
+                  csrfmiddlewaretoken: "{{ csrf_token }}",
+              },
+              success: function(data) {
+                  // Update the dislike count
+                  dislikeButton.find("span").text(data.dislikes_count);
+                  likeButton.find("span").text(data.likes_count);
+              },
+              error: function() {
+                  // If the request fails, revert the UI back to its previous state
+                  dislikeButton.find("i").toggleClass("fa fa-thumbs-down far fa-thumbs-down");
+                  dislikeButton.data("disliked", !disliked);
+                  
+                  // Reset the like button to its previous state
+                  likeButton.find("i").removeClass("far fa-thumbs-up").addClass("far fa-thumbs-up");
+                  likeButton.data("liked", !liked);
+              },
+          });
+      });
+  });
+  
+    </script>
+    <script>
+    $(document).ready(function() {
+    // Attach a click event listener to the follow button
+    $(".follow-button").click(function(e) {
+        e.preventDefault();
+        
+        var followButton = $(this);
+        var urlAdd = followButton.data("url-add");
+        var urlRemove = followButton.data("url-remove");
+        
+        // Toggle the button text and class immediately
+        followButton.find("span").text(followButton.hasClass("following") ? "Follow" : "Following");
+        followButton.toggleClass("following").toggleClass("btn btn-outline-danger btn btn-outline-success");
+        
+        // Send the AJAX request in the background
+        $.ajax({
+            type: "POST",
+            url: followButton.hasClass("following") ? urlAdd : urlRemove,
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            },
+            success: function(data) {
+                // Update the follow count if needed (you can implement this logic)
+                // Example: $(".follow-count").text(data.follow_count);
+                $(".follow-count").text(data.follow_count + " followers");
+            },
+            error: function() {
+                // If the request fails, revert the button state
+                followButton.find("span").text(followButton.hasClass("following") ? "Following" : "Follow");
+                followButton.toggleClass("following").toggleClass("btn btn-outline-danger btn btn-outline-success");
+            },
+        });
+    });
+});
+
+    </script>
+    <script src="https://vjs.zencdn.net/7.8.3/video.js"></script>
+    <script src="https://unpkg.com/ionicons@5.1.2/dist/ionicons.js"></script>
+    <script>
+        const playPauseBtn = document.querySelector(".play-pause-btn")
+        const theaterBtn = document.querySelector(".theater-btn")
+        const fullScreenBtn = document.querySelector(".full-screen-btn")
+        const miniPlayerBtn = document.querySelector(".mini-player-btn")
+        const muteBtn = document.querySelector(".mute-btn")
+        const captionsBtn = document.querySelector(".captions-btn")
+        const speedBtn = document.querySelector(".speed-btn")
+        const currentTimeElem = document.querySelector(".current-time")
+        const totalTimeElem = document.querySelector(".total-time")
+        const previewImg = document.querySelector(".preview-img")
+        const thumbnailImg = document.querySelector(".thumbnail-img")
+        const volumeSlider = document.querySelector(".volume-slider")
+        const videoContainer = document.querySelector(".video-container")
+        const timelineContainer = document.querySelector(".timeline-container")
+        const video = document.querySelector("video")
+
+        // Timeline
+        timelineContainer.addEventListener("mousemove", handleTimelineUpdate)
+        timelineContainer.addEventListener("mousedown", toggleScrubbing)
+        document.addEventListener("mouseup", e => {
+        if (isScrubbing) toggleScrubbing(e)
+        })
+        document.addEventListener("mousemove", e => {
+        if (isScrubbing) handleTimelineUpdate(e)
+        })
+
+        let isScrubbing = false
+        let wasPaused
+        function toggleScrubbing(e) {
+        const rect = timelineContainer.getBoundingClientRect()
+        const percent = Math.min(Math.max(0, e.x - rect.x), rect.width) / rect.width
+        isScrubbing = (e.buttons & 1) === 1
+        videoContainer.classList.toggle("scrubbing", isScrubbing)
+        if (isScrubbing) {
+            wasPaused = video.paused
+            video.pause()
+        } else {
+            video.currentTime = percent * video.duration
+            if (!wasPaused) video.play()
+        }
+
+        handleTimelineUpdate(e)
+        }
+
+        function handleTimelineUpdate(e) {
+        const rect = timelineContainer.getBoundingClientRect()
+        const percent = Math.min(Math.max(0, e.x - rect.x), rect.width) / rect.width
+        const previewImgNumber = Math.max(
+            1,
+            Math.floor((percent * video.duration) / 10)
+        )
+        const previewImgSrc = "/media/bungle.jpg"
+        previewImg.src = previewImgSrc
+        timelineContainer.style.setProperty("--preview-position", percent)
+
+        if (isScrubbing) {
+            e.preventDefault()
+            timelineContainer.style.setProperty("--progress-position", percent)
+        }
+        }
+
+        // Playback Speed
+        speedBtn.addEventListener("click", changePlaybackSpeed)
+
+        function changePlaybackSpeed() {
+        let newPlaybackRate = video.playbackRate + 0.25
+        if (newPlaybackRate > 2) newPlaybackRate = 0.25
+        video.playbackRate = newPlaybackRate
+        speedBtn.textContent = `${newPlaybackRate}x`
+        }
+
+        // Captions
+        const captions = video.textTracks[0]
+        captions.mode = "hidden"
+
+        captionsBtn.addEventListener("click", toggleCaptions)
+
+        function toggleCaptions() {
+        const isHidden = captions.mode === "hidden"
+        captions.mode = isHidden ? "showing" : "hidden"
+        videoContainer.classList.toggle("captions", isHidden)
+        }
+
+        // Duration
+        video.addEventListener("loadeddata", () => {
+        totalTimeElem.textContent = formatDuration(video.duration)
+        })
+
+        video.addEventListener("timeupdate", () => {
+        currentTimeElem.textContent = formatDuration(video.currentTime)
+        const percent = video.currentTime / video.duration
+        timelineContainer.style.setProperty("--progress-position", percent)
+        })
+
+        const leadingZeroFormatter = new Intl.NumberFormat(undefined, {
+        minimumIntegerDigits: 2,
+        })
+        function formatDuration(time) {
+        const seconds = Math.floor(time % 60)
+        const minutes = Math.floor(time / 60) % 60
+        const hours = Math.floor(time / 3600)
+        if (hours === 0) {
+            return `${minutes}:${leadingZeroFormatter.format(seconds)}`
+        } else {
+            return `${hours}:${leadingZeroFormatter.format(
+            minutes
+            )}:${leadingZeroFormatter.format(seconds)}`
+        }
+        }
+
+        function skip(duration) {
+        video.currentTime += duration
+        }
+
+        // Volume
+        muteBtn.addEventListener("click", toggleMute)
+        volumeSlider.addEventListener("input", e => {
+        video.volume = e.target.value
+        video.muted = e.target.value === 0
+        })
+
+        function toggleMute() {
+        video.muted = !video.muted
+        }
+
+        video.addEventListener("volumechange", () => {
+        volumeSlider.value = video.volume
+        let volumeLevel
+        if (video.muted || video.volume === 0) {
+            volumeSlider.value = 0
+            volumeLevel = "muted"
+        } else if (video.volume >= 0.5) {
+            volumeLevel = "high"
+        } else {
+            volumeLevel = "low"
+        }
+
+        videoContainer.dataset.volumeLevel = volumeLevel
+        })
+
+        // View Modes
+        theaterBtn.addEventListener("click", toggleTheaterMode)
+        fullScreenBtn.addEventListener("click", toggleFullScreenMode)
+        miniPlayerBtn.addEventListener("click", toggleMiniPlayerMode)
+
+        function toggleTheaterMode() {
+        videoContainer.classList.toggle("theater")
+        }
+
+        function toggleFullScreenMode() {
+        if (document.fullscreenElement == null) {
+            videoContainer.requestFullscreen()
+        } else {
+            document.exitFullscreen()
+        }
+        }
+
+        function toggleMiniPlayerMode() {
+        if (videoContainer.classList.contains("mini-player")) {
+            document.exitPictureInPicture()
+        } else {
+            video.requestPictureInPicture()
+        }
+        }
+
+        document.addEventListener("fullscreenchange", () => {
+        videoContainer.classList.toggle("full-screen", document.fullscreenElement)
+        })
+
+        video.addEventListener("enterpictureinpicture", () => {
+        videoContainer.classList.add("mini-player")
+        })
+
+        video.addEventListener("leavepictureinpicture", () => {
+        videoContainer.classList.remove("mini-player")
+        })
+
+        // Play/Pause
+        playPauseBtn.addEventListener("click", togglePlay)
+        video.addEventListener("click", togglePlay)
+
+        function togglePlay() {
+        video.paused ? video.play() : video.pause()
+        }
+
+        video.addEventListener("play", () => {
+        videoContainer.classList.remove("paused")
+        })
+
+        video.addEventListener("pause", () => {
+        videoContainer.classList.add("paused")
+        })
+
+    </script>
+  </body>
+</html>

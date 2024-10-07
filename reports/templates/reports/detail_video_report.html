@@ -1,0 +1,25 @@
+{% extends 'videos/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+	<div class="container" id="post-container" style="text-align:center">
+        <h4>Summary: <br> {{ report.brief_summary }}</h4>
+        <br>
+		<h5>Reasoning: {{ report.reasoning }}</h5>
+        <h5>Video title: {{ report.post.title }}</h5>
+        <h5>Video description: {{ report.post.description }}</h5>
+        <br>
+        <br>
+        <h2><a class="link-text" href="{% url 'video-detail' report.post.pk %}">Reported video</a></h2>
+        <br>
+        <h2><a class="link-text" href="{% url 'detail-profile' thing %}">Reporter: {{ report.reporter }}</a></h2>
+        <br>
+    </div>
+        <div style="text-align:center">
+            <a href="{% url 'video-delete' report.post.pk %}"><h3 style="color: #dd0000;">Remove video</h3><i class="fa-solid fa-trash-can fa-2xl" style="color: #dd0000;"></i>
+        </div>
+        <br>
+        <div style="text-align:center">
+            <a href="{% url 'video-report-delete' report.pk %}"><h3 style="color: #04c604;">Approve video</h3><i class="fa-solid fa-check fa-2xl" style="color: #04c604;"></i>
+        </div>
+{% endblock content %}

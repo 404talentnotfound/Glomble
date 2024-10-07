@@ -1,0 +1,20 @@
+{% extends 'videos/base.html' %}
+{% block content %}
+	<div class="container" id="post-container" style="text-align:center">
+        <br>
+        <h3>Hello, {{ profile.username }}. This is an admin page for reviewing reports with the new report feature.</h3>
+        <br>
+        <br>
+        {% if p_count != 0 %}
+        <h2><a class="link-text" href="{% url 'profile-report-index' %}">Profile reports <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png"></a></h2>
+        {% else %}
+        <h2><a class="link-text" href="{% url 'profile-report-index' %}">Profile reports</a></h2>
+        {% endif %}
+        <br>
+        {% if v_count != 0 %}
+        <h2><a class="link-text" href="{% url 'video-report-index' %}">Video reports <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png"></a></h2>
+        {% else %}
+        <h2><a class="link-text" href="{% url 'video-report-index' %}">Video reports</a></h2>
+        {% endif %}
+    </div>
+{% endblock content %}

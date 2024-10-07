@@ -1,0 +1,1 @@
+web: gunicorn Glomble.wsgi:application --bind 0.0.0.0:80 --workers 1 --threads 8 --timeout 0

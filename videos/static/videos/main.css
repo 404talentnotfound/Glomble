@@ -1,0 +1,374 @@
+@import url("https://fonts.googleapis.com/css2?family=Caveat&display=swap");
+.image-home {
+  height: 250px;
+}
+.link:hover {
+  text-decoration: none !important;
+  color: white !important;
+}
+a {
+  text-decoration: none !important;
+}
+
+.lmao { 
+  max-width: 70ch; word-wrap: break-word;
+ }
+
+.landing {
+  height: 100vh;
+  background-image: url("/static/main/bg.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  display: grid;
+  grid-template-rows: 10vh 1fr 1fr;
+}
+.landing::after {
+  content: "";
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 0;
+}
+.title {
+  font-size: clamp(3.2rem, 8vw, 8rem);
+  font-weight: 600;
+  opacity: 1;
+  color: white;
+  z-index: 10;
+  text-align: center;
+  place-self: end center;
+  margin-top: 50px;
+}
+.create-btn {
+  background: linear-gradient(262deg, #ff7854, #fd267d);
+  padding: 1rem 3rem;
+  transition: background ease;
+  border-radius: 100vh;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+  z-index: 10;
+  margin-top: 50px;
+  place-self: start center;
+  box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.27);
+}
+.create-btn:hover {
+  background: #fd5068;
+}
+.navigation {
+  z-index: 999;
+  text-decoration: none;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  grid-row: 0/1;
+  padding: 20px;
+  font-size: 1.3rem;
+}
+.navigation--bg {
+  background: #ff4d00d5;
+}
+.logo {
+  color: rgb(255, 255, 255);
+  font-size: 1.5rem;
+}
+
+.login {
+  text-decoration: none;
+  color: #ff4d00d5;
+  position: relative;
+  background: #ffffff;
+  padding: 0.7rem 2.2rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 5px;
+}
+a.login:hover {
+  background: #c43b00;
+  color: #ffffff;
+}
+.sidenav {
+  height: 100%;
+  width: 160px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #111;
+  overflow-x: hidden;
+  padding-top: 20px;
+}
+.sidenav a {
+  padding: 6px 8px 6px 16px;
+  text-decoration: none;
+  font-size: 25px;
+  color: #818181;
+  display: block;
+}
+
+.sidenav a:hover {
+  color: #f1f1f1;
+}
+
+.main {
+  margin-left: 160px;
+  font-size: 28px;
+  padding: 0px 10px;
+}
+
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+}
+
+.profile-link {
+  text-decoration: none;
+  color: white;
+  margin-right: 10px;
+}
+.profile {
+  display: flex;
+  margin: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+.profile-about {
+  text-align: center;
+}
+.profile-image {
+  border-radius: 50%;
+  margin: 5px;
+}
+.bio {
+  font-size: 1.4rem;
+  color: gray;
+  max-width: 50ch;
+}
+.username {
+  font-size: 1.5rem;
+  color: grey;
+  text-align: center;
+  font-style: italic;
+  opacity: 0.9;
+}
+@media screen and (max-width: 900px) {
+  .profile-about {
+    margin: 10px;
+  }
+}
+
+.stats {
+  display: flex;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+  align-items: center;
+  width: 50%;
+  text-align: center;
+  margin-bottom: 60px;
+  border-top: 1px solid black;
+}
+.stats div {
+  margin: 20px;
+  height: 50px;
+}
+.stats h4 {
+  font-size: 1.3rem;
+}
+.header {
+  color: grey;
+}
+.user-card {
+  margin: 15px;
+  box-shadow: 0 8px 17px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.15);
+  color: #2b2b2b;
+}
+.users-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 50px;
+}
+.info-container {
+  padding: 20px;
+}
+.like-btn,
+.block-btn {
+  background: transparent;
+  border: 0;
+  transition: transform 250ms ease;
+}
+.like-btn:focus,
+.block-btn:focus {
+  outline: none;
+  background: none;
+}
+.like-btn i {
+  font-size: 1.5rem;
+  color: #ff8400;
+}
+.block-btn i {
+  font-size: 1.5rem;
+  color: rgb(190, 0, 0);
+}
+
+.like-btn:hover,
+.block-btn:hover {
+  transform: scale(1.1);
+}
+#message {
+  margin: 20px auto;
+  max-width: 50%;
+}
+#filter {
+  margin: auto;
+  max-width: 50vw;
+  color: #2b2b2b;
+}
+@media screen and (max-width: 900px) {
+  #filter {
+    max-width: 100%;
+    margin: 10px;
+  }
+}
+.container-fluid {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: #fa7e41;
+}
+.container-fluid .btn {
+  margin: auto;
+}
+.container-fluid h1 {
+  color: white;
+  margin-bottom: 50px;
+}
+.container-fluid form {
+  background: rgba(0, 0, 0, 0.18);
+  padding: 10px;
+}
+.container-fluid form label {
+  color: white;
+}
+
+.messages {
+  min-height: 100vh;
+  margin: auto;
+}
+.message {
+  display: flex;
+  position: relative;
+  margin: auto;
+  padding: 10px;
+  max-width: 40rem;
+  align-items: center;
+  box-shadow: 0 8px 17px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.15);
+  margin-bottom: 20px;
+}
+.message__detail {
+  padding: 10px;
+  border-right: 2px solid #515151;
+}
+
+.message__image {
+  height: 100px;
+  border-radius: 50%;
+}
+
+.message__date {
+  color: lightslategray;
+}
+.message__content {
+  margin: 15px;
+}
+.message__msg {
+  margin: 0 auto;
+}
+.mark-read {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: none;
+  border: 0;
+}
+.mark-read i {
+  margin: 5px;
+}
+
+.burger a {
+  position: relative;
+}
+.burger span {
+  position: absolute;
+  right: -20px;
+  top: -15px;
+  background: #26a69a;
+  color: white;
+  font-weight: thin;
+}
+.read {
+  position: absolute;
+  top: 1px;
+  right: 20px;
+}
+
+#msg-badge {
+  position: absolute;
+  right: -10px;
+}
+#match-btn {
+  position: relative;
+}
+.remove-btn {
+  position: absolute;
+  color: black;
+  bottom: 10px;
+  right: 10px;
+}
+.container-delete {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: #9a000078;
+}
+.container-delete h1 {
+  margin-bottom: 20px;
+}
+.container-delete form {
+  display: inline-flex;
+}
+.container-delete form * {
+  margin: 10px;
+}
+.piss {
+  padding-top:20px;
+  color:#fff;
+  background-color:#ff4d00d5
+}
+.poop {
+  padding-top:20px;
+  padding-bottom:20px;
+  color:#fff;
+  background-color:#ca3d00d5
+}
+.shit {
+  width: 10em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: justify;
+}

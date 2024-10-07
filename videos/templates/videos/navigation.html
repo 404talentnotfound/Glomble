@@ -1,0 +1,70 @@
+{% load static %}
+{% load count %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="{% url 'index' %}"><img src="{% static 'videos/favico.png' %}" width="70" height="35"></a>
+  <a href="https://www.paypal.com/donate/?hosted_button_id=43GQJ3EZ9RAUG" class="active">donate to help keep the site running!</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+    </ul>
+    <form class="d-flex" method="GET" action="{% url 'video-search' %}">
+      <div class="input-group">
+      <input type="text" class="form-control" placeholder="Video Title" aria-label="video title" aria-describedby="basic-addon1" name="query">
+      <button style="border: none; background-color: transparent; box-shadow: none" type="submit"><i class="fas fa-search"></i></button>
+      </div>
+    </form>
+    <form class="d-flex" method="GET" action="{% url 'profile-search' %}">
+      <div class="input-group">
+      <input type="text" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1" name="query">
+      <button style="border: none; background-color: transparent; box-shadow: none" type="submit"><i class="fas fa-search"></i></button>
+      </div>
+    </form>
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'profile-index' %}">Profiles</a>
+      </li>
+      {% if user.is_superuser %}
+      <li class="nav-item">
+        {% V_reports as i %}
+        {% P_reports as j %}
+        {% if i or j %}
+        <a class="nav-link" href="{% url 'choice-page' %}">Check reports <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png" width="16" height="16"></a>
+        {% else %}
+        <a class="nav-link" href="{% url 'choice-page' %}">Check reports</a>
+        {% endif %}
+      </li>
+      {% endif %}
+      {% if user.is_authenticated %}
+      {% V_Notifications user as test %}
+      {% has_profile user as test2 %}
+      <li class="nav-item">
+        <h5><a class="nav-link" href="{% url 'notification-index' %}">{% if test %}<i class="fa-solid fa-bell"></i>{% else %}<i class="fa-regular fa-bell"></i>{% endif %}</a></h5>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" href="{% url 'video-create' %}">Upload Video</a>
+      </li>
+      <li class="nav-item">
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="nav-link" type="submit">Sign Out</button>
+        </form>
+      </li>
+      {% if test2 %}
+      {% find request.user as obj %}
+      <li class="nav-item">
+        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center"><img class="shot" style="margin-left: 25px" width="50" height="50" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ obj.profile_picture }}"></a>
+      </li>
+      {% endif %}
+      {% else %}
+      <li class="nav-item">
+          <a class="nav-link" href="{% url 'register' %}">Register</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">Sign In</a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>

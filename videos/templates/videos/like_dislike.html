@@ -1,0 +1,7 @@
+{% if is_liked %}
+  <button class="btn btn-secondary dislike-btn" data-id="{{ video.id }}">Dislike <span class="badge badge-light">{{ video.dislikes.count }}</span></button>
+  <button class="btn btn-primary like-btn" data-id="{{ video.id }}" style="display: none;">Like <span class="badge badge-light">{{ video.likes.count }}</span></button>
+{% else %}
+  <button class="btn btn-primary like-btn" data-id="{{ video.id }}">Like <span class="badge badge-light">{{ video.likes.count }}</span></button>
+  <button class="btn btn-secondary dislike-btn" data-id="{{ video.id }}" style="display: none;">Dislike <span class="badge badge-light">{{ video.dislikes.count }}</span></button>
+{% endif %}

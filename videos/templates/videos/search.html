@@ -1,0 +1,20 @@
+{% extends 'videos/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        {% for video in video_list %}
+        <div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
+            <a href="{% url 'video-detail' video.id %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ video.thumbnail }}" width="256" height="144"></a>
+            <div class="card-body">
+                <a class="link-text" href="{% url 'video-detail' video.id %}"><h6 class="text-center shit">{{ video.title }}{% if video.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>
+                <h6 class="text-muted text-center"><a class="link-text" href="{% url 'detail-profile' video.uploader.id %}">{{ video.uploader.username }}</a></h6>
+                <h6 class="text-muted text-center">views: {{ video.views.count }}</h6>
+                <h6 class="text-muted text-center">{{ video.date_posted | date:"d M, Y" }}</h6>
+                <h6 class="text-muted text-center">{{ video.likes.all.count }} likes, {{ video.dislikes.all.count }} dislikes</h6>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,63 @@
+{% extends 'videos/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="border-bottom text-center" style="width: 20em; margin-left: 3em; margin-top: 0.5em;">Your notifications</h1>
+    <div class="col-md-3 col-sm-12 mt-5 mb-3">
+        <form method="get">
+            <label for="sort-by">Sort by:</label>
+            <select name="sort-by" id="sort-by" onchange="this.form.submit()">
+                <option value="unread"{% if sort_by == 'unread' %} selected{% else %} selected="selected"{% endif %}>Unread</option>
+                <option value="read"{% if sort_by == 'read' %} selected{% endif %}>Read</option>
+                <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
+                <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
+            </select>
+        </form>
+    </div>
+        {% for object in object_list %}
+        <div class="row justify-content-center mt-3">
+            <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.video.uploader.id %}">
+                <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.uploader.profile_picture }}">
+            </a>{{ object.video.uploader.username }}: {{ object.message }}</h4>
+            <div class="col-md-3 col-sm-12">
+                <a href="{% url 'video-detail' object.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.thumbnail }}" width="128" height="72"></a>
+                <div class="card-body">
+                    <a class="link-text" href="{% url 'video-detail' object.video.id %}"><h6 class="text-center shit">{{ object.video.title }}</h6></a>
+                    <h6 class="text-muted text-center">{{ object.video.date_posted | date:"H:m | d M, Y" }}</h6>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% if is_paginated %}
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-12 col-sm-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

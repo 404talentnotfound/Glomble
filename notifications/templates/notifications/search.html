@@ -1,0 +1,13 @@
+{% extends 'videos/base.html' %}
+
+{% block content %}
+<div class="container">
+    {% for video_notification in video_notification_list %}
+        <div class="row justify-content-center mt-3">
+            <div class="col-md-5 col-sm-12 border-bottom position-relative">
+                <h5>{{ video_notification.message }}</h5></a></p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock content %}

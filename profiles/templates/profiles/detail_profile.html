@@ -1,0 +1,91 @@
+{% extends 'videos/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+	<div class="container">
+        <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto; margin-top: 2em;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ pfp }}">
+        <h1 class="text-center">{{ username }}</h1>
+        <h5 class="text-center">{{ info }}</h5>
+		<div id='wrapper' style='text-align: center;'>
+			{% if admin %}
+			<div style='display: inline-block; vertical-align: top;' class="text-center" title="Admin">
+				<i class="fa-solid fa-clipboard-user"></i>
+			</div>
+			{% endif %}
+			{% if developer %}
+			<div style='display: inline-block; vertical-align: top;' class="text-center" title="Developer">
+				<i class="fa-solid fa-screwdriver-wrench"></i>
+			</div>
+			{% endif %}
+			{% if creator %}
+			<div style='display: inline-block; vertical-align: top;' class="text-center" title="Creator">
+				<i class="fa-solid fa-palette"></i>
+			</div>
+			{% endif %}
+		</div>
+		<div class="text-center">
+			{% if username == user or user.is_superuser %}
+			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
+			<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
+			{% endif %}
+			{% if username != request.user %}
+			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fa-solid fa-flag"></i></a>
+			{% endif %}
+			<p class="follow-count" id="{{ poopie }}">{{ follow_num }} followers</p>
+			{% if request.user.is_authenticated %}
+			{% if username != request.user %}
+			<div class="follow-button-container">
+				<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' poopie %}" data-url-remove="{% url 'remove-follower' poopie %}">
+					{% if is_following %}
+					<span>Following</span>
+					{% else %}
+					<span>Follow</span>
+					{% endif %}
+				</button>
+			</div>
+			{% endif %}
+			{% endif %}
+
+		</div>
+		<div class="row justify-content-center">
+			{% for object in detail_profile_list %}
+			<div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
+				<a href="{% url 'video-detail' object.id %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" width="256" height="144"></a>
+				<div class="card-body">
+					<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>
+					<h6 class="text-muted text-center shit">{{ object.uploader.username }}</h6>
+					<h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
+					<h6 class="text-muted text-center">{{ object.date_posted | date:"d M, Y" }}</h6>
+					<h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script>
+		function updateFollowCount(videoId) {
+			// Send an AJAX request to update the view count
+			$.ajax({
+				type: "GET",
+				url: `${videoId}/update-follow-count/`, // Update the URL accordingly
+				success: function(data) {
+					// Update the view count on the page
+					$(".follow-count").text(data.follow_count + " followers");
+				},
+				error: function(error) {
+					console.error("Failed to update view count: " + error);
+				}
+			});
+		}
+
+		$(document).ready(function() {
+			// Replace 'videoId' with the actual ID of the video being watched
+			var videoId = $(".follow-count").attr('id'); // Assuming you pass the video ID from the server
+			console.log(`${videoId}`)
+			var interval = setInterval(function() {
+				updateFollowCount(videoId);
+			}, 20000);
+		});
+	</script>
+{% endblock content %}

@@ -1,0 +1,50 @@
+{% load static %}
+<!-- -->
+{% load crispy_forms_tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="shortcut icon" href="{% static 'videos/favicon.ico' %}" >
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="{% static 'users/main.css' %}" />
+    <title>Glomble | Login</title>
+  </head>
+  <body>
+    <section class="login">
+      <div class="content-section">
+        <form action="" method="POST">
+          {% csrf_token %} {{ form | crispy }}
+          <input type="submit" value="login" class="login-btn" />
+        </form>
+        {% if form.non_field_errors %}
+          <p class="error-message">Hint: have you verified your email yet?</p>
+        {% endif %}
+        <div class="border-top pt-3">
+          <small class="text-muted"
+            >Don't have an account?
+            <a class="ml-2" href="{% url 'register' %}">Sign Up</a></small
+          >
+        </div>
+        <div class="pt-3">
+          <small class="text-muted"
+            >Forgot Password?
+            <a class="ml-2" href="{% url 'password_reset' %}"
+              >Reset Here</a
+            ></small
+          >
+        </div>
+        {% for msg in messages %}
+        <p id="messages">{{ msg }}</p>
+        {% endfor %}
+      </div>
+    </section>
+  </body>
+</html>

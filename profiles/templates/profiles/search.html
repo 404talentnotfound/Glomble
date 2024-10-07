@@ -1,0 +1,16 @@
+{% extends 'profiles/base.html' %}
+
+{% block content %}
+<div class="container">
+    {% for profile in profile_list %}
+        <div class="row justify-content-center mt-3">
+            <div class="col-md-5 col-sm-12 border-bottom position-relative">
+                <p><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' profile.id %}">
+                <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ profile.profile_picture }}">
+                <h5>*{{ profile.username }}</h5></a></p>
+                 <p>{{ profile.followers.all.count }} Followers</p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock content %}

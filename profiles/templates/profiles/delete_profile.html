@@ -1,0 +1,19 @@
+{% extends 'videos/base.html' %}
+
+{% block content %}
+
+	<div class="container">
+		<div class="row justify-content-center mt-5">
+			<div class="col-md-6 col-sm-12 col-xs-12 text-center">
+				<form method="POST">
+					{% csrf_token %}
+					<legend class="border-bottom mb-4">Delete Profile</legend>
+					<h5>Are You Sure?</h5>
+					<p>This will delete the profile and all videos on it forever. This action cannot be undone.</p>
+					<button class="btn btn-outline-danger btn-block" type="submit">Delete</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	
+{% endblock content %}

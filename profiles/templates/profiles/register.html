@@ -1,0 +1,43 @@
+{% load static %}
+{% load crispy_forms_tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="shortcut icon" href="{% static 'videos/favicon.ico' %}" >
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="{% static 'users/main.css' %}" />
+    <title>Glomble | Register</title>
+  </head>
+  <body>
+    <section class="register">
+      <div class="reg-content-section">
+        <form action="" method="POST">
+          <!-- Cross site request token added security -->
+          {% csrf_token %}
+          <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Join Today</legend>
+            {{ form | crispy }}
+          </fieldset>
+          <div class="form-group">
+            <button class="btn btn-outline-info" type="submit">Sign Up</button>
+          </div>
+        </form>
+        <div class="border-top pt-3">
+          <small class="text-muted"
+            >Already have an account?
+            <a class="ml-2" href="{% url 'login' %}">Sign In</a></small
+          >
+        </div>
+      </div>
+      {{form.errors}}
+    </section>
+  </body>
+</html>
