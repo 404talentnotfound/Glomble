@@ -37,7 +37,7 @@
       </li>
       {% endif %}
       {% if user.is_authenticated %}
-      {% V_Notifications user as test %}
+      {% has_notifications user as test %}
       {% has_profile user as test2 %}
       <li class="nav-item">
         <h5><a class="nav-link" href="{% url 'notification-index' %}">{% if test %}<i class="fa-solid fa-bell"></i>{% else %}<i class="fa-regular fa-bell"></i>{% endif %}</a></h5>

@@ -293,11 +293,11 @@ class DetailVideo(DetailView):
                     time_passed = datetime.now() - last_comment_time
                     if time_passed < timedelta(seconds=30):
                         return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
-
-                new_comment = form.save(commit=False)
-                new_comment.commenter = Profile.objects.get(username=request.user)
-                new_comment.post = pen
-                new_comment.save()
+                    
+                form.save(commit=False)
+                form.instance.commenter = Profile.objects.get(username=request.user)
+                form.instance.post = pen
+                form.save()
 
                 cache.set(cooldown_key, datetime.now(), timeout=30)
 

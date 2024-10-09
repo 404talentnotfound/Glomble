@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import User
-from notifications.models import VideoNotification
+from notifications.models import VideoNotification, CommentNotification
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 import os
@@ -52,3 +52,9 @@ class Comment(models.Model):
 	class Meta:
 
 		ordering = ['-date_posted']
+
+@receiver(post_save, sender=Comment)
+def notify(sender, instance, created, **kwargs):
+    if created:
+        if instance.commenter != instance.post.uploader:
+            CommentNotification.objects.create(comment=instance, message=f'"{instance.comment}"')

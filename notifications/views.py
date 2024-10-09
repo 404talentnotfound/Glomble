@@ -1,10 +1,11 @@
-from .models import VideoNotification, UpdateNotification, BaseNotification
+from .models import VideoNotification, UpdateNotification, BaseNotification, CommentNotification
 from profiles.models import Profile
 from django.views.generic.list import ListView
 from django.views.generic import View
 from django.db.models import Count, Q
 from django.shortcuts import render
 from itertools import chain
+from operator import attrgetter
 
 class VideoNotificationsIndex(ListView):
     model = VideoNotification
@@ -13,21 +14,52 @@ class VideoNotificationsIndex(ListView):
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)])
+        queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]), CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]), UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)])))
+        
+        shouldnt_read = False
 
         if sort_by == 'date-desc':
-            queryset = queryset.order_by('-date_made')
+            queryset = sorted(
+                queryset,
+                key=attrgetter('date_made'),
+                reverse=True
+            )
         elif sort_by == 'date-asc':
-            queryset = queryset.order_by('date_made')
+            queryset = sorted(
+                queryset,
+                key=attrgetter('date_made'),
+                reverse=True
+            )
         elif sort_by == 'read':
-            queryset = queryset.order_by('-date_made').exclude(basenotification__read=False)
+            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False), CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False), UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False)))
+            queryset = sorted(
+                queryset,
+                key=attrgetter('date_made'),
+                reverse=True
+            )
+            shouldnt_read = True
         else:
-            queryset = queryset.order_by('-date_made').exclude(basenotification__read=True)
+            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True), CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True), UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True)))
+            queryset = sorted(
+                queryset,
+                key=attrgetter('date_made'),
+                reverse=True
+            )
         
-        for i in queryset:
-            for i in BaseNotification.objects.all().filter(notification=i):
-                i.read = True
-                i.save()
+        if not shouldnt_read:
+            for i in queryset:
+                if type(i) == VideoNotification:
+                    for i in BaseNotification.objects.all().filter(video_notification=i):
+                        i.read = True
+                        i.save()
+                elif type(i) == CommentNotification:
+                    for i in BaseNotification.objects.all().filter(comment_notification=i):
+                        i.read = True
+                        i.save()
+                elif type(i) == UpdateNotification:
+                    for i in BaseNotification.objects.all().filter(update_notification=i):
+                        i.read = True
+                        i.save()
 
         return queryset
 
