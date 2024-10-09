@@ -26,7 +26,7 @@ class Video(models.Model, object):
         return self.title
     
 @receiver(post_save, sender=Video)
-def notify(sender, instance, created, **kwargs):
+def video_notify(sender, instance, created, **kwargs):
     if created:
         VideoNotification.objects.create(video=instance, message=instance.notification_message)
 
@@ -54,7 +54,7 @@ class Comment(models.Model):
 		ordering = ['-date_posted']
 
 @receiver(post_save, sender=Comment)
-def notify(sender, instance, created, **kwargs):
+def comment_notify(sender, instance, created, **kwargs):
     if created:
         if instance.commenter != instance.post.uploader:
             CommentNotification.objects.create(comment=instance, message=f'"{instance.comment}"')

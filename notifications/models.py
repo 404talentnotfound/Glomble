@@ -31,18 +31,18 @@ class BaseNotification(models.Model, object):
     date_notified = models.DateTimeField(default=timezone.now)
 
 @receiver(post_save, sender=VideoNotification)
-def notify(sender, instance, created, **kwargs):
+def video_notify(sender, instance, created, **kwargs):
     if created:
         for follower in instance.video.uploader.followers.all():
             BaseNotification.objects.create(video_notification=instance, profile=Profile.objects.all().get(username=follower))
 
 @receiver(post_save, sender=CommentNotification)
-def notify(sender, instance, created, **kwargs):
+def comment_notify(sender, instance, created, **kwargs):
     if created:
         BaseNotification.objects.create(comment_notification=instance, profile=instance.comment.post.uploader)
 
 @receiver(post_save, sender=UpdateNotification)
-def notify(sender, instance, created, **kwargs):
+def update_notify(sender, instance, created, **kwargs):
     if created:
         for profile in Profile.objects.all():
             BaseNotification.objects.create(update_notification=instance, profile=profile)

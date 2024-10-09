@@ -239,7 +239,7 @@ def create_profile(request):
                             temp_pfp.write(chunk)
                         form.instance.profile_picture = f"media/profiles/pfps/{out}.png"
 
-                        subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 {os.path.join(BASE_DIR, f'/media/profiles/pfps/{profile.id}.png')}", shell=True, check=True)
+                        subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 '/media/profiles/pfps/{profile.id}.png'", shell=True, check=True)
 
                         os.remove(temp_pfp.name)
 
@@ -350,13 +350,13 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                                 temp_pfp.write(chunk)
                             try:
                                 if profile.profile_picture.name != "media/profiles/pfps/default.png":
-                                    os.remove(os.path.join(BASE_DIR, f'/media/profiles/pfps/{profile.id}.png'))
+                                    os.remove(f'media/profiles/pfps/{profile.id}.png')
                             except Exception as e:
                                 print(e)
 
                             cache.set(f"last_profileupdate_{self.request.user.id}", datetime.now(), timeout=None)
 
-                            subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 {os.path.join(BASE_DIR, f'/media/profiles/pfps/{profile.id}.png')}", shell=True, check=True)
+                            subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 media/profiles/pfps/{profile.id}.png", shell=True, check=True)
 
                             form.instance.profile_picture = f"media/profiles/pfps/{profile.id}.png"
 

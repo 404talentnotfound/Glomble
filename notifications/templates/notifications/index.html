@@ -20,7 +20,7 @@
         {% for object in object_list %}
         {% notification_type object as type %}
         {% if type == 1 %}
-        <div class="row justify-content-center mt-3">
+        <div class="row justify-content-center border-bottom mt-3">
             <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.comment.commenter.id %}">
                 <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment.commenter.profile_picture }}">
             </a>{{ object.comment.commenter.username }}: {{ object.message }}</h4>
@@ -33,12 +33,11 @@
             </div>
         </div>
         {% elif type == 2 %}
-        <div class="row justify-content-center mt-3">
+        <div class="row justify-content-center border-bottom mt-3">
             <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble Update <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
-            </div>
         </div>
         {% elif type == 3 %}
-        <div class="row justify-content-center mt-3">
+        <div class="row justify-content-center border-bottom mt-3">
             <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.video.uploader.id %}">
                 <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.uploader.profile_picture }}">
             </a>{{ object.video.uploader.username }}: {{ object.message }}</h4>

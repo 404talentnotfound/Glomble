@@ -8,7 +8,7 @@
 		<div style="position:absolute;right:-30%;width:60%;height:100px;">
 			{% for object in recommended %}
         			<div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0" style="background-color: rgb(200, 200, 200);">
-       	    				<a href="{% url 'video-detail' object.id %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" width="256" height="144"></a>
+       	    				<a href="{% url 'video-detail' object.id %}" style="width: 100%; overflow: hidden; margin: 0; padding-top: 56.25%; position: relative;"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" style="position: absolute; top: 50%; left: 50%; width: 100%; height:100%; transform: translate(-50%, -50%);"></a>
             				<div class="card-body">
                 				<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>
                 				<h6 class="text-muted text-center shit"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}">{{ object.uploader.username }}</a></h6>

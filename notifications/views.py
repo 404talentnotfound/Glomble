@@ -28,7 +28,6 @@ class VideoNotificationsIndex(ListView):
             queryset = sorted(
                 queryset,
                 key=attrgetter('date_made'),
-                reverse=True
             )
         elif sort_by == 'read':
             queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False), CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False), UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False)))

@@ -19,8 +19,8 @@ import tempfile
 import magic
 import os
 import random
-import subprocess
 from Glomble.pc_prod import *
+import subprocess
 
 def getvideos(request):
     videos = list(Video.objects.all().exclude(unlisted=True).values())
@@ -153,14 +153,15 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         if not 'thumbnail' in self.request.FILES:
             video_check = self.request.FILES['video_file']
             if cooldown_valid:
-                if video_check.size < 50000000 and video_check.size > 1024:
+                if video_check.size < 75000000 and video_check.size > 1024:
                     try:
-                        video_filename = os.path.join(BASE_DIR, f'/media/uploads/video_files/{out}.mp4')
+                        video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
+                        print(video_filename)
                         form.instance.video_file.name = f"{out}.mp4"
                         temp_video_file = tempfile.NamedTemporaryFile(delete=False)
                         temp_video_file.write(video_check.file.read())
                         vid = VideoFileClip(temp_video_file.name)
-                        thumbnail_filename = os.path.join(BASE_DIR, f'/media/uploads/thumbnails/{out}.png')
+                        thumbnail_filename = os.path.join(BASE_DIR, f'media/uploads/thumbnails/{out}.png')
                         form.instance.thumbnail.name = f"media/uploads/thumbnails/{out}.png"
                         vid.save_frame(thumbnail_filename, t = 0)
                         if vid.duration <= 1200 and vid.duration > 1:
@@ -180,7 +181,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                             return super().form_invalid(form)
                     finally:
                         try:
-                            os.remove(temp_video_file.name)
+                            temp_video_file.close()
                         except:
                             pass
                 else:
@@ -196,13 +197,13 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             mime = magic.Magic(mime=True).from_file(temp_thumbnail_file.name)
             if mime in ['image/jpeg', 'image/png']:
                 if cooldown_valid:
-                    if video_check.size < 50000000 and thumbnail_check.size < 10000000 and video_check.size > 1024 and thumbnail_check.size > 1024:
+                    if video_check.size < 75000000 and thumbnail_check.size < 10000000 and video_check.size > 1024 and thumbnail_check.size > 1024:
                         try:
-                            video_filename = os.path.join(BASE_DIR, f'/media/uploads/video_files/{out}.mp4')
+                            video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
                             form.instance.video_file.name = f"{out}.mp4"
                             temp_video_file = tempfile.NamedTemporaryFile(delete=False)
                             temp_video_file.write(video_check.file.read())
-                            thumbnail_filename = os.path.join(BASE_DIR, f'/media/uploads/thumbnails/{out}.png')
+                            thumbnail_filename = os.path.join(BASE_DIR, f'media/uploads/thumbnails/{out}.png')
                             form.instance.thumbnail.name = f"{out}.png"
                             vid = VideoFileClip(temp_video_file.name)
                             if vid.duration <= 1200 and vid.duration > 1:
@@ -218,7 +219,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                                 return super().form_invalid(form)
                         except Exception as e:
                             if self.is_valid != True:
-                                form.add_error(None, f"An error occurred while processing your video, please try again later {e}.")
+                                form.add_error(None, f"An error occurred while processing your video, please try again later.")
                                 return super().form_invalid(form)
                         finally:
                             try:
@@ -293,11 +294,11 @@ class DetailVideo(DetailView):
                     time_passed = datetime.now() - last_comment_time
                     if time_passed < timedelta(seconds=30):
                         return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
-                    
-                form.save(commit=False)
-                form.instance.commenter = Profile.objects.get(username=request.user)
-                form.instance.post = pen
-                form.save()
+
+                new_comment = form.save(commit=False)
+                new_comment.commenter = Profile.objects.get(username=request.user)
+                new_comment.post = pen
+                new_comment.save()
 
                 cache.set(cooldown_key, datetime.now(), timeout=30)
 
