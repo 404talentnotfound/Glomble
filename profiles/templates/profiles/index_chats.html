@@ -1,0 +1,28 @@
+{% extends 'profiles/base.html' %}
+{% load current_profile %}
+{% load count %}
+
+{% block content %}
+<div class="container">
+    <h1 class="border-bottom text-center">Chats</h1>
+    <div class="col-md-3 col-sm-12 mt-5 mb-3">
+        <form method="get">
+            <label for="sort-by">Sort by:</label>
+            <select name="sort-by" id="sort-by" onchange="this.form.submit()">
+                <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
+                <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
+            </select>
+        </form>
+    </div>
+        {% for chat in chat_list %}
+        <div class="row justify-content-center mt-3">
+            <div class="col-md-5 col-sm-12 border-bottom position-relative text-center">
+                {% other_chatter chat request.user as chatter %}
+                <p><a style="text-decoration: none;" class="link-text" href="{% url 'chat-detail' chatter.id %}">
+                <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ chatter.profile_picture }}">
+                <h5>{{ chatter.username }}</h5></a></p>
+            </div>
+        </div>
+        {% endfor %}
+</div>
+{% endblock content %}

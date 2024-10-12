@@ -1,0 +1,20 @@
+{% extends 'videos/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="container mb-5">
+	<div class="row justify-content-center">
+		<div class="col-md-6 col-sm-12 col-xs-12">
+			<form method="POST" enctype="multipart/form-data">
+				{% csrf_token %}
+				<legend class="text-center">Add paypal to your account</legend>
+				<p class="border-bottom mb-4 text-center">Please make sure you use the email you have registered on paypal.</p>
+				{{ form | crispy }}
+				<button class="btn btn-outline-info btn-block mt-3" type="submit">Submit</button>
+			</form>
+		</div>
+	</div>
+</div>
+
+{% endblock content %}

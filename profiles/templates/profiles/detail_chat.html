@@ -1,0 +1,59 @@
+{% extends 'profiles/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <legend class="border-bottom mb-4 text-center">{{ message_amount }} messages</legend>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<div class="container" id="post-container">
+		<div class="row justify-content-center mt-3 mb-5">
+			<div class="col-md-5 col-sm-12">
+				<form method="POST">
+					{% csrf_token %}
+					{{ form | crispy }}
+					<div class="d-grid gap-2 text-center">
+						<button class="btn btn-success mt-3">Send</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		{% for message in messages %}
+		<div class="row justify-content-center mt-3 mb-5 border-bottom">
+			<div class="col-md-6 col-sm-12">
+				<p class="bitch"><a class="link-text" href="{% url 'detail-profile' message.sender.id %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}"><b>{{ message.sender.username }}:</b> </a>{{ message.message }}</p>
+			</div>
+		</div>
+		{% endfor %}
+		{% if is_paginated %}
+	</div>
+	<div class="row justify-content-center mt-5">
+		<div class="col-md-12 col-sm-12">
+			<nav aria-label="Pagination">
+				<ul class="pagination justify-content-center">
+					{% if page_obj.has_previous %}
+					<li class="page-item">
+						<a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Previous</a>
+					</li>
+					{% endif %}
+					{% for num in page_obj.paginator.page_range %}
+					{% if page_obj.number == num %}
+					<li class="page-item active">
+						<a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+					</li>
+					{% else %}
+					<li class="page-item">
+						<a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+					</li>
+					{% endif %}
+					{% endfor %}
+					{% if page_obj.has_next %}
+					<li class="page-item">
+						<a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Next</a>
+					</li>
+					{% endif %}
+				</ul>
+			</nav>
+		</div>
+	</div>
+	{% endif %}
+{% endblock content %}
