@@ -34,7 +34,7 @@
         </div>
         {% elif type == 2 %}
         <div class="row justify-content-center border-bottom mt-3">
-            <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble Update <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
+            <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
         </div>
         {% elif type == 3 %}
         <div class="row justify-content-center border-bottom mt-3">
@@ -48,6 +48,21 @@
                     <h6 class="text-muted text-center">{{ object.video.date_posted | date:"H:m | d M, Y" }}</h6>
                 </div>
             </div>
+        </div>
+        {% elif type == 4 %}
+        <div class="row justify-content-center border-bottom mt-3">
+            <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
+            <div class="col-md-3 col-sm-12">
+                <a href="{% url 'video-detail' object.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.thumbnail }}" width="128" height="72"></a>
+                <div class="card-body">
+                    <a class="link-text" href="{% url 'video-detail' object.video.id %}"><h6 class="text-center shit">{{ object.video.title }}</h6></a>
+                    <h6 class="text-muted text-center">{{ object.video.date_posted | date:"H:m | d M, Y" }}</h6>
+                </div>
+            </div>
+        </div>
+        {% elif type == 5 %}
+        <div class="row justify-content-center border-bottom mt-3">
+            <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
         </div>
         {% endif %}
         {% endfor %}

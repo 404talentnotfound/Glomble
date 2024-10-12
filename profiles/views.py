@@ -1,15 +1,16 @@
 from django.shortcuts import render, reverse, redirect
-from .models import Profile
+from .models import Profile, Chat, Message, ProfileActivity
 from django.utils.html import strip_tags
 import random
 from videos.models import Video
 from django.views.generic.list import ListView
+from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.views import View
-from django.db.models import Q, Count
-from .forms import UserRegisterForm, CreateProfileForm
+from django.db.models import Q, Count, Max
+from .forms import UserRegisterForm, CreateProfileForm, MessageForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .decorators import user_not_authenticated
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -31,6 +32,7 @@ import magic
 import tempfile
 import subprocess
 from django.core.cache import cache
+from notifications.models import FollowNotification
 
 def update_profile_follow_count(request, id):
     follow_count = Profile.objects.get(id=id).followers.count()
@@ -38,6 +40,18 @@ def update_profile_follow_count(request, id):
 
 def redirect_profile(request, id):
     return redirect(f"{reverse('detail-profile', kwargs={'id': id})}")
+
+def toggle_tracking_activity(request):
+    profile = Profile.objects.get(username=request.user)
+    profile.using_activity = not profile.using_activity
+    if profile.using_activity:
+        if not ProfileActivity.objects.filter(profile=profile).exists():
+            activity = ProfileActivity.objects.create(profile=profile)
+        else:
+            activity = ProfileActivity.objects.get(profile=profile)
+        profile.activity = activity
+    profile.save()
+    return redirect(f"{reverse('detail-profile', kwargs={'id': profile.id})}")
 
 class ProfileIndex(ListView):
     model = Profile
@@ -86,7 +100,7 @@ def activate(request, uidb64, token):
 class CreateProfile(LoginRequiredMixin, CreateView):
     model = Profile
     fields = ['profile_picture', 'bio']
-    template_name = "profiles/create_profile.html"
+    template_name = "profiles/create-profile.html"
     def form_valid(self, form):
         if Profile.objects.filter(username=self.request.user).exists():
             raise ValidationError("you already have a profile associated with this account")
@@ -239,7 +253,7 @@ def create_profile(request):
                             temp_pfp.write(chunk)
                         form.instance.profile_picture = f"media/profiles/pfps/{out}.png"
 
-                        subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 '/media/profiles/pfps/{profile.id}.png'", shell=True, check=True)
+                        subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 'media/profiles/pfps/{profile.id}.png'", shell=True, check=True)
 
                         os.remove(temp_pfp.name)
 
@@ -248,10 +262,10 @@ def create_profile(request):
                         return redirect('profile-page')
                     else:
                         form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under five megabytes and try again.")
-                        return redirect('create_profile')
+                        return redirect('create-profile')
                 else:
                     form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format and try again.")
-                    return redirect('create_profile')
+                    return redirect('create-profile')
             else:
                 form.instance.profile_picture.name = "media/profiles/pfps/default.png"
                 if form.is_valid():
@@ -290,11 +304,11 @@ class DetailProfileIndex(ListView):
         admin = username.is_superuser
         developer = False
         creator = False
-        developers = ["DnGJTCYXZ2dJ"]
-        creators = ["DnGJTCYXZ2dJ"]
+        developers = DEVELOPER_IDS
+        creator = CREATOR_ID
         if poopie in developers:
             developer = True
-        if poopie in creators:
+        if poopie == creator:
             creator = True
 
         if len(followers) == 0:
@@ -326,7 +340,7 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     slug_url_kwarg = "id"
     slug_field = "id"
     fields = ['profile_picture','bio']
-    template_name = "profiles/create_profile.html"
+    template_name = "profiles/update_profile.html"
     def form_valid(self, form):
         profile = Profile.objects.get(id=self.kwargs['id'])
         cooldown_valid = True
@@ -386,7 +400,7 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         profile = self.get_object()
-        return self.request.user == profile.username or (self.request.user.is_superuser and profile.id != "DnGJTCYXZ2dJ")
+        return self.request.user == profile.username or (self.request.user.is_superuser and profile.id != CREATOR_ID)
 
 class DeleteProfile(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Profile
@@ -418,11 +432,22 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, *args, **kwargs):
         hi = self.kwargs['id']
         profilething = Profile.objects.get(id=hi)
-        if profilething.id != 5:
-            if request.user != profilething.username:
-                profilething.followers.add(request.user)
+        if request.user != profilething.username:
+            profilething.followers.add(request.user)
+
+        profile = Profile.objects.get(username=request.user)
+
+        if profile.using_activity:
+            ProfileActivity.objects.get(profile=profile).followed_profiles.add(profilething)
         
         followers_count = profilething.followers.count()
+
+        milestones = [5, 10, 25, 50, 100]
+
+        if (followers_count in milestones) and followers_count > profilething.passed_milestones:
+            profilething.passed_milestones = followers_count
+            profilething.save()
+            FollowNotification.objects.create(profile=profilething)
 
         return JsonResponse({'follow_count': followers_count})
     
@@ -435,6 +460,7 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
 class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
     def get_redirect_url(self):
         return reverse('detail-profile', kwargs={'id': self.object.id})
+    
     def post(self, request, *args, **kwargs):
         hi = self.kwargs['id']
         profilething = Profile.objects.get(id=hi)
@@ -443,6 +469,11 @@ class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
                 profilething.followers.remove(request.user)
     
         followers_count = profilething.followers.count()
+
+        profile = Profile.objects.get(username=request.user)
+
+        if ProfileActivity.objects.filter(profile=profile).exists():
+            ProfileActivity.objects.get(profile=profile).followed_profiles.remove(profilething)
 
         return JsonResponse({'follow_count': followers_count})
     
@@ -460,6 +491,12 @@ class UserSearch(View):
         profile_list = Profile.objects.filter(
         	Q(username__username__icontains=query)
         ).exclude(username__username__in=excluded_profiles)
+
+        profile = Profile.objects.get(username=self.request.user)
+        if profile.using_activity:
+            profile_activity = ProfileActivity.objects.get(profile=profile)
+            profile_activity.searches += query + "\n"
+            profile_activity.save()
     
         context = {
         	'profile_list': profile_list
@@ -467,3 +504,88 @@ class UserSearch(View):
     
 
         return render(request, 'profiles/search.html', context)
+
+class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    
+    def get(self, request, *args, **kwargs):
+        e = self.kwargs['id']
+        form = MessageForm()
+        if Chat.objects.all().filter(members__in=[Profile.objects.get(username=request.user)]).filter(members__in=[Profile.objects.get(id=e)]).exists():
+            pen = Chat.objects.all().filter(members__in=[Profile.objects.get(username=request.user)]).filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
+        else:
+            pen = Chat.objects.create()
+            pen.save()
+            pen.members.add(Profile.objects.get(username=request.user))
+            pen.members.add(Profile.objects.get(id=e))
+
+        messages = Message.objects.filter(chat=pen).order_by('-date_sent')
+        chat_count = messages.count()
+        context = {
+            'e': e,
+            'post': pen,
+            'form': form,
+            'messages': messages,
+            'message_amount': chat_count,
+        }
+        for i in messages:
+            if i.sender != Profile.objects.get(username=request.user):
+                i.read = True
+                i.save()
+
+        return render(request, 'profiles/detail_chat.html', context)
+
+    def post(self, request, *args, **kwargs):
+        e = self.kwargs['id']
+        pen = Chat.objects.all().filter(members__in=[Profile.objects.get(username=self.request.user)]).filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
+        form = MessageForm(request.POST)
+
+        if form.is_valid():
+            new_message = form.save(commit=False)
+            new_message.sender = Profile.objects.get(username=request.user)
+            new_message.chat = pen
+            new_message.save()
+            pen.messages.add(new_message)
+
+            return redirect(f'{reverse("chat-detail", kwargs={"id": e})}')
+
+        messages = Message.objects.filter(chat=pen).order_by('-date_sent')
+
+        context = {
+            'e': e,
+            'post': pen,
+            'form': form,
+            'messages': messages,
+        }
+        return render(request, 'profiles/detail_chat.html', context)
+    
+    def test_func(self):
+        hi = self.kwargs['id']
+        profilething = Profile.objects.get(id=hi)
+        currentprofile = Profile.objects.get(username=self.request.user)
+        following_eachother = profilething.followers.contains(currentprofile.username) and currentprofile.followers.contains(profilething.username)
+        return currentprofile != profilething and following_eachother
+    
+class ChatIndex(ListView):
+    model = Chat
+    template_name = "profiles/index_chats.html"
+    paginate_by = 9
+
+    def get_queryset(self):
+        sort_by = self.request.GET.get('sort-by')
+        queryset = Chat.objects.all()
+
+        queryset = queryset.filter(members__in=[Profile.objects.get(username=self.request.user)]).distinct().alias(max_date_sent=Max('messages__date_sent'))
+
+        if sort_by == 'date-desc':
+            queryset = queryset.order_by("-max_date_sent")
+        elif sort_by == 'date-asc':
+            queryset = queryset.order_by("max_date_sent")
+        else:
+            queryset = queryset.order_by("-max_date_sent")
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['sort_by'] = self.request.GET.get('sort-by')
+        return context

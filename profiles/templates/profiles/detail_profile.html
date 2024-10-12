@@ -1,5 +1,6 @@
 {% extends 'videos/base.html' %}
 {% load crispy_forms_tags %}
+{% load count %}
 
 {% block content %}
 	<div class="container">
@@ -24,9 +25,29 @@
 			{% endif %}
 		</div>
 		<div class="text-center">
-			{% if username == user or user.is_superuser %}
+			{% if username == user %}
+			{% if user.is_superuser %}
 			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
 			<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
+			{% endif %}
+			{% find user as profile %}
+			<a class="{% if profile.using_activity %}btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" href="{% url 'start-recommendations' %}">
+				{% if profile.using_activity %}
+				<span>Turn off recommendations</span>
+				{% else %}
+				<span>Turn on recommendations</span>
+				{% endif %}
+			</a>
+			{% is_in_creatorfund profile as in_creatorfund %}
+			<div style="margin-top: .25em;">
+				<a class="{% if in_creatorfund %}btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" href="{% if in_creatorfund %}{% url 'delete-funding-profile' %}{% else %}{% url 'create-funding-profile' %}{% endif %}">
+					{% if in_creatorfund %}
+					<span>Leave the creator fund</span>
+					{% else %}
+					<span>Join the creator fund</span>
+					{% endif %}
+				</a>
+			</div>
 			{% endif %}
 			{% if username != request.user %}
 			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fa-solid fa-flag"></i></a>
@@ -34,6 +55,10 @@
 			<p class="follow-count" id="{{ poopie }}">{{ follow_num }} followers</p>
 			{% if request.user.is_authenticated %}
 			{% if username != request.user %}
+			{% following_eachother request.user username as f %}
+			{% if f %}
+			<b>You are following each other</b>
+			{% endif %}
 			<div class="follow-button-container">
 				<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' poopie %}" data-url-remove="{% url 'remove-follower' poopie %}">
 					{% if is_following %}
@@ -42,10 +67,12 @@
 					<span>Follow</span>
 					{% endif %}
 				</button>
+				{% if f %}
+					<a class="btn btn-outline-success" href="{% url 'chat-detail' poopie %}">Message</a>
+				{% endif %}
 			</div>
 			{% endif %}
 			{% endif %}
-
 		</div>
 		<div class="row justify-content-center">
 			{% for object in detail_profile_list %}

@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.urls import path
-from .views import VideoNotificationsIndex, VideoNotificationSearch
+from .views import NotificationsIndex, VideoNotificationSearch
 
 urlpatterns = [
-    path('', VideoNotificationsIndex.as_view(), name='notification-index'),
+    path('', NotificationsIndex.as_view(), name='notification-index'),
 #    path('search/', VideoNotificationSearch.as_view(), name='video-notification-search'),
 ]

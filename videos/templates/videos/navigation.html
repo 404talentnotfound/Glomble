@@ -43,6 +43,10 @@
         <h5><a class="nav-link" href="{% url 'notification-index' %}">{% if test %}<i class="fa-solid fa-bell"></i>{% else %}<i class="fa-regular fa-bell"></i>{% endif %}</a></h5>
       </li>
       <li class="nav-item">
+        {% has_messages user as test3 %}
+        <h5><a class="nav-link" href="{% url 'chat-index' %}">{% if test3 %}<i class="fa-solid fa-envelope"></i>{% else %}<i class="fa-regular fa-envelope"></i>{% endif %}</a></h5>
+      </li>
+      <li class="nav-item">
           <a class="nav-link" href="{% url 'video-create' %}">Upload Video</a>
       </li>
       <li class="nav-item">

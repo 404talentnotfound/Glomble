@@ -90,8 +90,9 @@
 						</button>
 					  </div>
 					</div>
-					<video src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.video_file }}">
-					  <track kind="captions" srclang="en" src="{% static 'videos/bungle.vtt' %}">
+					<video>
+						<source src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.video_file }}" type="video/mp4">
+						<track kind="captions" srclang="en" src="{% static 'videos/bungle.vtt' %}">
 					</video>
 				  </div>
 				<h5 class="mt-4">{{ post.title }}</h5>

@@ -1,4 +1,4 @@
-from .models import VideoNotification, UpdateNotification, BaseNotification, CommentNotification
+from .models import VideoNotification, UpdateNotification, BaseNotification, CommentNotification, FollowNotification, LikeNotification
 from profiles.models import Profile
 from django.views.generic.list import ListView
 from django.views.generic import View
@@ -7,14 +7,18 @@ from django.shortcuts import render
 from itertools import chain
 from operator import attrgetter
 
-class VideoNotificationsIndex(ListView):
-    model = VideoNotification
+class NotificationsIndex(ListView):
     template_name = "notifications/index.html"
     paginate_by = 8
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]), CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]), UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)])))
+        queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
+                              CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
+                              UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
+                              FollowNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
+                              LikeNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)])
+                              ))
         
         shouldnt_read = False
 
@@ -30,7 +34,12 @@ class VideoNotificationsIndex(ListView):
                 key=attrgetter('date_made'),
             )
         elif sort_by == 'read':
-            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False), CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False), UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False)))
+            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
+                              CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
+                              UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
+                              FollowNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
+                              LikeNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False)
+                              ))
             queryset = sorted(
                 queryset,
                 key=attrgetter('date_made'),
@@ -38,7 +47,12 @@ class VideoNotificationsIndex(ListView):
             )
             shouldnt_read = True
         else:
-            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True), CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True), UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True)))
+            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
+                              CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
+                              UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
+                              FollowNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
+                              LikeNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True)
+                              ))
             queryset = sorted(
                 queryset,
                 key=attrgetter('date_made'),
@@ -57,6 +71,14 @@ class VideoNotificationsIndex(ListView):
                         i.save()
                 elif type(i) == UpdateNotification:
                     for i in BaseNotification.objects.all().filter(update_notification=i):
+                        i.read = True
+                        i.save()
+                elif type(i) == FollowNotification:
+                    for i in BaseNotification.objects.all().filter(follow_notification=i):
+                        i.read = True
+                        i.save()
+                elif type(i) == LikeNotification:
+                    for i in BaseNotification.objects.all().filter(like_notification=i):
                         i.read = True
                         i.save()
 
@@ -80,3 +102,4 @@ class VideoNotificationSearch(View):
     
 
         return render(request, 'notifications/search.html', context)
+

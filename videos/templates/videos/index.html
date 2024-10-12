@@ -2,12 +2,17 @@
 
 {% block content %}
 <div class="container">
-    <div class="row justify-content-center">
+    <div class="row justify-content-center" style="width:150%; margin-left: -25%;">
         <div class="col-md-3 col-sm-12 mt-5 mb-3">
             <form method="get">
                 <label for="sort-by">Sort by:</label>
                 <select name="sort-by" id="sort-by" onchange="this.form.submit()">
+                    {% if recommend %}
+                    <option value="recommended"{% if sort_by == 'recommended' %} selected{% else %} selected="selected"{% endif %}>Recommended</option>
+                    <option value="likes-desc"{% if sort_by == 'likes-desc' %} selected{% endif %}>Most Liked</option>
+                    {% else %}
                     <option value="likes-desc"{% if sort_by == 'likes-desc' %} selected{% else %} selected="selected"{% endif %}>Most Liked</option>
+                    {% endif %}
                     <option value="views-desc"{% if sort_by == 'views-desc' %} selected{% endif %}>Most Popular</option>
                     <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
                     <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
@@ -16,7 +21,7 @@
             
         </div>
         {% for object in object_list %}
-        <div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
+        <div class="card col-md-2 col-sm-12 mr-md-1 mt-5 p-3 border-0">
             <a href="{% url 'video-detail' object.id %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" width="256" height="144"></a>
             <div class="card-body">
                 <a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>

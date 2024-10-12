@@ -21,7 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = open(os.path.join(BASE_DIR, "secret_key.txt")).read() # make this file yourself if necessary
+SECRET_KEY = open(os.path.join(BASE_DIR, "secret_key.txt")).read()
+
+CREATOR_ID = open(os.path.join(BASE_DIR, "creator.txt")).read()
+DEVELOPER_IDS = open(os.path.join(BASE_DIR, "developers.txt")).read().split("\n")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -34,12 +37,18 @@ CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-# Application definition
+MEDIA_ROOT = os.path.join(BASE_DIR, "media").replace("\\","/")
+MEDIA_URL = "media/"
+
+CRONJOBS = [
+    ('*/5 * * * *', 'creatorfund.cron.update_funds')
+]
 
 INSTALLED_APPS = [
     'dumbshit',
-    
+    'django_crontab',
+
+    'creatorfund',
     'notifications',
     'videos',
     'profiles',
@@ -115,7 +124,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "/profiles/static"), os.path.join(BASE_DIR, "/videos/static"))
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "profiles/static"), os.path.join(BASE_DIR, "videos/static"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

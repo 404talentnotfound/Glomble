@@ -10,7 +10,7 @@ import os
 class Video(models.Model, object):
     uploader = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     notification_message = models.CharField(max_length=50, default="new video", null=True)
-    title = models.CharField(max_length=50)
+    title = models.CharField(max_length=75)
     description = models.CharField(max_length=500, null=True, blank=True)
     video_file = models.FileField(upload_to='media/uploads/video_files/', validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])])
     thumbnail = models.FileField(upload_to='media/uploads/thumbnails/', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])])
@@ -21,6 +21,7 @@ class Video(models.Model, object):
     duration = models.FloatField(null=True, blank=True)
     unlisted = models.BooleanField(default=False)
     id = models.SlugField(primary_key=True)
+    passed_milestones = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -42,12 +43,13 @@ def delete_files(sender, instance, using, **kwargs):
             pass
 
 class Comment(models.Model):
-	comment = models.CharField(max_length=100)
+	comment = models.CharField(max_length=200)
 	date_posted = models.DateTimeField(default=timezone.now)
 	commenter = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
 	post = models.ForeignKey('Video', on_delete=models.CASCADE)
 	likes = models.ManyToManyField(User, blank=True, related_name='comment_likes')
 	dislikes = models.ManyToManyField(User, blank=True, related_name='comment_dislikes')
+	passed_milestones = models.PositiveIntegerField(default=0)
 
 	class Meta:
 

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Profile
+from .models import Profile, Message
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
 
@@ -41,3 +41,18 @@ class CreateProfileForm(forms.ModelForm):
         model = Profile
 
         fields = ['profile_picture', 'bio']
+
+class MessageForm(forms.ModelForm):
+    message = forms.CharField(
+        label='',
+        widget=forms.Textarea(attrs={
+            'rows': '3',
+            'placeholder': 'Say something to this creator.',
+            'maxlength': '200',
+        })
+    )
+
+    class Meta:
+        model = Message
+
+        fields = ['message']

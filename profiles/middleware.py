@@ -7,8 +7,8 @@ class CheckProfileMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.user.is_authenticated and not Profile.objects.filter(username=request.user.id).exists() and not request.path == reverse('create_profile'):
-            return redirect('create_profile')
+        if request.user.is_authenticated and not Profile.objects.filter(username=request.user.id).exists() and not request.path == reverse('create-profile'):
+            return redirect('create-profile')
         response = self.get_response(request)
 
         return response

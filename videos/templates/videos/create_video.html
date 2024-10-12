@@ -6,7 +6,7 @@
 <div class="container mb-5">
 	<div class="row justify-content-center">
 		<div class="col-md-6 col-sm-12 col-xs-12">
-			<form method="POST" enctype="multipart/form-data">
+			<form method="POST" enctype="multipart/form-data" onsubmit="openLoader()">
 				{% csrf_token %}
 				<legend class="border-bottom mb-4">Upload Video</legend>
 				{{ form | crispy }}
