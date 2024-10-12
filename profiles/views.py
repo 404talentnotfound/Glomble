@@ -309,7 +309,7 @@ class DetailProfileIndex(ListView):
         if poopie in developers:
             developer = True
         if poopie == creators:
-            creators = True
+            creator = True
 
         if len(followers) == 0:
             is_following = False
