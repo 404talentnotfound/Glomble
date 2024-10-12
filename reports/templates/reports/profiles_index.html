@@ -1,4 +1,5 @@
 {% extends 'videos/base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="container">
@@ -20,7 +21,7 @@
                 <p class="text-muted text-center">Summary: {{ object.brief_summary }}</p>
                 <p class="text-muted text-center">Reported profile username: {{ object.profile.username }}</p>
                 <p class="text-muted text-center">Reported by: {{ object.reporter }}</p>
-                <p class="text-muted text-center">{{ object.date_sent | date:"d M, Y" }}</p>
+                <p class="text-muted text-center">{{ object.date_sent|naturaltime }}</p>
             </div>
         </div>
         {% endfor %}

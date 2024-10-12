@@ -1,6 +1,7 @@
 {% extends 'profiles/base.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
+{% load humanize %}
 
 {% block content %}
     <legend class="border-bottom mb-4 text-center">{{ message_amount }} messages</legend>
@@ -20,7 +21,9 @@
 		{% for message in messages %}
 		<div class="row justify-content-center mt-3 mb-5 border-bottom">
 			<div class="col-md-6 col-sm-12">
-				<p class="bitch"><a class="link-text" href="{% url 'detail-profile' message.sender.id %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}"><b>{{ message.sender.username }}:</b> </a>{{ message.message }}</p>
+				<p class="bitch"><a class="link-text" href="{% url 'detail-profile' message.sender.id %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}"><b>{{ message.sender.username }}:</b> </a>{{ message.message }}
+				</p>
+				<p class="text-muted">{{ message.date_sent|naturaltime }}</p>
 			</div>
 		</div>
 		{% endfor %}

@@ -1,6 +1,7 @@
 {% extends 'videos/base.html' %}
 {% load crispy_forms_tags %}
 {% load count %}
+{% load humanize %}
 
 {% block content %}
 	<div class="container">
@@ -40,6 +41,11 @@
 			</a>
 			{% is_in_creatorfund profile as in_creatorfund %}
 			<div style="margin-top: .25em;">
+				{% if in_creatorfund %}
+				<a class="btn btn-outline-success" href="{% url 'detail-funding-profile' %}">
+					<span>Check your revenue</span>
+				</a>
+				{% endif %}
 				<a class="{% if in_creatorfund %}btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" href="{% if in_creatorfund %}{% url 'delete-funding-profile' %}{% else %}{% url 'create-funding-profile' %}{% endif %}">
 					{% if in_creatorfund %}
 					<span>Leave the creator fund</span>
@@ -82,7 +88,7 @@
 					<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>
 					<h6 class="text-muted text-center shit">{{ object.uploader.username }}</h6>
 					<h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
-					<h6 class="text-muted text-center">{{ object.date_posted | date:"d M, Y" }}</h6>
+					<h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
 					<h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
 				</div>
 			</div>

@@ -1,6 +1,7 @@
 {% extends 'videos/base.html' %}
 {% load count %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
 
@@ -28,7 +29,7 @@
                 <a href="{% url 'video-detail' object.comment.post.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment.post.thumbnail }}" width="128" height="72"></a>
                 <div class="card-body">
                     <a class="link-text" href="{% url 'video-detail' object.comment.post.id %}"><h6 class="text-center shit">{{ object.comment.post.title }}</h6></a>
-                    <h6 class="text-muted text-center">{{ object.comment.date_made | date:"H:m | d M, Y" }}</h6>
+                    <h6 class="text-muted text-center">{{ object.comment.date_made|naturaltime }}</h6>
                 </div>
             </div>
         </div>
@@ -45,7 +46,7 @@
                 <a href="{% url 'video-detail' object.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.thumbnail }}" width="128" height="72"></a>
                 <div class="card-body">
                     <a class="link-text" href="{% url 'video-detail' object.video.id %}"><h6 class="text-center shit">{{ object.video.title }}</h6></a>
-                    <h6 class="text-muted text-center">{{ object.video.date_posted | date:"H:m | d M, Y" }}</h6>
+                    <h6 class="text-muted text-center">{{ object.video.date_posted|naturaltime }}</h6>
                 </div>
             </div>
         </div>
@@ -56,7 +57,7 @@
                 <a href="{% url 'video-detail' object.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.thumbnail }}" width="128" height="72"></a>
                 <div class="card-body">
                     <a class="link-text" href="{% url 'video-detail' object.video.id %}"><h6 class="text-center shit">{{ object.video.title }}</h6></a>
-                    <h6 class="text-muted text-center">{{ object.video.date_posted | date:"H:m | d M, Y" }}</h6>
+                    <h6 class="text-muted text-center">{{ object.video.date_posted|naturaltime }}</h6>
                 </div>
             </div>
         </div>

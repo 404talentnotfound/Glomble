@@ -1,4 +1,5 @@
 {% extends 'videos/base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="container">
@@ -27,7 +28,7 @@
                 <a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>
                 <h6 class="text-muted text-center shit"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}">{{ object.uploader.username }}</a></h6>
                 <h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
-                <h6 class="text-muted text-center">{{ object.date_posted | date:"d M, Y" }}</h6>
+                <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
                 <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
             </div>
         </div>

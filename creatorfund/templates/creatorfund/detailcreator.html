@@ -1,5 +1,6 @@
 {% extends 'videos/base.html' %}
 {% load crispy_forms_tags %}
+{% load humanize %}
 
 {% block content %}
 	<div class="container" id="post-container" style="text-align:center">
@@ -8,7 +9,7 @@
 		<br>
         <h5>Paypal Email: {{ funding_profile.paypal_email }} <a class="icon-color" href="{% url 'edit-funding-profile' %}"><ion-icon name="pencil-outline"></ion-icon></a></h5>
 		<h5>Estimated income: €{{ estimated_income }}</h5>
-		<h5>Next payout: {{ next_payout | date:"d M, Y"  }}</h5>
+		<h5>Next payout: {{ next_payout|naturaltime  }}</h5>
     </div>
 	<br>
 	<h3 class="text-center">Earnings per video:</h3>

@@ -1,6 +1,7 @@
 {% extends 'videos/base.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
+{% load humanize %}
 
 {% block content %}
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -13,7 +14,7 @@
                 				<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>
                 				<h6 class="text-muted text-center shit"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}">{{ object.uploader.username }}</a></h6>
 				                <h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
-				                <h6 class="text-muted text-center">{{ object.date_posted | date:"d M, Y" }}</h6>
+				                <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
 				                <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
 				        </div>
         			</div>
@@ -109,7 +110,7 @@
 				<p>views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span></p>
 				<div class="row">
 					<div class="col-md-6 text-muted">
-						<p>{{ post.date_posted | date:"d M, Y" }}</p>
+						<p>{{ post.date_posted|naturaltime }}</p>
 					</div>
 
 					<div class="col-md-6 text-muted text-right">
