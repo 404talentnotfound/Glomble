@@ -35,7 +35,6 @@ def generate_recommendations(profile):
     
     previous_searches = user_activity.searches.lower().split()
     previous_searches = [search.strip() for search in previous_searches if search.strip()]
-    print(previous_searches)
     followed_profiles = profile.followed_profiles.all()
     
     data = []
@@ -68,14 +67,15 @@ def generate_recommendations(profile):
         
         search_score = 0
         if previous_searches and video.title.strip():
-            title_corpus = [video.title] + previous_searches
-            try:
-                title_matrix = vectorizer.fit_transform(title_corpus)
-                title_similarity = (title_matrix * title_matrix.T)
-                search_score = title_similarity[0, 1:].sum() * 2
-            except ValueError:
-                search_score = 0
-
+            valid_searches = [s for s in previous_searches if len(vectorizer.build_analyzer()(s)) > 0]
+            if valid_searches:
+                title_corpus = [video.title] + valid_searches
+                try:
+                    title_matrix = vectorizer.fit_transform(title_corpus)
+                    title_similarity = (title_matrix * title_matrix.T)
+                    search_score = title_similarity[0, 1:].sum() * 2
+                except ValueError:
+                    search_score = 0
         
         final_score += search_score
         
