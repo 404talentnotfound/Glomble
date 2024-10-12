@@ -55,7 +55,7 @@ def video_notify(sender, instance, created, **kwargs):
 @receiver(post_save, sender=CommentNotification)
 def comment_notify(sender, instance, created, **kwargs):
     if created:
-        if instance.comment.video.uploader != instance.comment.commenter:
+        if instance.comment.post.uploader != instance.comment.commenter:
             BaseNotification.objects.create(comment_notification=instance, profile=instance.comment.post.uploader)
 
 @receiver(post_save, sender=UpdateNotification)

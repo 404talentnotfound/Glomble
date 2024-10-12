@@ -30,8 +30,11 @@ def has_messages(user):
     profile = Profile.objects.get(username=user)
     unreadmessages = Chat.objects.filter(members__in=[profile]).filter(messages__read=False)
     if unreadmessages.exists():
+        is_from_other_chatter = False
         for i in unreadmessages:
-            return i.messages.latest("date_sent").sender != profile
+            if i.messages.latest("date_sent").sender != profile:
+                is_from_other_chatter = True
+        return is_from_other_chatter
     return False
 
 @register.simple_tag

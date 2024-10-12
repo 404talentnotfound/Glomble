@@ -279,7 +279,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                         form.instance.thumbnail.name = f"media/uploads/thumbnails/{out}.png"
                         vid.save_frame(thumbnail_filename, t = 0)
                         if vid.duration <= 36000 and vid.duration > 1:
-                            subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -vtag hvc1 -c:a copy -preset medium {video_filename}''', shell=True, check=True)
+                            subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}''', shell=True, check=True)
                             form.instance.duration = vid.duration
                             cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
                             os.remove(temp_video_file.name)
@@ -322,7 +322,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                             vid = VideoFileClip(temp_video_file.name)
                             if vid.duration <= 36000 and vid.duration > 1:
                                 cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
-                                subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -vtag hvc1 -c:a copy -preset medium {video_filename}''', shell=True, check=True)
+                                subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}''', shell=True, check=True)
                                 subprocess.run(f'sudo ffmpeg -y -i {temp_thumbnail_file.name} -vf scale=512:512 {thumbnail_filename}', shell=True, check=True)
                                 form.instance.duration = vid.duration
                                 cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
