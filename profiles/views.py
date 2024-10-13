@@ -253,7 +253,7 @@ def create_profile(request):
                             temp_pfp.write(chunk)
                         form.instance.profile_picture = f"media/profiles/pfps/{out}.png"
 
-                        subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 'media/profiles/pfps/{profile.id}.png'", shell=True, check=True)
+                        subprocess.run(f"sudo ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 'media/profiles/pfps/{profile.id}.png'", shell=True, check=True)
 
                         os.remove(temp_pfp.name)
 
@@ -474,6 +474,9 @@ class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
 
         if ProfileActivity.objects.filter(profile=profile).exists():
             ProfileActivity.objects.get(profile=profile).followed_profiles.remove(profilething)
+
+        if Chat.objects.filter(members__in=[profile]).filter(members__in=[profilething]).exists():
+            Chat.objects.filter(members__in=[profile]).get(members__in=[profilething]).delete()
 
         return JsonResponse({'follow_count': followers_count})
     
