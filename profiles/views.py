@@ -438,7 +438,8 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
         profile = Profile.objects.get(username=request.user)
 
         if profile.using_activity:
-            ProfileActivity.objects.get(profile=profile).followed_profiles.add(profilething)
+            activity = ProfileActivity.objects.get(profile=profile)
+            activity.followed_profiles.add(profilething)
         
         followers_count = profilething.followers.count()
 

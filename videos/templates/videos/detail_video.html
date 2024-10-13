@@ -135,7 +135,7 @@
 										<ion-icon class="social-share-icons facebook-social-color" name="logo-facebook" data-sharer="facebook" data-title="Check out {{ post.title }} by {{ post.uploader }}!" data-hashtags="" data-url="{% url 'video-detail' post.id %}">Share on Facebook</ion-icon>
 										<ion-icon class="social-share-icons reddit-social-color" name="logo-reddit" data-sharer="reddit" data-title="Check out {{ post.title }} by {{ post.uploader }}!" data-hashtags="" data-url="{% url 'video-detail' post.id %}">Share on Reddit</ion-icon>
 									</div>
-                                    <p class="mt-3">Link: glomble.com/videos/{{ post.id }}/</p>
+                                    <p class="mt-3"><a href="{% url 'video-detail' post.id %}">{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.id }}</a></p>
                                 </div>
                             </div>
                         </div>
@@ -198,7 +198,7 @@
 		<div class="row justify-content-center mt-3 mb-5 border-bottom">
 			<div class="col-md-6 col-sm-12">
 				<p>
-					<strong><a class="link-text" href="{% url 'detail-profile' comment.commenter.pk %}">{{ comment.commenter.username }}</a></strong> {{ comment.date_posted }}
+					<strong><a class="link-text" href="{% url 'detail-profile' comment.commenter.pk %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ comment.commenter.profile_picture }}">{{ comment.commenter.username }}</a></strong> {{ comment.date_posted|naturaltime }}
 					{% if request.user == comment.commenter.username or request.user.is_superuser %}
 					<a href="{% url 'comments:comment-delete' comment.pk %}" style="color: #333;"><ion-icon name="close-outline"></ion-icon></a>
 					{% endif %}
@@ -230,7 +230,7 @@
 					</div>
 					{% endif %}
 				</p>
-				<p class="bitch">{{ comment.comment }}</p>
+				<p class="lmao">{{ comment.comment }}</p>
 			</div>
 		</div>
 		{% endfor %}

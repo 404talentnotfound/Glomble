@@ -1,6 +1,6 @@
 from django import template
 from reports.models import VideoReport, ProfileReport
-from notifications.models import VideoNotification, CommentNotification, UpdateNotification, FollowNotification, LikeNotification
+from notifications.models import BaseNotification
 from profiles.models import Profile, Chat
 from creatorfund.models import Creator
 
@@ -17,11 +17,7 @@ def P_reports():
 @register.simple_tag
 def has_notifications(user):
     if Profile.objects.all().filter(username=user).exists():
-        return (VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=user)], basenotification__read=False).count() > 0 or
-                CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=user)], basenotification__read=False).count() > 0 or
-                UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=user)], basenotification__read=False).count() > 0 or
-                LikeNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=user)], basenotification__read=False).count() > 0 or
-                FollowNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=user)], basenotification__read=False).count() > 0)
+        return BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=user)], read=False).count() > 0
     else:
         return False
     
@@ -39,15 +35,15 @@ def has_messages(user):
 
 @register.simple_tag
 def notification_type(object):
-    if type(object) == CommentNotification:
+    if object.comment_notification != None:
         return 1
-    elif type(object) == UpdateNotification:
+    elif object.update_notification != None:
         return 2
-    elif type(object) == VideoNotification:
+    elif object.video_notification != None:
         return 3
-    elif type(object) == LikeNotification:
+    elif object.like_notification != None:
         return 4
-    elif type(object) == FollowNotification:
+    elif object.follow_notification != None:
         return 5
     else:
         return 0

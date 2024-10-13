@@ -13,74 +13,31 @@ class NotificationsIndex(ListView):
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
-                              CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
-                              UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
-                              FollowNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]),
-                              LikeNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)])
-                              ))
-        
-        shouldnt_read = False
+        queryset = list(chain(BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=False),
+                              BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=True)))
+        print(BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=False))
 
         if sort_by == 'date-desc':
             queryset = sorted(
                 queryset,
-                key=attrgetter('date_made'),
+                key=attrgetter('date_notified'),
                 reverse=True
             )
         elif sort_by == 'date-asc':
             queryset = sorted(
                 queryset,
-                key=attrgetter('date_made'),
+                key=attrgetter('date_notified'),
             )
-        elif sort_by == 'read':
-            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
-                              CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
-                              UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
-                              FollowNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False),
-                              LikeNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=False)
-                              ))
-            queryset = sorted(
-                queryset,
-                key=attrgetter('date_made'),
-                reverse=True
-            )
-            shouldnt_read = True
         else:
-            queryset = list(chain(VideoNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
-                              CommentNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
-                              UpdateNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
-                              FollowNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True),
-                              LikeNotification.objects.all().filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)]).exclude(basenotification__read=True)
-                              ))
             queryset = sorted(
                 queryset,
-                key=attrgetter('date_made'),
+                key=attrgetter('date_notified'),
                 reverse=True
             )
         
-        if not shouldnt_read:
-            for i in queryset:
-                if type(i) == VideoNotification:
-                    for i in BaseNotification.objects.all().filter(video_notification=i):
-                        i.read = True
-                        i.save()
-                elif type(i) == CommentNotification:
-                    for i in BaseNotification.objects.all().filter(comment_notification=i):
-                        i.read = True
-                        i.save()
-                elif type(i) == UpdateNotification:
-                    for i in BaseNotification.objects.all().filter(update_notification=i):
-                        i.read = True
-                        i.save()
-                elif type(i) == FollowNotification:
-                    for i in BaseNotification.objects.all().filter(follow_notification=i):
-                        i.read = True
-                        i.save()
-                elif type(i) == LikeNotification:
-                    for i in BaseNotification.objects.all().filter(like_notification=i):
-                        i.read = True
-                        i.save()
+        for i in queryset:
+            i.read = True
+            i.save()
 
         return queryset
 

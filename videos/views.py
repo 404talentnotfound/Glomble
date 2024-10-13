@@ -35,7 +35,7 @@ def generate_recommendations(profile):
     
     previous_searches = user_activity.searches.lower().split()
     previous_searches = [search.strip() for search in previous_searches if search.strip()]
-    followed_profiles = profile.followed_profiles.all()
+    followed_profiles = user_activity.followed_profiles.all()
     
     data = []
     
@@ -55,7 +55,7 @@ def generate_recommendations(profile):
             score -= 7
         
         if uploader_followed:
-            score += 8
+            score += 10
         
         views_count = video.views.count()
         likes_count = video.likes.count()

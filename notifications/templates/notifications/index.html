@@ -11,61 +11,56 @@
         <form method="get">
             <label for="sort-by">Sort by:</label>
             <select name="sort-by" id="sort-by" onchange="this.form.submit()">
-                <option value="unread"{% if sort_by == 'unread' %} selected{% else %} selected="selected"{% endif %}>Unread</option>
-                <option value="read"{% if sort_by == 'read' %} selected{% endif %}>Read</option>
-                <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
+                <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% else %} selected="selected"{% endif %}>Newest First</option>
                 <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
             </select>
         </form>
     </div>
         {% for object in object_list %}
         {% notification_type object as type %}
-        {% if type == 1 %}
-        <div class="row justify-content-center border-bottom mt-3">
-            <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.comment.commenter.id %}">
-                <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment.commenter.profile_picture }}">
-            </a>{{ object.comment.commenter.username }}: {{ object.message }}</h4>
-            <div class="col-md-3 col-sm-12">
-                <a href="{% url 'video-detail' object.comment.post.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment.post.thumbnail }}" width="128" height="72"></a>
-                <div class="card-body">
-                    <a class="link-text" href="{% url 'video-detail' object.comment.post.id %}"><h6 class="text-center shit">{{ object.comment.post.title }}</h6></a>
-                    <h6 class="text-muted text-center">{{ object.comment.date_made|naturaltime }}</h6>
-                </div>
+        {% if type != 0 %}
+            <div class="row border-bottom mt-3">
+                {% if not object.read %}
+                <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png" width="32" height="32">
+                {% endif %}
+                {% if type == 1 %}
+                    <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.comment_notification.comment.commenter.id %}">
+                        <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment.commenter.profile_picture }}">
+                    </a>{{ object.comment_notification.comment.commenter.username }}: {{ object.comment_notification.message }}</h4>
+                    <div class="col-md-3 col-sm-12">
+                        <a href="{% url 'video-detail' object.comment_notification.comment.post.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment_notification.comment.post.thumbnail }}" width="128" height="72"></a>
+                        <div class="card-body">
+                            <a class="link-text" href="{% url 'video-detail' object.comment_notification.comment.post.id %}"><h6 class="text-center shit">{{ object.comment_notification.comment.post.title }}</h6></a>
+                            <h6 class="text-muted text-center">{{ object.comment_notification.comment.date_made|naturaltime }}</h6>
+                        </div>
+                    </div>
+                {% elif type == 2 %}
+                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.update_notification.message }}</h4>
+                {% elif type == 3 %}
+                    <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.video_notification.video.uploader.id %}">
+                        <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video_notification.video.uploader.profile_picture }}">
+                    </a>{{ object.video_notification.video.uploader.username }}: {{ object.video_notification.message }}</h4>
+                    <div class="col-md-3 col-sm-12">
+                        <a href="{% url 'video-detail' object.video_notification.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video_notification.video.thumbnail }}" width="128" height="72"></a>
+                        <div class="card-body">
+                            <a class="link-text" href="{% url 'video-detail' object.video_notification.video.id %}"><h6 class="text-center shit">{{ object.video_notification.video.title }}</h6></a>
+                            <h6 class="text-muted text-center">{{ object.video_notification.video.date_posted|naturaltime }}</h6>
+                        </div>
+                    </div>
+                {% elif type == 4 %}
+                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.like_notification.message }}</h4>
+                    <div class="col-md-3 col-sm-12">
+                        <a href="{% url 'video-detail' object.like_notification.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.like_notification.video.thumbnail }}" width="128" height="72"></a>
+                        <div class="card-body">
+                            <a class="link-text" href="{% url 'video-detail' object.like_notification.video.id %}"><h6 class="text-center shit">{{ object.like_notification.video.title }}</h6></a>
+                            <h6 class="text-muted text-center">{{ object.like_notification.video.date_posted|naturaltime }}</h6>
+                        </div>
+                    </div>
+                {% elif type == 5 %}
+                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.follow_notification.message }}</h4>
+                {% endif %}
             </div>
-        </div>
-        {% elif type == 2 %}
-        <div class="row justify-content-center border-bottom mt-3">
-            <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
-        </div>
-        {% elif type == 3 %}
-        <div class="row justify-content-center border-bottom mt-3">
-            <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.video.uploader.id %}">
-                <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.uploader.profile_picture }}">
-            </a>{{ object.video.uploader.username }}: {{ object.message }}</h4>
-            <div class="col-md-3 col-sm-12">
-                <a href="{% url 'video-detail' object.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.thumbnail }}" width="128" height="72"></a>
-                <div class="card-body">
-                    <a class="link-text" href="{% url 'video-detail' object.video.id %}"><h6 class="text-center shit">{{ object.video.title }}</h6></a>
-                    <h6 class="text-muted text-center">{{ object.video.date_posted|naturaltime }}</h6>
-                </div>
-            </div>
-        </div>
-        {% elif type == 4 %}
-        <div class="row justify-content-center border-bottom mt-3">
-            <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
-            <div class="col-md-3 col-sm-12">
-                <a href="{% url 'video-detail' object.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video.thumbnail }}" width="128" height="72"></a>
-                <div class="card-body">
-                    <a class="link-text" href="{% url 'video-detail' object.video.id %}"><h6 class="text-center shit">{{ object.video.title }}</h6></a>
-                    <h6 class="text-muted text-center">{{ object.video.date_posted|naturaltime }}</h6>
-                </div>
-            </div>
-        </div>
-        {% elif type == 5 %}
-        <div class="row justify-content-center border-bottom mt-3">
-            <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.message }}</h4>
-        </div>
-        {% endif %}
+            {% endif %}
         {% endfor %}
     {% if is_paginated %}
     <div class="row justify-content-center mt-5">

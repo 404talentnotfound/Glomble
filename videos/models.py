@@ -52,7 +52,6 @@ class Comment(models.Model):
 	passed_milestones = models.PositiveIntegerField(default=0)
 
 	class Meta:
-
 		ordering = ['-date_posted']
 
 @receiver(post_save, sender=Comment)

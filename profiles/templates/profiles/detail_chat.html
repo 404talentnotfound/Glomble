@@ -21,7 +21,10 @@
 		{% for message in messages %}
 		<div class="row justify-content-center mt-3 mb-5 border-bottom">
 			<div class="col-md-6 col-sm-12">
-				<p class="bitch"><a class="link-text" href="{% url 'detail-profile' message.sender.id %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}"><b>{{ message.sender.username }}:</b> </a>{{ message.message }}
+				<p><a class="link-text" href="{% url 'detail-profile' message.sender.id %}">
+					<img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}">
+					<b>{{ message.sender.username }}:</b></a>
+					<i style="max-width: 10ch; word-wrap: break-word;">{{ message.message }}<i>
 				</p>
 				<p class="text-muted">{{ message.date_sent|naturaltime }}</p>
 			</div>
