@@ -15,7 +15,6 @@ class NotificationsIndex(ListView):
         sort_by = self.request.GET.get('sort-by')
         queryset = list(chain(BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=False),
                               BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=True)))
-        print(BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=False))
 
         if sort_by == 'date-desc':
             queryset = sorted(

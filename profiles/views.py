@@ -308,10 +308,10 @@ class DetailProfileIndex(ListView):
         creators = CREATOR_ID
         if poopie in developers:
             developer = True
-        if poopie == creators:
+        if poopie in creators:
             creator = True
 
-        if len(followers) == 0:
+        if follow_num == 0:
             is_following = False
 
         for follower in followers:
@@ -443,7 +443,7 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
         
         followers_count = profilething.followers.count()
 
-        milestones = [5, 10, 25, 50, 100]
+        milestones = [5, 10, 25, 50, 100, 250, 500, 1000]
 
         if (followers_count in milestones) and followers_count > profilething.passed_milestones:
             profilething.passed_milestones = followers_count

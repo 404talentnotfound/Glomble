@@ -43,16 +43,17 @@ def delete_files(sender, instance, using, **kwargs):
             pass
 
 class Comment(models.Model):
-	comment = models.CharField(max_length=200)
-	date_posted = models.DateTimeField(default=timezone.now)
-	commenter = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
-	post = models.ForeignKey('Video', on_delete=models.CASCADE)
-	likes = models.ManyToManyField(User, blank=True, related_name='comment_likes')
-	dislikes = models.ManyToManyField(User, blank=True, related_name='comment_dislikes')
-	passed_milestones = models.PositiveIntegerField(default=0)
+    comment = models.CharField(max_length=200)
+    date_posted = models.DateTimeField(default=timezone.now)
+    commenter = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
+    post = models.ForeignKey('Video', on_delete=models.CASCADE)
+    likes = models.ManyToManyField(User, blank=True, related_name='comment_likes')
+    dislikes = models.ManyToManyField(User, blank=True, related_name='comment_dislikes')
+    passed_milestones = models.PositiveIntegerField(default=0)
+    replying_to = models.ForeignKey("Comment", on_delete=models.CASCADE, null=True, blank=True, related_name="reply_to")
 
-	class Meta:
-		ordering = ['-date_posted']
+    class Meta:
+        ordering = ['-date_posted']
 
 @receiver(post_save, sender=Comment)
 def comment_notify(sender, instance, created, **kwargs):

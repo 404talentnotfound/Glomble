@@ -1,12 +1,11 @@
-from django.shortcuts import render, reverse, redirect
-from django.urls import reverse_lazy
+from django.shortcuts import reverse
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic.edit import DeleteView, UpdateView
+from django.views.generic.edit import DeleteView
 from django.http import JsonResponse
-from videos.models import Comment, Video
+from videos.models import Comment
 from profiles.models import Profile
-from videos.forms import CommentForm
+from notifications.models import BaseNotification, LikeNotification
 
 class DeleteComment(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 	model = Comment
@@ -50,6 +49,9 @@ class AddLike(LoginRequiredMixin, View):
 
 		if not is_like:
 			video.likes.add(request.user)
+			profile = Profile.objects.get(username=request.user)
+			if not BaseNotification.objects.exclude(like_notification=None).filter(like_notification__liker=profile, like_notification__video=video.post).exists():
+				LikeNotification.objects.create(video=video.post, liker=profile)
 
 		if is_like:
 			video.likes.remove(request.user)

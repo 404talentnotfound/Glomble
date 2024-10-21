@@ -397,6 +397,17 @@ class DetailVideo(DetailView):
 
         comments = Comment.objects.filter(post=pen).annotate(num_likes=Count('likes')).order_by('-num_likes')
         comment_count = comments.count()
+
+        if pen.uploader.followers.all() == 0:
+            is_following = False
+
+        for follower in pen.uploader.followers.all():
+            if follower == request.user:
+                is_following = True
+                break
+            else:
+                is_following = False
+
         context = {
             'e': e,
             'post': pen,
@@ -408,6 +419,7 @@ class DetailVideo(DetailView):
             'desclen': desclen,
             'has': has_desc,
             'recommended': posts,
+            'is_following': is_following
         }
 
         return render(request, 'videos/detail_video.html', context)
@@ -504,13 +516,12 @@ class AddLike(LoginRequiredMixin, View):
             profile = Profile.objects.get(username=request.user)
             if profile.using_activity:
                 ProfileActivity.objects.get(profile=profile).liked_videos.add(video)
-
             if not BaseNotification.objects.exclude(like_notification=None).filter(like_notification__liker=profile, like_notification__video=video).exists():
                 LikeNotification.objects.create(video=video, liker=profile)
 
         if is_like:
             video.likes.remove(request.user)
-
+            profile = Profile.objects.get(username=request.user)
             if ProfileActivity.objects.filter(profile=profile).exists():
                 ProfileActivity.objects.get(profile=profile).liked_videos.remove(video)
 
