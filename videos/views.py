@@ -398,7 +398,9 @@ class DetailVideo(DetailView):
         comments = Comment.objects.filter(post=pen).annotate(num_likes=Count('likes')).order_by('-num_likes')
         comment_count = comments.count()
 
-        if pen.uploader.followers.all() == 0:
+        is_following = False
+
+        if pen.uploader.followers.all().count() == 0:
             is_following = False
 
         for follower in pen.uploader.followers.all():
@@ -529,7 +531,7 @@ class AddLike(LoginRequiredMixin, View):
 
         dislikes_count = video.dislikes.count()
         
-        return JsonResponse({'likes_count': likes_count, 'liked': is_like, 'dislikes_count': dislikes_count, 'disliked': is_dislike})
+        return JsonResponse({'likes_count': likes_count, 'liked': not is_like, 'dislikes_count': dislikes_count, 'disliked': is_dislike})
         
 class Dislike(LoginRequiredMixin, View):
     def get_redirect_url(self):
