@@ -98,7 +98,7 @@
 				  </div>
 				<h5 class="mt-4">{{ post.title }}</h5>
 				<h6><a class="link-text" href="{% url 'detail-profile' post.uploader.id %}"><img class="shot" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
-					{{ post.uploader.username }} {% if post.uploader.username == user %}<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
+					{{ post.uploader.username }} {% if post.uploader.username != user %}<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
 						{% if is_following %}
 						<span>Following</span>
 						{% else %}
