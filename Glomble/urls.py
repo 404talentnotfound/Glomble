@@ -38,7 +38,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(template_name="profiles/logout.html"), name="logout"),
     path("profile/", user_views.profile, name="profile-page"),
     path('report/', include('reports.urls')),
-    path('creatorfund/', include('creatorfund.urls')),
+    # path('creatorfund/', include('creatorfund.urls')),
 
     path("password-reset/", CustomPasswordResetView.as_view(
         template_name="profiles/password_reset.html",

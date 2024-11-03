@@ -1,4 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Caveat&display=swap");
+.card {
+  width: 100%;
+  max-width: 256px;
+  margin: 10px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
 .image-home {
   height: 250px;
 }
@@ -383,3 +393,4 @@ a.login:hover {
 .shot img{
   width:100%;
 }
+
