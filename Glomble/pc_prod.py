@@ -27,7 +27,7 @@ CREATOR_ID = open(os.path.join(BASE_DIR, "creator.txt")).read()
 DEVELOPER_IDS = open(os.path.join(BASE_DIR, "developers.txt")).read().split("\n")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 LOGIN_URL = 'login'
 
