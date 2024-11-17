@@ -26,11 +26,11 @@
 			{% endif %}
 		</div>
 		<div class="text-center">
-			{% if username == user %}
-			{% if user.is_superuser %}
+			{% if username == user or user.is_superuser %}
 			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
-			<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
+				<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
 			{% endif %}
+			{% if username == user %}
 			{% find user as profile %}
 			<a class="{% if profile.using_activity %}btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" href="{% url 'start-recommendations' %}">
 				{% if profile.using_activity %}
