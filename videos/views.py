@@ -398,7 +398,7 @@ class DetailVideo(DetailView):
         comments = Comment.objects.filter(post=pen,replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
         comment_count = Comment.objects.filter(post=pen).count()
 
-        replies = Comment.objects.filter(post=pen).exclude(replying_to=None).order_by('-date_posted')
+        replies = Comment.objects.filter(post=pen).exclude(replying_to=None).order_by('date_posted')
 
         is_following = False
 
@@ -464,14 +464,11 @@ class DetailVideo(DetailView):
 
             return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
 
-        comments = Comment.objects.filter(post=pen).order_by('-date_posted')
-
         context = {
             'e': e,
             'post': pen,
             'form': form,
             'replyform': replyform,
-            'comments': comments,
         }
         return render(request, 'videos/detail_video.html', context)
 
