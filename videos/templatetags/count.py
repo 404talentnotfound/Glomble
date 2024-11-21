@@ -41,10 +41,8 @@ def notification_type(object):
         return 2
     elif object.video_notification != None:
         return 3
-    elif object.like_notification != None:
-        return 4
     elif object.follow_notification != None:
-        return 5
+        return 4
     else:
         return 0
     
@@ -53,6 +51,11 @@ def following_eachother(user1, user2):
     profile1 = Profile.objects.get(username=user1)
     profile2 = Profile.objects.get(username=user2)
     return profile1.followers.contains(user2) and profile2.followers.contains(user1)
+
+@register.simple_tag
+def following_you(currentuser, otheruser):
+    profile = Profile.objects.get(username=currentuser)
+    return profile.followers.contains(otheruser)
 
 @register.simple_tag
 def other_chatter(chat, user):

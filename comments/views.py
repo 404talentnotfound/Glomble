@@ -5,7 +5,7 @@ from django.views.generic.edit import DeleteView
 from django.http import JsonResponse
 from videos.models import Comment
 from profiles.models import Profile
-from notifications.models import BaseNotification, LikeNotification
+from notifications.models import BaseNotification
 
 class DeleteComment(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 	model = Comment
@@ -20,7 +20,7 @@ class DeleteComment(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 	
 	def test_func(self):
 		comment = self.get_object()
-		return self.request.user == comment.commenter or self.request.user.is_superuser
+		return self.request.user == comment.commenter.username or self.request.user.is_superuser
 
 class AddLike(LoginRequiredMixin, View):
 	def get_redirect_url(self):
@@ -49,9 +49,6 @@ class AddLike(LoginRequiredMixin, View):
 
 		if not is_like:
 			video.likes.add(request.user)
-			profile = Profile.objects.get(username=request.user)
-			if not BaseNotification.objects.exclude(like_notification=None).filter(like_notification__liker=profile, like_notification__video=video.post).exists():
-				LikeNotification.objects.create(video=video.post, liker=profile)
 
 		if is_like:
 			video.likes.remove(request.user)

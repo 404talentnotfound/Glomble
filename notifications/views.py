@@ -1,4 +1,4 @@
-from .models import VideoNotification, UpdateNotification, BaseNotification, CommentNotification, FollowNotification, LikeNotification
+from .models import VideoNotification, UpdateNotification, BaseNotification, CommentNotification, FollowNotification
 from profiles.models import Profile
 from django.views.generic.list import ListView
 from django.views.generic import View

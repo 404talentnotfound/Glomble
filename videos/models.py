@@ -58,5 +58,7 @@ class Comment(models.Model):
 @receiver(post_save, sender=Comment)
 def comment_notify(sender, instance, created, **kwargs):
     if created:
-        if instance.commenter != instance.post.uploader:
-            CommentNotification.objects.create(comment=instance, message=f'"{instance.comment}"')
+        if instance.commenter != instance.post.uploader and instance.replying_to == None:
+            CommentNotification.objects.create(comment=instance, message=f'just commented on your video: "{instance.comment}"')
+        elif instance.replying_to != None and instance.replying_to.commenter != instance.commenter and instance.commenter != instance.post.uploader:
+            CommentNotification.objects.create(comment=instance, message=f'just replied to your comment: "{instance.comment}"')

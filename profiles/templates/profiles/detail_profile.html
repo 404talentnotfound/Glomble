@@ -7,24 +7,21 @@
 	<div class="container">
         <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto; margin-top: 2em;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ pfp }}">
         <h1 class="text-center">{{ username }}</h1>
-        <h5 class="text-center">{{ info }}</h5>
-		<div id='wrapper' style='text-align: center;'>
-			{% if admin %}
-			<div style='display: inline-block; vertical-align: top;' class="text-center" title="Admin">
-				<i class="fa-solid fa-clipboard-user"></i>
-			</div>
+		<h4 class="text-center">
+			{% if username.is_superuser %}
+				<i title="Admin" class="fa-solid fa-clipboard-user"></i>
 			{% endif %}
 			{% if developer %}
-			<div style='display: inline-block; vertical-align: top;' class="text-center" title="Developer">
-				<i class="fa-solid fa-screwdriver-wrench"></i>
-			</div>
+				<i title="Developer" class="fa-solid fa-screwdriver-wrench"></i>
 			{% endif %}
 			{% if creator %}
-			<div style='display: inline-block; vertical-align: top;' class="text-center" title="Creator">
-				<i class="fa-solid fa-palette"></i>
-			</div>
+				<i title="Creator" class="fa-solid fa-palette"></i>
 			{% endif %}
-		</div>
+			{% if supporter %}
+				<i title="Patreon supporter" class="fa-brands fa-patreon"></i>
+			{% endif %}
+		</h4>
+        <h5 class="text-center">{{ info }}</h5>
 		<div class="text-center">
 			{% if username == user or user.is_superuser %}
 			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
@@ -46,9 +43,12 @@
 			<p class="follow-count" id="{{ poopie }}">{{ follow_num }} followers</p>
 			{% if request.user.is_authenticated %}
 			{% if username != request.user %}
-			{% following_eachother request.user username as f %}
-			{% if f %}
-			<b>You are following each other</b>
+			{% following_eachother request.user username as fe %}
+			{% following_you request.user username as fy %}
+			{% if fe %}
+			<b>(You are following each other)</b>
+			{% elif fy %}
+			<b>(Follows you)</b>
 			{% endif %}
 			<div class="follow-button-container">
 				<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' poopie %}" data-url-remove="{% url 'remove-follower' poopie %}">
@@ -58,7 +58,7 @@
 					<span>Follow</span>
 					{% endif %}
 				</button>
-				{% if f %}
+				{% if fe or request.user.is_superuser %}
 					<a class="btn btn-outline-success" href="{% url 'chat-detail' poopie %}">Message</a>
 				{% endif %}
 			</div>

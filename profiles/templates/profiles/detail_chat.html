@@ -23,7 +23,7 @@
 			<div class="col-md-6 col-sm-12">
 				<p><a class="link-text" href="{% url 'detail-profile' message.sender.id %}">
 					<img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}">
-					<b>{{ message.sender.username }}:</b></a>
+					<b>{{ message.sender.username }}{% if message.sender.username.is_superuser %} <i title="Admin" class="fa-solid fa-clipboard-user"></i>{% endif %}:</b></a>
 					<i style="max-width: 10ch; word-wrap: break-word;">{{ message.message }}<i>
 				</p>
 				<p class="text-muted">{{ message.date_sent|naturaltime }}</p>

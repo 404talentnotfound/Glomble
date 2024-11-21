@@ -194,6 +194,7 @@
 					{% csrf_token %}
 					<legend class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
 					{{ form | crispy }}
+					<input type="hidden" name="form_type" value="comment">
 					<div class="d-grid gap-2">
 						<button class="btn btn-success mt-3">Submit!</button>
 					</div>
@@ -240,11 +241,76 @@
 					{% endif %}
 				</p>
 				<p class="lmao">{{ comment.comment }}</p>
+				<button id="{{ comment.id }}" onclick="onClick(this)" style="border: none; background-color: transparent;"><i class="fa-regular fa-comments"></i></button>
+
+				<div class="reply" style="display: none;" id="reply{{ comment.id }}">
+					<form method="POST">
+						{% csrf_token %}
+						<input type="hidden" name="form_type" value="reply">
+						<input type="hidden" name="comment_id" value="{{comment.id}}">
+						{{ replyform | crispy }}
+						<div class="d-grid gap-2">
+						<button class="btn btn-success mt-3">Submit!</button>
+						</div>
+					</form>
+				</div>
+
+				{% for reply in replies %}
+				{% if reply.replying_to.id == comment.id %}
+				<div class="row justify-content-center mt-3 mb-5">
+					<div>
+						<p>
+							<strong><a class="link-text" href="{% url 'detail-profile' reply.commenter.pk %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">{{ reply.commenter.username }}</a></strong> {{ reply.date_posted|naturaltime }}
+							{% if request.user == reply.commenter.username or request.user.is_superuser %}
+							<a href="{% url 'comments:comment-delete' reply.pk %}" style="color: #333;"><ion-icon name="close-outline"></ion-icon></a>
+							{% endif %}
+							{% if request.user.is_authenticated %}
+							<div class="row mt-3">
+								<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-like-button" data-url="{% url 'comments:comment-like' reply.pk %}">
+									{% if request.user in reply.likes.all %}
+									<i class="fa fa-thumbs-up"><span class="reply-like-count" id="{{ reply.pk }}-like">{{ reply.likes.all.count }}</span></i>
+									{% else %}
+									<i class="far fa-thumbs-up"><span class="reply-dislike-count" id="{{ reply.pk }}-dislike">{{ reply.likes.all.count }}</span></i>
+									{% endif %}
+								</button>
+								<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-dislike-button" data-url="{% url 'comments:comment-dislike' reply.pk %}">
+									{% if request.user in reply.dislikes.all %}
+									<i class="fa fa-thumbs-down"><span>{{ reply.dislikes.all.count }}</span></i>
+									{% else %}
+									<i class="far fa-thumbs-down"><span>{{ reply.dislikes.all.count }}</span></i>
+									{% endif %}
+								</button>
+							</div>
+							{% else %}
+							<div class="row mt-3">
+								<button style="background-color: transparent; border: none; box-shadow: none;">
+									<i class="far fa-thumbs-up"><span class="dislike-count">{{ reply.likes.all.count }}</span></i>
+								</button>
+								<button style="background-color: transparent; border: none; box-shadow: none;">
+									<i class="far fa-thumbs-down"><span>{{ reply.dislikes.all.count }}</span></i>
+								</button>
+							</div>
+							{% endif %}
+
+							<p class="lmao">{{ reply.comment }}</p>
+						</p>
+					</div>
+				</div>
+				{% endif %}
+				{% endfor %}
 			</div>
 		</div>
 		{% endfor %}
 	</div>
 	<script>
+		function onClick(ele) {
+			if (document.getElementById('reply'+ele.id).style.display === 'none') {
+				document.getElementById('reply'+ele.id).style.display = 'block'
+			}
+			else {
+				document.getElementById('reply'+ele.id).style.display = 'none'
+			}
+		}
 		function updateViewCount(videoId) {
 			globalThis.viewed = false
 			$.ajax({

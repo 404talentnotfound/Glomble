@@ -301,15 +301,18 @@ class DetailProfileIndex(ListView):
             posts = Video.objects.all().order_by('-date_posted').filter(uploader=profile).exclude(unlisted=True)
         followers = profile.followers.all()
         follow_num = len(followers)
-        admin = username.is_superuser
         developer = False
         creator = False
+        supporter = False
         developers = DEVELOPER_IDS
+        supporters = SUPPORTER_IDS
         creators = CREATOR_ID
         if poopie in developers:
             developer = True
         if poopie in creators:
             creator = True
+        if poopie in supporters:
+            supporter = True
 
         if follow_num == 0:
             is_following = False
@@ -329,9 +332,9 @@ class DetailProfileIndex(ListView):
             'detail_profile_list': posts,
             'follow_num': follow_num,
             'is_following': is_following,
-            'admin': admin,
             'developer': developer,
             'creator': creator,
+            'supporter': supporter,
         }
         return render(request, 'profiles/detail_profile.html', context)
 
@@ -567,7 +570,7 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         profilething = Profile.objects.get(id=hi)
         currentprofile = Profile.objects.get(username=self.request.user)
         following_eachother = profilething.followers.contains(currentprofile.username) and currentprofile.followers.contains(profilething.username)
-        return currentprofile != profilething and following_eachother
+        return currentprofile != profilething and (following_eachother or currentprofile.username.is_superuser)
     
 class ChatIndex(ListView):
     model = Chat

@@ -9,7 +9,7 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from profiles.models import Profile, ProfileActivity
-from .forms import CommentForm
+from .forms import CommentForm, ReplyForm
 from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
@@ -21,7 +21,6 @@ import os
 import random
 from Glomble.pc_prod import *
 import subprocess
-from notifications.models import LikeNotification, BaseNotification
 from django.shortcuts import render
 import pandas as pd
 from django.db.models import Count
@@ -360,6 +359,7 @@ class DetailVideo(DetailView):
     def get(self, request, *args, **kwargs):
         e = self.kwargs['id']
         form = CommentForm()
+        replyform = ReplyForm()
         pen = Video.objects.get(id=e)
         desclen = None
         pre = None
@@ -395,8 +395,10 @@ class DetailVideo(DetailView):
         else:
             has_desc = False
 
-        comments = Comment.objects.filter(post=pen).annotate(num_likes=Count('likes')).order_by('-num_likes')
-        comment_count = comments.count()
+        comments = Comment.objects.filter(post=pen,replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comment_count = Comment.objects.filter(post=pen).count()
+
+        replies = Comment.objects.filter(post=pen).exclude(replying_to=None).order_by('-date_posted')
 
         is_following = False
 
@@ -414,6 +416,7 @@ class DetailVideo(DetailView):
             'e': e,
             'post': pen,
             'form': form,
+            'replyform': replyform,
             'comments': comments,
             'comment_amount': comment_count,
             'pre': pre,
@@ -421,7 +424,8 @@ class DetailVideo(DetailView):
             'desclen': desclen,
             'has': has_desc,
             'recommended': posts,
-            'is_following': is_following
+            'is_following': is_following,
+            'replies': replies
         }
 
         return render(request, 'videos/detail_video.html', context)
@@ -431,8 +435,11 @@ class DetailVideo(DetailView):
         pen = Video.objects.get(id=e)
         hi = Video.objects.get(id=e).uploader
         form = CommentForm(request.POST)
+        replyform = ReplyForm(request.POST)
 
-        if form.is_valid():
+        form_type = request.POST.get("form_type")
+
+        if form_type == "comment" and form.is_valid():
             cooldown_key = f"user:{request.user.id}:cooldown"
             last_comment_time = cache.get(cooldown_key)
             if last_comment_time:
@@ -446,6 +453,14 @@ class DetailVideo(DetailView):
             new_comment.save()
 
             cache.set(cooldown_key, datetime.now(), timeout=30)
+            return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
+
+        elif form_type == "reply" and replyform.is_valid():
+            new_reply = replyform.save(commit=False)
+            new_reply.replying_to = Comment.objects.get(id=int(request.POST.get("comment_id")))
+            new_reply.commenter = Profile.objects.get(username=request.user)
+            new_reply.post = pen
+            new_reply.save()
 
             return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
 
@@ -455,6 +470,7 @@ class DetailVideo(DetailView):
             'e': e,
             'post': pen,
             'form': form,
+            'replyform': replyform,
             'comments': comments,
         }
         return render(request, 'videos/detail_video.html', context)
@@ -518,8 +534,6 @@ class AddLike(LoginRequiredMixin, View):
             profile = Profile.objects.get(username=request.user)
             if profile.using_activity:
                 ProfileActivity.objects.get(profile=profile).liked_videos.add(video)
-            if not BaseNotification.objects.exclude(like_notification=None).filter(like_notification__liker=profile, like_notification__video=video).exists():
-                LikeNotification.objects.create(video=video, liker=profile)
 
         if is_like:
             video.likes.remove(request.user)
