@@ -205,8 +205,8 @@
 			</div>
 		</div>
 		{% for comment in comments %}
-		<div class="row justify-content-center mt-3 mb-5 border-bottom">
-			<div class="col-md-6 col-sm-12">
+		<div class="row justify-content-center border-bottom">
+			<div class="col-md-9">
 				<p>
 					<strong><a class="link-text" href="{% url 'detail-profile' comment.commenter.pk %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ comment.commenter.profile_picture }}">{{ comment.commenter.username }}</a></strong> {{ comment.date_posted|naturaltime }}
 					{% if request.user == comment.commenter.username or request.user.is_superuser %}
@@ -257,8 +257,8 @@
 
 				{% for reply in replies %}
 				{% if reply.replying_to.id == comment.id %}
-				<div class="row justify-content-center mt-3 mb-5">
-					<div>
+				<div class="row justify-content-center">
+					<div class="col-md-9">
 						<p>
 							<strong><a class="link-text" href="{% url 'detail-profile' reply.commenter.pk %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">{{ reply.commenter.username }}</a></strong> {{ reply.date_posted|naturaltime }}
 							{% if request.user == reply.commenter.username or request.user.is_superuser %}
