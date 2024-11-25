@@ -41,9 +41,9 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media").replace("\\","/")
 MEDIA_URL = "media/"
 
-# CRONJOBS = [
-#     ('*/5 * * * *', 'creatorfund.cron.update_funds')
-# ]
+CRONJOBS = [
+    ('* * * * 1', 'videos.cron.reset_recommendations')
+]
 
 INSTALLED_APPS = [
     'dumbshit',

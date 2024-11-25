@@ -25,8 +25,7 @@ def has_notifications(user):
 def can_recommend(user):
     if Profile.objects.all().filter(username=user).exists():
         return datetime.now().timestamp() > Profile.objects.all().get(username=user).last_recommend.timestamp() + 43200
-    else:
-        return False
+    return False
     
 @register.simple_tag
 def has_messages(user):

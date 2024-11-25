@@ -98,14 +98,17 @@
 					</video>
 				  </div>
 				<h5 class="mt-4">{{ post.title }}
-				{% can_recommend request.user as recommend_available %}
-				<button class="recommend-button {% if recommend_available %} btn btn-success {% else %}btn btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
-					{% if recommend_available %}
-					<span>Recommend</span>
-					{% else %}
-					<span>Recommend (on cooldown)</span>
+					{% can_recommend request.user as recommend_available %}
+					{% if not user.is_anonymous: %}
+					<button class="recommend-button {% if recommend_available %} btn btn-success {% else %}btn btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
+						{% if recommend_available %}
+						<span>Recommend</span>
+						{% else %}
+						<span>Recommend (on cooldown)</span>
+						{% endif %}
+					</button>
 					{% endif %}
-				</button></h5>
+				</h5>
 				<h6><a class="link-text" href="{% url 'detail-profile' post.uploader.id %}"><img class="shot" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
 					{{ post.uploader.username }} {% if post.uploader.username != user and request.user.is_authenticated %}
 					<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
