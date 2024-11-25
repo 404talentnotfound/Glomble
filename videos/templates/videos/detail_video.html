@@ -99,7 +99,7 @@
 				  </div>
 				<h5 class="mt-4">{{ post.title }}
 					{% can_recommend request.user as recommend_available %}
-					{% if not user.is_anonymous: %}
+					{% if not user.is_anonymous %}
 					<button class="recommend-button {% if recommend_available %} btn btn-success {% else %}btn btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
 						{% if recommend_available %}
 						<span>Recommend</span>
