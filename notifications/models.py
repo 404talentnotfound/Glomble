@@ -62,3 +62,8 @@ def update_notify(sender, instance, created, **kwargs):
 def follow_notify(sender, instance, created, **kwargs):
     if created:
         BaseNotification.objects.create(follow_notification=instance, profile=instance.profile)
+
+@receiver(post_save, sender=BaseNotification)
+def add_notification_to_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.all().get(id=instance.profile.id).notifications.add(instance)

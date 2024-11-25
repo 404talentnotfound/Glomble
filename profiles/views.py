@@ -1,5 +1,5 @@
 from django.shortcuts import render, reverse, redirect
-from .models import Profile, Chat, Message, ProfileActivity
+from .models import Profile, Chat, Message
 from django.utils.html import strip_tags
 import random
 from videos.models import Video
@@ -32,7 +32,7 @@ import magic
 import tempfile
 import subprocess
 from django.core.cache import cache
-from notifications.models import FollowNotification
+from notifications.models import FollowNotification, BaseNotification
 
 def update_profile_follow_count(request, id):
     follow_count = Profile.objects.get(id=id).followers.count()
@@ -41,17 +41,14 @@ def update_profile_follow_count(request, id):
 def redirect_profile(request, id):
     return redirect(f"{reverse('detail-profile', kwargs={'id': id})}")
 
-def toggle_tracking_activity(request):
-    profile = Profile.objects.get(username=request.user)
-    profile.using_activity = not profile.using_activity
-    if profile.using_activity:
-        if not ProfileActivity.objects.filter(profile=profile).exists():
-            activity = ProfileActivity.objects.create(profile=profile)
-        else:
-            activity = ProfileActivity.objects.get(profile=profile)
-        profile.activity = activity
-    profile.save()
-    return redirect(f"{reverse('detail-profile', kwargs={'id': profile.id})}")
+def make_changes(request):
+    for i in Profile.objects.all():
+        for j in BaseNotification.objects.all().filter(profile__in=[i]):
+            i.notifications.add(j)
+        for j in Chat.objects.all().filter(members__in=[i]):
+            i.chats.add(j)
+        for j in Video.objects.all().filter(views__in=[i.username]):
+            i.watched_videos.add(j)
 
 class ProfileIndex(ListView):
     model = Profile
@@ -437,12 +434,6 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
         profilething = Profile.objects.get(id=hi)
         if request.user != profilething.username:
             profilething.followers.add(request.user)
-
-        profile = Profile.objects.get(username=request.user)
-
-        if profile.using_activity:
-            activity = ProfileActivity.objects.get(profile=profile)
-            activity.followed_profiles.add(profilething)
         
         followers_count = profilething.followers.count()
 
@@ -476,11 +467,8 @@ class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
 
         profile = Profile.objects.get(username=request.user)
 
-        if ProfileActivity.objects.filter(profile=profile).exists():
-            ProfileActivity.objects.get(profile=profile).followed_profiles.remove(profilething)
-
-        if Chat.objects.filter(members__in=[profile]).filter(members__in=[profilething]).exists():
-            Chat.objects.filter(members__in=[profile]).get(members__in=[profilething]).delete()
+        if profile.chats.filter(members__in=[profilething]).exists():
+            profile.chats.get(members__in=[profilething]).delete()
 
         return JsonResponse({'follow_count': followers_count})
     
@@ -500,10 +488,6 @@ class UserSearch(View):
         ).exclude(username__username__in=excluded_profiles)
 
         profile = Profile.objects.get(username=self.request.user)
-        if profile.using_activity:
-            profile_activity = ProfileActivity.objects.get(profile=profile)
-            profile_activity.searches += query + "\n"
-            profile_activity.save()
     
         context = {
         	'profile_list': profile_list
@@ -513,17 +497,19 @@ class UserSearch(View):
         return render(request, 'profiles/search.html', context)
 
 class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
-    
     def get(self, request, *args, **kwargs):
         e = self.kwargs['id']
         form = MessageForm()
-        if Chat.objects.all().filter(members__in=[Profile.objects.get(username=request.user)]).filter(members__in=[Profile.objects.get(id=e)]).exists():
-            pen = Chat.objects.all().filter(members__in=[Profile.objects.get(username=request.user)]).filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
+        profile = Profile.objects.all().get(username=request.user)
+        if profile.chats.filter(members__in=[Profile.objects.get(id=e)]).exists():
+            pen = profile.chats.filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
         else:
             pen = Chat.objects.create()
             pen.save()
             pen.members.add(Profile.objects.get(username=request.user))
             pen.members.add(Profile.objects.get(id=e))
+            Profile.objects.get(id=e).chats.add(pen)
+            Profile.objects.get(username=request.user).chats.add(pen)
 
         messages = Message.objects.filter(chat=pen).order_by('-date_sent')
         chat_count = messages.count()
@@ -543,7 +529,8 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         e = self.kwargs['id']
-        pen = Chat.objects.all().filter(members__in=[Profile.objects.get(username=self.request.user)]).filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
+        profile = Profile.objects.all().get(username=request.user)
+        pen = profile.chats.filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
         form = MessageForm(request.POST)
 
         if form.is_valid():
@@ -570,7 +557,7 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         profilething = Profile.objects.get(id=hi)
         currentprofile = Profile.objects.get(username=self.request.user)
         following_eachother = profilething.followers.contains(currentprofile.username) and currentprofile.followers.contains(profilething.username)
-        return currentprofile != profilething and (following_eachother or currentprofile.username.is_superuser)
+        return currentprofile != profilething and (following_eachother or currentprofile.username.is_superuser or profilething.chats.filter(members__in=[currentprofile]).exists())
     
 class ChatIndex(ListView):
     model = Chat

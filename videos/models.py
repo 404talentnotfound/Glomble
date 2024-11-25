@@ -7,6 +7,8 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 import os
 
+from django.core.exceptions import ValidationError
+
 class Video(models.Model, object):
     uploader = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     notification_message = models.CharField(max_length=50, default="new video", null=True)
@@ -21,7 +23,7 @@ class Video(models.Model, object):
     duration = models.FloatField(null=True, blank=True)
     unlisted = models.BooleanField(default=False)
     id = models.SlugField(primary_key=True)
-    passed_milestones = models.PositiveIntegerField(default=0)
+    recommendations = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -49,7 +51,6 @@ class Comment(models.Model):
     post = models.ForeignKey('Video', on_delete=models.CASCADE)
     likes = models.ManyToManyField(User, blank=True, related_name='comment_likes')
     dislikes = models.ManyToManyField(User, blank=True, related_name='comment_dislikes')
-    passed_milestones = models.PositiveIntegerField(default=0)
     replying_to = models.ForeignKey("Comment", on_delete=models.CASCADE, null=True, blank=True, related_name="reply_to")
 
     class Meta:

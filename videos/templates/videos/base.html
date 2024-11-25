@@ -18,7 +18,7 @@
     <link href="https://vjs.zencdn.net/7.8.3/video-js.css" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="{% static 'users/style.css' %}">
-    <style>* {font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;}</style>
+    <style>* {font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif}</style>
 
     <!-- If you'd like to support IE8 (for Video.js versions prior to v7) -->
   	<script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
@@ -66,6 +66,30 @@
 }
     </script>
     <script>
+            $(document).ready(function() {
+                $(".recommend-button").click(function(e) {
+                    e.preventDefault();
+                    
+                    var recommendbutton = $(this);
+                    var url = recommendbutton.data("url");
+                    
+                    $.ajax({
+                        type: "POST",
+                        url: url,
+                        data: {
+                            csrfmiddlewaretoken: "{{ csrf_token }}",
+                        },
+                        success: function(data) {
+                            recommendbutton.toggleClass("btn btn-success btn btn-danger");
+                            recommendbutton.find("span").text("Recommend (on cooldown)");
+                        },
+                        error: function() {
+                        },
+                    });
+                });
+            });
+                
+
     $(document).ready(function() {
     // Attach a click event listener to the like button
     $(".like-button").click(function(e) {

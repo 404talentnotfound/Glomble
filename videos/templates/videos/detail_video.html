@@ -2,6 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% load humanize %}
+{% load count %}
 
 {% block content %}
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -96,9 +97,18 @@
 						<track kind="captions" srclang="en" src="{% static 'videos/bungle.vtt' %}">
 					</video>
 				  </div>
-				<h5 class="mt-4">{{ post.title }}</h5>
+				<h5 class="mt-4">{{ post.title }}
+				{% can_recommend request.user as recommend_available %}
+				<button class="recommend-button {% if recommend_available %} btn btn-success {% else %}btn btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
+					{% if recommend_available %}
+					<span>Recommend</span>
+					{% else %}
+					<span>Recommend (on cooldown)</span>
+					{% endif %}
+				</button></h5>
 				<h6><a class="link-text" href="{% url 'detail-profile' post.uploader.id %}"><img class="shot" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
-					{{ post.uploader.username }} {% if post.uploader.username != user and request.user.is_authenticated %}<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
+					{{ post.uploader.username }} {% if post.uploader.username != user and request.user.is_authenticated %}
+					<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
 						{% if is_following %}
 						<span>Following</span>
 						{% else %}
@@ -117,45 +127,19 @@
 				{% endif %}
 				{% endif %}
 				<p>views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span></p>
+				<p>recommendations: <span class="recommendation-count" id="{{ post.id }}">{{ post.recommendations }}</span></p>
 				<div class="row">
 					<div class="col-md-6 text-muted">
 						<p>{{ post.date_posted|naturaltime }}</p>
 					</div>
 
 					<div class="col-md-6 text-muted text-right">
-						<ion-icon class="video-icons" name="share-social-outline" type="button" data-toggle="modal" data-target="#exampleModal">
-                        Share
-                    </ion-icon>
-
-                    <!-- Modal -->
-                    {% if post.uploader.id != 5 %}
-                    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel">Share This Video!</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body text-center">
-									<div title="I do not know how to make these buttons work">
-										<ion-icon class="social-share-icons twitter-social-color" name="logo-twitter" data-sharer="twitter" data-title="Check out {{ post.title }}!" data-hashtags="" data-url="{% url 'video-detail' post.id %}">Share on Twitter</ion-icon>
-										<ion-icon class="social-share-icons facebook-social-color" name="logo-facebook" data-sharer="facebook" data-title="Check out {{ post.title }} by {{ post.uploader }}!" data-hashtags="" data-url="{% url 'video-detail' post.id %}">Share on Facebook</ion-icon>
-										<ion-icon class="social-share-icons reddit-social-color" name="logo-reddit" data-sharer="reddit" data-title="Check out {{ post.title }} by {{ post.uploader }}!" data-hashtags="" data-url="{% url 'video-detail' post.id %}">Share on Reddit</ion-icon>
-									</div>
-                                    <p class="mt-3"><a href="{% url 'video-detail' post.id %}">{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.id }}</a></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>                    
-                    {% endif %}
-					<a class="video-icons icon-color" href="{% url 'video-download' post.id %}"><i class="fas fa-download"></i></a>
-					{% if post.uploader.username != request.user %}
-					<a href="{% url 'video-report' post.id %}"><i class="fa-solid fa-flag video-icons icon-color"></i></a>
-					{% endif %}
-			</div>
-		</div>
+						<a class="video-icons icon-color" href="{% url 'video-download' post.id %}"><i class="fas fa-download"></i></a>
+						{% if post.uploader.username != request.user %}
+						<a href="{% url 'video-report' post.id %}"><i class="fa-solid fa-flag video-icons icon-color"></i></a>
+						{% endif %}
+					</div>
+				</div>
 		{% if request.user.is_authenticated %}
 		<div class="row mt-3 mb-5 border-bottom">
 			<button style="background-color: transparent; border: none; box-shadow: none;" class="like-button" data-url="{% url 'video-like' post.id %}">
@@ -321,9 +305,16 @@
 					$(".view-count").text(data.view_count);
 					globalThis.viewed = data.viewed;
 				},
-				error: function(error) {
-					console.error("Failed to update view count: " + error);
-				}
+			});
+		}
+
+		function updateRecommendCount(videoId) {
+			$.ajax({
+				type: "GET",
+				url: `${videoId}/update-recommendation-count/`,
+				success: function(data) {
+					$(".recommend-count").text(data.recommend_count);
+				},
 			});
 		}
 
@@ -332,9 +323,11 @@
 			var interval = setInterval(function() {
 				if (globalThis.viewed == true) clearInterval(interval);
 				updateViewCount(videoId);
-			}, 750);
+				updateRecommendCount(videoId);
+			}, 1000);
 			var interval2 = setInterval(function() {
 				updateViewCount(videoId);
+				updateRecommendCount(videoId);
 			}, 20000);
 		});
 	</script>

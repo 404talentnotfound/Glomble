@@ -27,16 +27,6 @@
 			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
 				<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
 			{% endif %}
-			{% if username == user %}
-			{% find user as profile %}
-			<a class="{% if profile.using_activity %}btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" href="{% url 'start-recommendations' %}">
-				{% if profile.using_activity %}
-				<span>Turn off recommendations</span>
-				{% else %}
-				<span>Turn on recommendations</span>
-				{% endif %}
-			</a>
-			{% endif %}
 			{% if username != request.user %}
 			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fa-solid fa-flag"></i></a>
 			{% endif %}
@@ -91,16 +81,12 @@
 					// Update the view count on the page
 					$(".follow-count").text(data.follow_count + " followers");
 				},
-				error: function(error) {
-					console.error("Failed to update view count: " + error);
-				}
 			});
 		}
 
 		$(document).ready(function() {
 			// Replace 'videoId' with the actual ID of the video being watched
 			var videoId = $(".follow-count").attr('id'); // Assuming you pass the video ID from the server
-			console.log(`${videoId}`)
 			var interval = setInterval(function() {
 				updateFollowCount(videoId);
 			}, 20000);

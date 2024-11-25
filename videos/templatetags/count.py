@@ -1,8 +1,8 @@
 from django import template
 from reports.models import VideoReport, ProfileReport
-from notifications.models import BaseNotification
-from profiles.models import Profile, Chat
+from profiles.models import Profile
 from creatorfund.models import Creator
+from datetime import datetime, timedelta
 
 register = template.Library()
 
@@ -17,14 +17,21 @@ def P_reports():
 @register.simple_tag
 def has_notifications(user):
     if Profile.objects.all().filter(username=user).exists():
-        return BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=user)], read=False).count() > 0
+        return Profile.objects.all().get(username=user).notifications.filter(read=False).count() > 0
+    else:
+        return False
+    
+@register.simple_tag
+def can_recommend(user):
+    if Profile.objects.all().filter(username=user).exists():
+        return datetime.now().timestamp() > Profile.objects.all().get(username=user).last_recommend.timestamp() + 43200
     else:
         return False
     
 @register.simple_tag
 def has_messages(user):
     profile = Profile.objects.get(username=user)
-    unreadmessages = Chat.objects.filter(members__in=[profile]).filter(messages__read=False)
+    unreadmessages = profile.chats.filter(messages__read=False)
     if unreadmessages.exists():
         is_from_other_chatter = False
         for i in unreadmessages:

@@ -9,12 +9,11 @@ from operator import attrgetter
 
 class NotificationsIndex(ListView):
     template_name = "notifications/index.html"
-    paginate_by = 8
+    paginate_by = 25
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = list(chain(BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=False),
-                              BaseNotification.objects.all().filter(profile__in=[Profile.objects.all().get(username=self.request.user)]).exclude(read=True)))
+        queryset = list(chain(Profile.objects.all().get(username=self.request.user).notifications.exclude(read=False), Profile.objects.all().get(username=self.request.user).notifications.exclude(read=True)))
 
         if sort_by == 'date-desc':
             queryset = sorted(
