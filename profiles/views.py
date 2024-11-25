@@ -41,15 +41,6 @@ def update_profile_follow_count(request, id):
 def redirect_profile(request, id):
     return redirect(f"{reverse('detail-profile', kwargs={'id': id})}")
 
-def make_changes(request):
-    for i in Profile.objects.all():
-        for j in BaseNotification.objects.all().filter(profile__in=[i]):
-            i.notifications.add(j)
-        for j in Chat.objects.all().filter(members__in=[i]):
-            i.chats.add(j)
-        for j in Video.objects.all().filter(views__in=[i.username]):
-            i.watched_videos.add(j)
-
 class ProfileIndex(ListView):
     model = Profile
     template_name = "profiles/index.html"

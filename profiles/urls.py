@@ -1,10 +1,9 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ProfileIndex, DetailProfileIndex, UpdateProfile, DeleteProfile, AddFollower, RemoveFollower, UserSearch, DetailChat, ChatIndex, create_profile, update_profile_follow_count, redirect_profile, make_changes
+from .views import ProfileIndex, DetailProfileIndex, UpdateProfile, DeleteProfile, AddFollower, RemoveFollower, UserSearch, DetailChat, ChatIndex, create_profile, update_profile_follow_count, redirect_profile
 urlpatterns = [
     path('', ProfileIndex.as_view(), name='profile-index'),
     path('create', create_profile, name='create-profile'),
-    path('change', make_changes),
     path('search/', UserSearch.as_view(), name='profile-search'),
     path('chats', ChatIndex.as_view(), name='chat-index'),
     path('<slug:id>/chats', DetailChat.as_view(), name='chat-detail'),
