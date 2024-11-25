@@ -1,0 +1,13 @@
+{% extends 'videos/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+<form method="POST">
+  {% csrf_token %}
+  <legend class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
+  {{ form | crispy }}
+  <div class="d-grid gap-2">
+    <button class="btn btn-success mt-3">Submit!</button>
+  </div>
+</form>
