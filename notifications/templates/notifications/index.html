@@ -35,7 +35,7 @@
                         </div>
                     </div>
                 {% elif type == 2 %}
-                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.update_notification.message }}</h4>
+                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fas fa-check"></i>: {{ object.update_notification.message }}</h4>
                 {% elif type == 3 %}
                     <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.video_notification.video.uploader.id %}">
                         <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video_notification.video.uploader.profile_picture }}">
@@ -48,7 +48,7 @@
                         </div>
                     </div>
                 {% elif type == 4 %}
-                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fa-solid fa-check"></i>: {{ object.follow_notification.message }}</h4>
+                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fas fa-check"></i>: {{ object.follow_notification.message }}</h4>
                 {% endif %}
             </div>
             {% endif %}

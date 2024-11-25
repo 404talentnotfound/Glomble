@@ -9,13 +9,13 @@
         <h1 class="text-center">{{ username }}</h1>
 		<h4 class="text-center">
 			{% if username.is_superuser %}
-				<i title="Admin" class="fa-solid fa-clipboard-user"></i>
+				<i title="Admin" class="fas fa-clipboard-user"></i>
 			{% endif %}
 			{% if developer %}
-				<i title="Developer" class="fa-solid fa-screwdriver-wrench"></i>
+				<i title="Developer" class="fas fa-screwdriver-wrench"></i>
 			{% endif %}
 			{% if creator %}
-				<i title="Creator" class="fa-solid fa-palette"></i>
+				<i title="Creator" class="fas fa-palette"></i>
 			{% endif %}
 			{% if supporter %}
 				<i title="Patreon supporter" class="fa-brands fa-patreon"></i>
@@ -28,7 +28,7 @@
 				<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
 			{% endif %}
 			{% if username != request.user %}
-			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fa-solid fa-flag"></i></a>
+			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fas fa-flag"></i></a>
 			{% endif %}
 			<p class="follow-count" id="{{ poopie }}">{{ follow_num }} followers</p>
 			{% if request.user.is_authenticated %}
@@ -60,7 +60,7 @@
 			<div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
 				<a href="{% url 'video-detail' object.id %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" width="256" height="144"></a>
 				<div class="card-body">
-					<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fa-solid fa-eye-slash"></i></div>{% endif %}</h6></a>
+					<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fas fa-eye-slash"></i></div>{% endif %}</h6></a>
 					<h6 class="text-muted text-center shit">{{ object.uploader.username }}</h6>
 					<h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
 					<h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>

@@ -16,5 +16,11 @@
         {% else %}
         <h2><a class="link-text" href="{% url 'video-report-index' %}">Video reports</a></h2>
         {% endif %}
+        <br>
+        {% if b_count != 0 %}
+        <h2><a class="link-text" href="{% url 'bug-report-index' %}">Bug reports <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png"></a></h2>
+        {% else %}
+        <h2><a class="link-text" href="{% url 'bug-report-index' %}">Bug reports</a></h2>
+        {% endif %}
     </div>
 {% endblock content %}

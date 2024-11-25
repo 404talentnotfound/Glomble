@@ -6,14 +6,18 @@ from notifications.models import VideoNotification, CommentNotification
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 import os
-
 from django.core.exceptions import ValidationError
+
+def validate_characters(value):
+    for char in value:
+        if len(char.encode('utf-8')) > 3:
+            raise ValidationError("Input contains oversized characters.")
 
 class Video(models.Model, object):
     uploader = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
-    notification_message = models.CharField(max_length=50, default="new video", null=True)
-    title = models.CharField(max_length=75)
-    description = models.CharField(max_length=500, null=True, blank=True)
+    notification_message = models.CharField(max_length=50, default="new video", null=True, validators=[validate_characters])
+    title = models.CharField(max_length=75, validators=[validate_characters])
+    description = models.CharField(max_length=500, null=True, blank=True, validators=[validate_characters])
     video_file = models.FileField(upload_to='media/uploads/video_files/', validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])])
     thumbnail = models.FileField(upload_to='media/uploads/thumbnails/', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])])
     date_posted = models.DateTimeField(default=timezone.now)
@@ -45,7 +49,7 @@ def delete_files(sender, instance, using, **kwargs):
             pass
 
 class Comment(models.Model):
-    comment = models.CharField(max_length=200)
+    comment = models.CharField(max_length=200, validators=[validate_characters])
     date_posted = models.DateTimeField(default=timezone.now)
     commenter = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     post = models.ForeignKey('Video', on_delete=models.CASCADE)

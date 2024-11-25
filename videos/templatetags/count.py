@@ -1,5 +1,5 @@
 from django import template
-from reports.models import VideoReport, ProfileReport
+from reports.models import VideoReport, ProfileReport, BugReport
 from profiles.models import Profile
 from creatorfund.models import Creator
 from datetime import datetime, timedelta
@@ -13,6 +13,10 @@ def V_reports():
 @register.simple_tag
 def P_reports():
     return ProfileReport.objects.all().count() > 0
+
+@register.simple_tag
+def B_reports():
+    return BugReport.objects.all().count() > 0
 
 @register.simple_tag
 def has_notifications(user):

@@ -156,7 +156,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         if not 'thumbnail' in self.request.FILES:
             video_check = self.request.FILES['video_file']
             if cooldown_valid:
-                if video_check.size < 2000000000 and video_check.size > 1024:
+                if video_check.size < 5000000000 and video_check.size > 1024:
                     try:
                         video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
                         print(video_filename)
@@ -168,7 +168,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                         form.instance.thumbnail.name = f"media/uploads/thumbnails/{out}.png"
                         vid.save_frame(thumbnail_filename, t = 0)
                         if vid.duration <= 7200 and vid.duration > 1:
-                            subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}''', shell=True, check=True)
+                            subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset slow {video_filename}''', shell=True, check=True)
                             form.instance.duration = vid.duration
                             cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
                             os.remove(temp_video_file.name)
@@ -200,7 +200,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             mime = magic.Magic(mime=True).from_file(temp_thumbnail_file.name)
             if mime in ['image/jpeg', 'image/png']:
                 if cooldown_valid:
-                    if video_check.size < 2000000000 and thumbnail_check.size < 10000000 and video_check.size > 1024 and thumbnail_check.size > 1024:
+                    if video_check.size < 5000000000 and thumbnail_check.size < 10000000 and video_check.size > 1024 and thumbnail_check.size > 1024:
                         try:
                             video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
                             form.instance.video_file.name = f"{out}.mp4"
@@ -211,7 +211,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                             vid = VideoFileClip(temp_video_file.name)
                             if vid.duration <= 7200 and vid.duration > 1:
                                 cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
-                                subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}''', shell=True, check=True)
+                                subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset slow {video_filename}''', shell=True, check=True)
                                 subprocess.run(f'sudo ffmpeg -y -i {temp_thumbnail_file.name} -vf scale=512:512 {thumbnail_filename}', shell=True, check=True)
                                 form.instance.duration = vid.duration
                                 cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
@@ -257,7 +257,7 @@ class DetailVideo(DetailView):
         if self.request.user.is_authenticated:
             if Profile.objects.filter(username=self.request.user).exists():
                 profile = Profile.objects.get(username=self.request.user)
-                posts = generate_recommendations().exclude(unlisted=True).exclude(id__in=profile.watched_videos.values_list('id', flat=True))
+                posts = generate_recommendations().exclude(unlisted=True).exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
             else:
                 posts = None
         else:
@@ -337,12 +337,56 @@ class DetailVideo(DetailView):
             new_reply.save()
 
             return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
+        
+        desclen = None
+        pre = None
+        readmore = None
+
+        if self.request.user.is_authenticated:
+            if Profile.objects.filter(username=self.request.user).exists():
+                profile = Profile.objects.get(username=self.request.user)
+                posts = generate_recommendations().exclude(unlisted=True).exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
+            else:
+                posts = None
+        else:
+            posts = None
+        
+        if pen.description is not None:
+            has_desc = True
+            desclen = len(pen.description)
+            pre = pen.description[:25]
+            readmore = pen.description[25:]
+        else:
+            has_desc = False
+
+        is_following = False
+
+        if pen.uploader.followers.all().count() == 0:
+            is_following = False
+
+        for follower in pen.uploader.followers.all():
+            if follower == request.user:
+                is_following = True
+                break
+            else:
+                is_following = False
+        
+        comments = Comment.objects.filter(post=pen,replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comment_count = Comment.objects.filter(post=pen).count()
 
         context = {
             'e': e,
             'post': pen,
             'form': form,
             'replyform': replyform,
+            'comments': comments,
+            'pre': pre,
+            'readmore': readmore,
+            'desclen': desclen,
+            'has': has_desc,
+            'recommended': posts,
+            'is_following': is_following,
+            'comment_amount': comment_count,
         }
         return render(request, 'videos/detail_video.html', context)
 

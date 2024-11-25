@@ -1,0 +1,18 @@
+{% extends 'videos/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+	<div class="container" id="post-container" style="text-align:center">
+        <h4>Summary: <br> {{ report.brief_summary }}</h4>
+        <br>
+		<h5>Explanation: {{ report.explanation }}</h5>
+        <h5>Reporter username: {{ report.reporter.username }}</h5>
+    </div>
+        <div style="text-align:center">
+            <a href="{% url 'bug-report-delete' report.pk %}"><h3 style="color: #dd0000;">Invalid bug</h3><i class="fas fa-trash-can fa-2xl" style="color: #dd0000;"></i>
+        </div>
+        <br>
+        <div style="text-align:center">
+            <a href="{% url 'bug-report-delete' report.pk %}"><h3 style="color: #04c604;">Bug has been fixed</h3><i class="fas fa-check fa-2xl" style="color: #04c604;"></i>
+        </div>
+{% endblock content %}
