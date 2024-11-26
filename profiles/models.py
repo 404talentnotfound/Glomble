@@ -13,7 +13,7 @@ def validate_characters(value):
 
 class Profile(models.Model):
     username = models.ForeignKey(User, on_delete=models.CASCADE)
-    bio = models.TextField(max_length=300, default="hello, world!", validators=[validate_characters]) #hammed burger
+    bio = models.TextField(max_length=500, default="hello, world!", validators=[validate_characters]) #hammed burger
     profile_picture = models.FileField(default='media/profiles/pfps/default.png', null=True, blank=True, upload_to='media/profiles/pfps/', validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])])
     date_made = models.DateTimeField(default=timezone.now)
     passed_milestones = models.PositiveIntegerField(default=0)
