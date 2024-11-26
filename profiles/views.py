@@ -334,12 +334,10 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "profiles/update_profile.html"
     def form_valid(self, form):
         profile = Profile.objects.get(id=self.kwargs['id'])
-        cooldown_valid = True
         last_upload_time = cache.get(f"last_profileupdate_{self.request.user.id}")
 
         if last_upload_time is not None and datetime.now() < last_upload_time + timedelta(minutes=1):
             form.add_error(None, "You can only update your profile every minute.")
-            cooldown_valid = False
             return super().form_invalid(form)
 
         if form.is_valid():
@@ -376,7 +374,6 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                         form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format and try again.")
                         return super().form_invalid(form)
                 else:
-                    form.instance.profile_picture.name = 'media/profiles/pfps/default.png'
                     return super().form_valid(form)
 
             except Exception as e:
