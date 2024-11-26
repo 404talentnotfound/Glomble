@@ -23,12 +23,6 @@ from Glomble.pc_prod import *
 import subprocess
 from django.shortcuts import render
 
-def make_changes(request):
-    for i in Comment.objects.all():
-        i.post.comments.add(i)
-        if i.replying_to != None:
-            i.replying_to.replies.add(i) 
-
 def generate_recommendations():
     all_videos = Video.objects.all().annotate(num_likes=Count('likes')).order_by('-num_likes').order_by("-recommendations").exclude(unlisted=True)
 
