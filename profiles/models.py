@@ -33,7 +33,7 @@ class Chat(models.Model):
 class Message(models.Model):
     sender = models.ForeignKey("profiles.Profile", on_delete=models.CASCADE, related_name="sender")
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
-    message = models.TextField(validators=[validate_characters])
+    message = models.TextField(max_length=1000, validators=[validate_characters])
     date_sent = models.DateTimeField(default=timezone.now)
     read = models.BooleanField(default=False)
 

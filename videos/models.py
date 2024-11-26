@@ -49,7 +49,7 @@ def delete_files(sender, instance, using, **kwargs):
             pass
 
 class Comment(models.Model):
-    comment = models.CharField(max_length=200, validators=[validate_characters])
+    comment = models.CharField(max_length=500, validators=[validate_characters])
     date_posted = models.DateTimeField(default=timezone.now)
     commenter = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     post = models.ForeignKey('Video', on_delete=models.CASCADE)

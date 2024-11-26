@@ -20,3 +20,4 @@ videos/migrations/
 profiles/migrations/
 notifications/migrations/
 creatorfund/migrations/
+reports/migrations/

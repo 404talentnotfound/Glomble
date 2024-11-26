@@ -48,7 +48,7 @@ class MessageForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'rows': '3',
             'placeholder': 'Say something to this creator.',
-            'maxlength': '200',
+            'maxlength': '1900',
         })
     )
 
