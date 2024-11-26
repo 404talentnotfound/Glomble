@@ -28,6 +28,7 @@ class Video(models.Model, object):
     unlisted = models.BooleanField(default=False)
     id = models.SlugField(primary_key=True)
     recommendations = models.PositiveIntegerField(default=0)
+    comments = models.ManyToManyField("Comment", blank=True, related_name='video_comments')
 
     def __str__(self):
         return self.title
@@ -56,6 +57,7 @@ class Comment(models.Model):
     likes = models.ManyToManyField(User, blank=True, related_name='comment_likes')
     dislikes = models.ManyToManyField(User, blank=True, related_name='comment_dislikes')
     replying_to = models.ForeignKey("Comment", on_delete=models.CASCADE, null=True, blank=True, related_name="reply_to")
+    replies = models.ManyToManyField("Comment", blank=True, related_name="comment_replies")
 
     class Meta:
         ordering = ['-date_posted']

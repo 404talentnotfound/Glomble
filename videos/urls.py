@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import CreateVideo, DetailVideo, UpdateVideo, DeleteVideo, AddLike, Dislike, DownloadVideo, VideoSearch, Recommend, update_video_view_count, update_video_recommendation_count, update_video_like_count, update_comments_like_count, redirect_video
+from .views import CreateVideo, DetailVideo, UpdateVideo, DeleteVideo, AddLike, Dislike, DownloadVideo, VideoSearch, Recommend, make_changes, update_video_view_count, update_video_recommendation_count, update_video_like_count, update_comments_like_count, redirect_video
 
 urlpatterns = [
+    path('change/', make_changes),
     path('create/', CreateVideo.as_view(), name='video-create'),
     path('search/', VideoSearch.as_view(), name='video-search'),
     path('<slug:id>/', redirect_video),

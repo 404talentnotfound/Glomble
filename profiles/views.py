@@ -32,7 +32,7 @@ import magic
 import tempfile
 import subprocess
 from django.core.cache import cache
-from notifications.models import FollowNotification, BaseNotification
+from notifications.models import FollowNotification
 
 def update_profile_follow_count(request, id):
     follow_count = Profile.objects.get(id=id).followers.count()

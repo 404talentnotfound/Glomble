@@ -23,9 +23,15 @@ from Glomble.pc_prod import *
 import subprocess
 from django.shortcuts import render
 
+def make_changes(request):
+    for i in Comment.objects.all():
+        i.post.comments.add(i)
+        if i.replying_to != None:
+            i.replying_to.replies.add(i) 
+
 def generate_recommendations():
-    all_videos = Video.objects.all().annotate(num_recommendations=Count('recommendations')).order_by('-num_recommendations')
-    
+    all_videos = Video.objects.all().annotate(num_likes=Count('likes')).order_by('-num_likes').order_by("-recommendations").exclude(unlisted=True)
+
     return all_videos
 
 def update_video_view_count(request, id):
@@ -69,7 +75,7 @@ def update_video_like_count(request, id):
     return JsonResponse({"like_count": like_count, "dislike_count": dislike_count})
 
 def update_comments_like_count(request, id):
-    for comment in Comment.objects.filter(post=Video.objects.get(id=id)):
+    for comment in Video.objects.get(id=id).comments.all():
         like_count = comment.likes.count()
         dislike_count = comment.dislikes.count()
         print(like_count, dislike_count, comment.pk)
@@ -108,9 +114,9 @@ class Index(ListView):
         elif sort_by == 'views-desc':
             queryset = queryset.annotate(num_views=Count('views')).order_by('-num_views')
         elif sort_by == "recommended":
-            queryset = queryset.annotate(num_likes=Count('likes')).order_by('-num_likes').order_by("-recommendations")
+            queryset = generate_recommendations()
         else:
-            queryset = queryset.annotate(num_likes=Count('likes')).order_by('-num_likes').order_by("-recommendations")
+            queryset = generate_recommendations()
 
         return queryset
 
@@ -257,7 +263,7 @@ class DetailVideo(DetailView):
         if self.request.user.is_authenticated:
             if Profile.objects.filter(username=self.request.user).exists():
                 profile = Profile.objects.get(username=self.request.user)
-                posts = generate_recommendations().exclude(unlisted=True).exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
+                posts = generate_recommendations().exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
             else:
                 posts = None
         else:
@@ -270,10 +276,10 @@ class DetailVideo(DetailView):
         else:
             has_desc = False
 
-        comments = Comment.objects.filter(post=pen,replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
-        comment_count = Comment.objects.filter(post=pen).count()
+        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comment_count = pen.comments.count()
 
-        replies = Comment.objects.filter(post=pen).exclude(replying_to=None).order_by('date_posted')
+        replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
 
         is_following = False
 
@@ -326,6 +332,8 @@ class DetailVideo(DetailView):
             new_comment.post = pen
             new_comment.save()
 
+            pen.comments.add(new_comment)
+
             cache.set(cooldown_key, datetime.now(), timeout=30)
             return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
 
@@ -336,6 +344,9 @@ class DetailVideo(DetailView):
             new_reply.post = pen
             new_reply.save()
 
+            Comment.objects.get(id=int(request.POST.get("comment_id"))).replies.add(new_reply)
+            pen.comments.add(new_reply)
+
             return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
         
         desclen = None
@@ -345,7 +356,7 @@ class DetailVideo(DetailView):
         if self.request.user.is_authenticated:
             if Profile.objects.filter(username=self.request.user).exists():
                 profile = Profile.objects.get(username=self.request.user)
-                posts = generate_recommendations().exclude(unlisted=True).exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
+                posts = generate_recommendations().exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
             else:
                 posts = None
         else:
@@ -371,8 +382,10 @@ class DetailVideo(DetailView):
             else:
                 is_following = False
         
-        comments = Comment.objects.filter(post=pen,replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
-        comment_count = Comment.objects.filter(post=pen).count()
+        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comment_count = pen.comments.count()
+
+        replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
 
         context = {
             'e': e,
@@ -387,6 +400,7 @@ class DetailVideo(DetailView):
             'recommended': posts,
             'is_following': is_following,
             'comment_amount': comment_count,
+            'replies': replies
         }
         return render(request, 'videos/detail_video.html', context)
 
