@@ -7,7 +7,7 @@ class CommentForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'rows': '3',
             'placeholder': 'Input the text you want to comment!',
-            'maxlength': '200',
+            'maxlength': '500',
         })
     )
 
@@ -22,7 +22,7 @@ class ReplyForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'rows': '3',
             'placeholder': 'Input the text you want to reply!',
-            'maxlength': '200',
+            'maxlength': '500',
         })
     )
 
