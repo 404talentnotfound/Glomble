@@ -16,9 +16,3 @@ GlombleEnv/
 conf/
 media/
 config/
-comments/migrations
-creatorfund/migrations
-notifications/migrations
-profiles/migrations
-reports/migrations
-videos/migrations
