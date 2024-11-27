@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ReportVideo, VideoReportIndex, DetailVideoReport, DeleteVideoReport, ProfileReportIndex, DeleteProfileReport, DetailProfileReport, ReportProfile, BugReportIndex, DeleteBugReport, DetailBugReport, ReportBug, choice_page
+from .views import ReportVideo, VideoReportIndex, DetailVideoReport, DeleteVideoReport, ProfileReportIndex, DeleteProfileReport, DetailProfileReport, ReportProfile, BugReportIndex, DeleteBugReport, DetailBugReport, ReportBug, Suggest, SuggestionIndex, DeleteSuggestion, DetailSuggestion, choice_page
 
 urlpatterns = [
     path('', choice_page, name='choice-page'),
@@ -12,6 +12,10 @@ urlpatterns = [
     path('bug/<int:pk>/view', DetailBugReport.as_view(), name='bug-report-detail'),
     path('bug/<int:pk>/delete', DeleteBugReport.as_view(), name='bug-report-delete'),
     path('bug/', ReportBug.as_view(), name='bug-report'),
+    path('suggestion/index', SuggestionIndex.as_view(), name='suggestion-index'),
+    path('suggestion/<int:pk>/view', DetailSuggestion.as_view(), name='suggestion-detail'),
+    path('suggestion/<int:pk>/delete', DeleteSuggestion.as_view(), name='suggestion-delete'),
+    path('suggest/', Suggest.as_view(), name='suggest'),
     path('profiles/index', ProfileReportIndex.as_view(), name='profile-report-index'),
     path('profile/<int:pk>/view', DetailProfileReport.as_view(), name='profile-report-detail'),
     path('profile/<int:pk>/delete', DeleteProfileReport.as_view(), name='profile-report-delete'),

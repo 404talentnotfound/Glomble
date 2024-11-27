@@ -6,7 +6,7 @@
         <h4>Summary: <br> {{ report.brief_summary }}</h4>
         <br>
 		<h5>Explanation: {{ report.explanation }}</h5>
-        <h5>Reporter username: {{ report.reporter.username }}</h5>
+        <h5><a class="link-text" href="{% url 'detail-profile' thing %}">Reporter: {{ report.reporter }}</a></h5>
     </div>
         <div style="text-align:center">
             <a href="{% url 'bug-report-delete' report.pk %}"><h3 style="color: #dd0000;">Invalid bug</h3><i class="fas fa-trash-can fa-2xl" style="color: #dd0000;"></i>

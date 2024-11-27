@@ -1,4 +1,4 @@
-from videos.models import Video
+from .models import Video
 
 def reset_recommendations():
     for i in Video.objects.all():

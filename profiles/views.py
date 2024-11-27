@@ -44,7 +44,7 @@ def redirect_profile(request, id):
 class ProfileIndex(ListView):
     model = Profile
     template_name = "profiles/index.html"
-    paginate_by = 8
+    paginate_by = 20
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')

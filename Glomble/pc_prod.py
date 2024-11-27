@@ -42,7 +42,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media").replace("\\","/")
 MEDIA_URL = "media/"
 
 CRONJOBS = [
-    ('0 13 * * MON', 'videos.cron.reset_recommendations')
+    ('0 13 * * MON', 'videos.cron.reset_recommendations'),
+    ('0 */12 * * *', 'profile.cron.reset_recommendations_left')
 ]
 
 INSTALLED_APPS = [

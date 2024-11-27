@@ -22,7 +22,7 @@ class Profile(models.Model):
     notifications = models.ManyToManyField("notifications.BaseNotification", blank=True, related_name='notifications')
     watched_videos = models.ManyToManyField("videos.Video", blank=True, related_name='watched_videos')
     chats = models.ManyToManyField("Chat", blank=True, related_name='chats')
-    last_recommend = models.DateTimeField(default=timezone.datetime(1970,1,1,0,1,1))
+    recommendations_left = models.PositiveIntegerField(default=3)
     rating = models.PositiveIntegerField(default=5)
 
 class Chat(models.Model):

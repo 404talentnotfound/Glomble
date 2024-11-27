@@ -1,5 +1,5 @@
 from django import template
-from reports.models import VideoReport, ProfileReport, BugReport
+from reports.models import VideoReport, ProfileReport, BugReport, Suggestion
 from profiles.models import Profile
 from creatorfund.models import Creator
 from datetime import datetime, timedelta
@@ -19,6 +19,10 @@ def B_reports():
     return BugReport.objects.all().count() > 0
 
 @register.simple_tag
+def S_reports():
+    return Suggestion.objects.all().count() > 0
+
+@register.simple_tag
 def has_notifications(user):
     if Profile.objects.all().filter(username=user).exists():
         return Profile.objects.all().get(username=user).notifications.filter(read=False).count() > 0
@@ -28,7 +32,13 @@ def has_notifications(user):
 @register.simple_tag
 def can_recommend(user):
     if Profile.objects.all().filter(username=user).exists():
-        return datetime.now().timestamp() > Profile.objects.all().get(username=user).last_recommend.timestamp() + 43200
+        return Profile.objects.all().get(username=user).recommendations_left > 0
+    return False
+
+@register.simple_tag
+def recommendations_left(user):
+    if Profile.objects.all().filter(username=user).exists():
+        return Profile.objects.all().get(username=user).recommendations_left
     return False
     
 @register.simple_tag

@@ -80,8 +80,12 @@
                             csrfmiddlewaretoken: "{{ csrf_token }}",
                         },
                         success: function(data) {
-                            recommendbutton.toggleClass("btn btn-success btn btn-danger");
-                            recommendbutton.find("span").text("Recommend (on cooldown)");
+                            if (data.recommendations_left == 0) {
+                                recommendbutton.find("span").text("Recommend (on cooldown)");
+                                recommendbutton.toggleClass("btn btn-success btn btn-danger");
+                            }
+                            else
+                                recommendbutton.find("span").text("Recommend (||)".replace("||", data.recommendations_left));
                         },
                         error: function() {
                         },

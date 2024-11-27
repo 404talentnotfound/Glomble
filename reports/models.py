@@ -30,3 +30,12 @@ class BugReport(models.Model):
 
 	class Meta:
 		ordering = ['-date_sent']
+
+class Suggestion(models.Model):
+	brief_summary = models.TextField(max_length=50)
+	explanation = models.TextField(max_length=500)
+	date_sent = models.DateTimeField(default=timezone.now)
+	reporter = models.ForeignKey(User, on_delete=models.CASCADE)
+
+	class Meta:
+		ordering = ['-date_sent']

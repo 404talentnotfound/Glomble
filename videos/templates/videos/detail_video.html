@@ -102,7 +102,7 @@
 					{% can_recommend request.user as recommend_available %}
 					<button class="recommend-button {% if recommend_available %} btn btn-success {% else %}btn btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
 						{% if recommend_available %}
-						<span>Recommend</span>
+						<span>Recommend ({% recommendations_left request.user %})</span>
 						{% else %}
 						<span>Recommend (on cooldown)</span>
 						{% endif %}

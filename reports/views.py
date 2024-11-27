@@ -4,7 +4,7 @@ from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import VideoReport, ProfileReport, BugReport
+from .models import VideoReport, ProfileReport, BugReport, Suggestion
 from profiles.models import Profile
 from videos.models import Video
 from django.core.cache import cache
@@ -18,11 +18,13 @@ def choice_page(request):
     v_count = VideoReport.objects.all().count()
     p_count = ProfileReport.objects.all().count()
     b_count = BugReport.objects.all().count()
+    s_count = Suggestion.objects.all().count()
     context = {
         'profile': profile,
         'v_count': v_count,
         'p_count': p_count,
-        'b_count': b_count
+        'b_count': b_count,
+        's_count': s_count,
     }
     return render(request, 'reports/choice_page.html', context)
 
@@ -303,4 +305,86 @@ class DetailBugReport(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         }
 
         return render(request, 'reports/detail_bug_report.html', context)
+    
+class SuggestionIndex(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    template_name = 'reports/suggestions_index.html'
+    context_object_name = 'reports'
+    paginate_by = 9
+
+    def get_queryset(self):
+        sort_by = self.request.GET.get('sort-by')
+        queryset = Suggestion.objects.all()
+
+        if sort_by == 'date-desc':
+            queryset = queryset.order_by('-date_sent')
+        elif sort_by == 'date-asc':
+            queryset = queryset.order_by('date_sent')
+        else:
+            queryset = queryset.order_by('-date_sent')
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['sort_by'] = self.request.GET.get('sort-by')
+        return context
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+
+class DeleteSuggestion(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Suggestion
+    template_name = 'reports/delete_report.html'
+    def get_redirect_url(self):
+        return reverse('suggestion-detail', kwargs={'pk': self.object.pk})
+    
+    def post(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
+    def get_success_url(self):        
+        return reverse('suggestion-index')
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+    
+class Suggest(LoginRequiredMixin, CreateView):
+    model = Suggestion
+    fields = ['brief_summary', 'explanation']
+    template_name = 'reports/create_suggestion.html'
+    is_valid = None
+    
+    def form_valid(self, form):
+        last_report_time = cache.get(f"last_suggestion_{self.request.user.id}")
+
+        if last_report_time is not None and datetime.now() < last_report_time + timedelta(minutes=2):
+            form.add_error(None, "You can only send one bug report every 2 minutes.")
+            return super().form_invalid(form)
+
+        form.instance.reporter = self.request.user
+
+        cache.set(f"last_suggestion_{self.request.user.id}", datetime.now(), timeout=None)
+        form.save()
+        return render(self.request, 'reports/suggestion_sent.html')
+
+    def form_invalid(self, form):
+        Suggestion.objects.all().filter(pk=self.object.pk).delete()
+
+        return super().form_invalid(form)
+
+class DetailSuggestion(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get(self, request, *args, **kwargs):
+        e = self.kwargs['pk']
+        pen = Suggestion.objects.get(pk=e)
+        hi = Suggestion.objects.get(pk=e).reporter
+        thing = Profile.objects.get(username=hi).id
+
+        context = {
+            'e': e,
+            'thing': thing,
+            'report': pen,
+        }
+
+        return render(request, 'reports/detail_suggestion.html', context)
         

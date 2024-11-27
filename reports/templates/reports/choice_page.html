@@ -22,5 +22,11 @@
         {% else %}
         <h2><a class="link-text" href="{% url 'bug-report-index' %}">Bug reports</a></h2>
         {% endif %}
+        <br>
+        {% if s_count != 0 %}
+        <h2><a class="link-text" href="{% url 'suggestion-index' %}">Suggestions <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png"></a></h2>
+        {% else %}
+        <h2><a class="link-text" href="{% url 'suggestion-index' %}">Suggestions</a></h2>
+        {% endif %}
     </div>
 {% endblock content %}

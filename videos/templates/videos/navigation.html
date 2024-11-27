@@ -27,9 +27,11 @@
       </li>
       {% if user.is_superuser %}
       <li class="nav-item">
-        {% B_reports as i %}
-        {% P_reports as j %}
-        {% if i or j %}
+        {% S_reports as a %}
+        {% B_reports as b %}
+        {% P_reports as c %}
+        {% V_reports as d %}
+        {% if a or b or c or d %}
         <a class="nav-link" href="{% url 'choice-page' %}">Check reports <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png" width="16" height="16"></a>
         {% else %}
         <a class="nav-link" href="{% url 'choice-page' %}">Check reports</a>
@@ -51,19 +53,22 @@
         <a class="nav-link" href="{% url 'video-create' %}">Upload Video</a>
       </li>
       <li class="nav-item">
-        <h5><a class="nav-link" href="{% url 'bug-report' %}"><i class="icon-color fas fa-bug"></i></a></h5>
+        <h5><a class="nav-link" href="{% url 'bug-report' %}"><i class="fas fa-bug"></i></a></h5>
+      </li>
+      <li class="nav-item">
+        <h5><a class="nav-link" href="{% url 'suggest' %}"><i class="fa-solid fa-lightbulb"></i></a></h5>
       </li>
       {% endif %}
       <li class="nav-item">
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
-            <button class="nav-link" type="submit">Sign Out</button>
+            <button class="nav-link btn" type="submit">Sign Out</button>
         </form>
       </li>
       {% if test2 %}
       {% find request.user as obj %}
       <li class="nav-item">
-        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center"><img class="shot" style="margin-left: 25px" width="50" height="50" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ obj.profile_picture }}"></a>
+        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center nav-link"><img class="shot" style="margin-left: 15px; margin-top: -2px" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ obj.profile_picture }}"></a>
       </li>
       {% endif %}
       {% else %}

@@ -40,7 +40,7 @@ def update_video_view_count(request, id):
                 cache.set(key, start_time, timeout=None)
 
             elapsed_time = timezone.now().timestamp() - start_time
-            if elapsed_time >= 0.3 * Video.objects.get(id=id).duration or elapsed_time >= 7.5:
+            if elapsed_time >= 0.3 * Video.objects.get(id=id).duration or elapsed_time >= 5:
                 if not cache.get(f"{key}:viewed"):
                     video = Video.objects.get(id=id)
                     video.views.add(User.objects.all().get(id=request.user.id))
@@ -510,7 +510,7 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
 
         profile = Profile.objects.all().get(username=self.request.user)
         
-        profile.last_recommend = datetime.now()
+        profile.recommendations_left -= 1
 
         profile.save()
 
@@ -520,11 +520,11 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
 
         recommend_count = video.recommendations
         
-        return JsonResponse({'recommend_count': recommend_count})
+        return JsonResponse({'recommend_count': recommend_count, 'recommendations_left': profile.recommendations_left})
     
     def test_func(self):
         if Profile.objects.all().filter(username=self.request.user).exists():
-            return datetime.now().timestamp() > Profile.objects.all().get(username=self.request.user).last_recommend.timestamp() + 43200
+            return Profile.objects.all().get(username=self.request.user).recommendations_left > 0
         return False
 
 class DownloadVideo(View):
