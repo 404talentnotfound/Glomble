@@ -1,0 +1,62 @@
+{% extends 'videos/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-3 col-sm-12 mt-5 mb-3">
+            <form method="get">
+                <label for="sort-by">Sort by:</label>
+                <select name="sort-by" id="sort-by" onchange="this.form.submit()">
+                    <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
+                    <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
+                </select>
+            </form>
+            
+        </div>
+        {% for object in object_list %}
+        <div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
+            <a href="{% url 'suggestion-detail' object.pk %}" class="row justify-content-center">
+                <div class="card-body">
+                    <h3 class="text-muted text-center">Summary: {{ object.brief_summary }}</h3>
+                    <p class="text-muted text-center">Reported by: {{ object.reporter }}</p>
+                    <p class="text-muted text-center">{{ object.date_sent|naturaltime }}</p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if is_paginated %}
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-12 col-sm-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}
