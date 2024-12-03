@@ -395,6 +395,7 @@ a.login:hover {
 
 .sidebar {
   height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar h5 {
