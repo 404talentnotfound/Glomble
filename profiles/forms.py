@@ -33,8 +33,7 @@ class UserRegisterForm(UserCreationForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = "__all__"
-        exclude = ["date_made", "followers"]
+        fields = ["profile_picture", "bio"]
 
 class CreateProfileForm(forms.ModelForm):
     class Meta:

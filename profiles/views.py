@@ -38,6 +38,31 @@ def update_profile_follow_count(request, id):
     follow_count = Profile.objects.get(id=id).followers.count()
     return JsonResponse({"follow_count": follow_count})
 
+@user_not_authenticated
+def resend_activation(req, id):
+    user = User.objects.all().get(id=id)
+    activateEmail(req, user, user.email)
+    return redirect("login")
+
+def send_emails(request):
+    if request.user.is_superuser:
+        for i in User.objects.all().filter(username="almighty"):
+            activation_url = request.build_absolute_uri(
+                reverse('resend_activation', args=[i.id])
+            )
+            mail_subject = 'Glomble Notice'
+            html_thing = render_to_string('notice.html', {"user": i.username, "activation_url": activation_url, "id": i.id})
+            sg = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
+            from_email = Email(EMAIL_HOST_USER)
+            to_email_sendgrid = To(i.email)
+            content = Content("text/html", html_thing)
+            print(content)
+            mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
+            mail_json = mail.get()
+            sg.client.mail.send.post(request_body=mail_json)
+
+            return redirect("index")
+
 def redirect_profile(request, id):
     return redirect(f"{reverse('detail-profile', kwargs={'id': id})}")
 
@@ -131,6 +156,7 @@ def register(req):
 class CustomPasswordResetView(PasswordResetView):
     def form_valid(self, form):
         email = form.cleaned_data['email']
+        mail_subject = "Reset your Glomble password"
         user = Profile.objects.all().get(username=User.objects.all().get(email=email))
         uid = urlsafe_base64_encode(force_bytes(user.username.id))
         token = default_token_generator.make_token(user.username)
@@ -138,19 +164,17 @@ class CustomPasswordResetView(PasswordResetView):
             reverse('password_reset_confirm', args=[uid, token])
         )
         html_thing = render_to_string('profiles/password_reset_email.html', {"reset_url": reset_url, "user": user.username.username})
-        plain_text_thing = strip_tags(html_thing)
-        message = Mail(
-            from_email=EMAIL_HOST_USER,
-            to_emails=email,
-            subject='Glomble Password Reset',
-            html_content=html_thing,
-        )
-        sendgrid_client = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
-        sendgrid_client.send(message)
+        sg = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
+        from_email = Email(EMAIL_HOST_USER)
+        to_email_sendgrid = To(email)
+        content = Content("text/html", html_thing)
+        mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
+        mail_json = mail.get()
+        sg.client.mail.send.post(request_body=mail_json)
         return redirect('password_reset_done')
 
 def activateEmail(request, user, to_email):
-    mail_subject = "Activate your user account."
+    mail_subject = "Activate your Glomble user account"
     message = render_to_string("template_activate_account.html", {
         'user': user,
         'domain': "glomble.com",
@@ -166,7 +190,7 @@ def activateEmail(request, user, to_email):
     mail_json = mail.get()
     response = sg.client.mail.send.post(request_body=mail_json)
     if response.status_code == 202:
-        messages.success(request, f"Dear {user}, please go to your email {to_email} inbox and click on \
+        messages.success(request, f"Hello {user}, please go to your email {to_email} inbox and click on \
                 the activation link to confirm and complete the registration. Note: If you can't find the email, check your spam folder.")
     else:
         messages.error(request, f'Problem sending email to {to_email}, check if you typed it correctly.')
@@ -235,7 +259,7 @@ def create_profile(request):
                 mime_type = magic.Magic(mime=True).from_buffer(pfp.read(1024))
                 if mime_type in ['image/jpeg', 'image/png']:
                     form.save(commit=False)
-                    if form.is_valid() and pfp.size < 5000000 and pfp.size > 1024:
+                    if form.is_valid() and pfp.size < 5000000 and pfp.size > 1:
                         temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                         for chunk in pfp.chunks():
                             temp_pfp.write(chunk)
@@ -283,7 +307,7 @@ class DetailProfileIndex(ListView):
         username = Profile.objects.get(id=hi).username
         poopie = Profile.objects.get(id=hi).id
         profile = Profile.objects.get(id=poopie)
-        if request.user.is_superuser or username == request.user:
+        if (request.user.is_superuser or profile.moderator) or username == request.user:
             posts = Video.objects.all().order_by('-date_posted').filter(uploader=profile)
         else:
             posts = Video.objects.all().order_by('-date_posted').filter(uploader=profile).exclude(unlisted=True)
@@ -347,7 +371,7 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
                     
                     if mime_type in ['image/jpeg', 'image/png']:
-                        if 1024 < newpfp.size < 10000000:
+                        if 1 < newpfp.size < 10000000:
                             temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                             for chunk in newpfp.chunks():
                                 temp_pfp.write(chunk)
@@ -388,7 +412,7 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         profile = self.get_object()
-        return self.request.user == profile.username or (self.request.user.is_superuser and profile.id != CREATOR_ID)
+        return self.request.user == profile.username or ((self.request.user.is_superuser or profile.moderator) and profile.id != CREATOR_ID)
 
 class DeleteProfile(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Profile

@@ -24,6 +24,8 @@ class Profile(models.Model):
     chats = models.ManyToManyField("Chat", blank=True, related_name='chats')
     recommendations_left = models.PositiveIntegerField(default=3)
     rating = models.PositiveIntegerField(default=5)
+    moderator = models.BooleanField(default=False)
+    helper = models.BooleanField(default=False)
 
 class Chat(models.Model):
     members = models.ManyToManyField("profiles.Profile", related_name="members")

@@ -29,13 +29,14 @@ class Video(models.Model, object):
     id = models.SlugField(primary_key=True)
     recommendations = models.PositiveIntegerField(default=0)
     comments = models.ManyToManyField("Comment", blank=True, related_name='video_comments')
+    push_notification = models.BooleanField(default=True)
 
     def __str__(self):
         return self.title
     
 @receiver(post_save, sender=Video)
 def video_notify(sender, instance, created, **kwargs):
-    if created:
+    if created and instance.push_notification:
         VideoNotification.objects.create(video=instance, message=instance.notification_message)
 
 @receiver(post_delete, sender=Video)
@@ -67,5 +68,5 @@ def comment_notify(sender, instance, created, **kwargs):
     if created:
         if instance.commenter != instance.post.uploader and instance.replying_to == None:
             CommentNotification.objects.create(comment=instance, message=f'just commented on your video: "{instance.comment}"')
-        elif instance.replying_to != None and instance.replying_to.commenter != instance.commenter and instance.commenter != instance.post.uploader:
+        elif instance.replying_to != None and instance.replying_to.commenter != instance.commenter:
             CommentNotification.objects.create(comment=instance, message=f'just replied to your comment: "{instance.comment}"')

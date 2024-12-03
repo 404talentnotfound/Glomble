@@ -23,9 +23,11 @@
 		</h4>
         <h5 class="text-center">{{ info }}</h5>
 		<div class="text-center">
-			{% if username == user or user.is_superuser %}
+			{% if username != user and user.moderator %}
 			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
-				<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
+			{% elif username == user or user.is_superuser %}
+			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
+			<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
 			{% endif %}
 			{% if username != request.user %}
 			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fas fa-flag"></i></a>

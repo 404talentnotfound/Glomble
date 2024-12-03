@@ -121,7 +121,7 @@ class Index(ListView):
 
 class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Video
-    fields = ['title', 'notification_message', 'description', 'video_file', 'thumbnail', 'unlisted']
+    fields = ['title', 'notification_message', 'description', 'video_file', 'thumbnail', 'unlisted', 'push_notification']
     template_name = 'videos/create_video.html'
     redirect_field_name = reverse_lazy('video-create')
     is_valid = None
@@ -156,7 +156,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         if not 'thumbnail' in self.request.FILES:
             video_check = self.request.FILES['video_file']
             if cooldown_valid:
-                if video_check.size < 5000000000 and video_check.size > 1024:
+                if video_check.size < 5000000000 and video_check.size > 1:
                     try:
                         video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
                         print(video_filename)
@@ -200,7 +200,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             mime = magic.Magic(mime=True).from_file(temp_thumbnail_file.name)
             if mime in ['image/jpeg', 'image/png']:
                 if cooldown_valid:
-                    if video_check.size < 5000000000 and thumbnail_check.size < 10000000 and video_check.size > 1024 and thumbnail_check.size > 1024:
+                    if video_check.size < 5000000000 and thumbnail_check.size < 10000000 and video_check.size > 1 and thumbnail_check.size > 1:
                         try:
                             video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
                             form.instance.video_file.name = f"{out}.mp4"

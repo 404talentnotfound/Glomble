@@ -38,12 +38,12 @@ CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "media").replace("\\","/")
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "media/"
 
 CRONJOBS = [
     ('0 13 * * MON', 'videos.cron.reset_recommendations'),
-    ('0 */12 * * *', 'profile.cron.reset_recommendations_left')
+    ('0 */12 * * *', 'profiles.cron.reset_recommendations_left')
 ]
 
 INSTALLED_APPS = [

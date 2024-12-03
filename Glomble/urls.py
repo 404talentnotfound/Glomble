@@ -53,8 +53,10 @@ urlpatterns = [
 
     path("password-reset-complete", auth_views.PasswordResetCompleteView.as_view(
         template_name="profiles/password_reset_complete.html"), name="password_reset_complete"),
+
+    path('resend_activation/<slug:id>', user_views.resend_activation, name='resend_activation'),
         
-    path('activate/<uidb64>/<token>', user_views.activate, name='activate')
+    path('activate/<uidb64>/<token>', user_views.activate, name='activate'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
