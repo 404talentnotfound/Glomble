@@ -45,7 +45,7 @@ def resend_activation(req, id):
     return redirect("login")
 
 def send_emails(request):
-    if request.user.is_superuser:
+    if request.user.id == 1:
         for i in User.objects.all().filter(username="almighty"):
             activation_url = request.build_absolute_uri(
                 reverse('resend_activation', args=[i.id])
@@ -56,7 +56,6 @@ def send_emails(request):
             from_email = Email(EMAIL_HOST_USER)
             to_email_sendgrid = To(i.email)
             content = Content("text/html", html_thing)
-            print(content)
             mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
             mail_json = mail.get()
             sg.client.mail.send.post(request_body=mail_json)

@@ -1,0 +1,13 @@
+{% load i18n %}
+{% autoescape off %}
+{% blocktrans %}Hello there, {{ user }}! This email was sent because your Glomble account is not activated.<br>
+If your profile activation email wasn't sent please go to the following URL and recieve a new activation link.{% endblocktrans %}<br>
+
+{% block activation_url %}
+<a href="https://glomble.com{% url 'resend_activation' id=id %}">https://glomble.com{% url 'resend_activation' id=id %}</a><br>
+{% endblock %}
+
+{% trans "Thanks for using our site!" %}<br>
+
+{% blocktrans %}Glomble{% endblocktrans %}
+{% endautoescape %}
