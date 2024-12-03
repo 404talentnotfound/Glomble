@@ -27,13 +27,14 @@ CREATOR_ID = open(os.path.join(BASE_DIR, "creator.txt")).read()
 DEVELOPER_IDS = open(os.path.join(BASE_DIR, "developers.txt")).read().split("\n")
 SUPPORTER_IDS = open(os.path.join(BASE_DIR, "supporters.txt")).read().split("\n")
 
+MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
 LOGIN_URL = 'login'
 
 ALLOWED_HOSTS = ['glomble.com', 'localhost', '127.0.0.1']
-
 CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
@@ -43,7 +44,7 @@ MEDIA_URL = "media/"
 
 CRONJOBS = [
     ('0 13 * * MON', 'videos.cron.reset_recommendations'),
-    ('0 */12 * * *', 'profiles.cron.reset_recommendations_left')
+    ('0 */8 * * *', 'profiles.cron.reset_recommendations_left')
 ]
 
 INSTALLED_APPS = [

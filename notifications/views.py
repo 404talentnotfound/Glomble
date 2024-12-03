@@ -1,9 +1,5 @@
-from .models import VideoNotification, UpdateNotification, BaseNotification, CommentNotification, FollowNotification
 from profiles.models import Profile
 from django.views.generic.list import ListView
-from django.views.generic import View
-from django.db.models import Count, Q
-from django.shortcuts import render
 from itertools import chain
 from operator import attrgetter
 
@@ -43,18 +39,3 @@ class NotificationsIndex(ListView):
         context = super().get_context_data(**kwargs)
         context['sort_by'] = self.request.GET.get('sort-by')
         return context
-    
-class VideoNotificationSearch(View):
-    def get(self, request, *args, **kwargs):
-        query = self.request.GET.get('query')
-        video_notification_list = VideoNotification.objects.filter(
-        	Q(message__icontains=query)
-        ).filter(notified_profiles__in=[Profile.objects.all().get(username=self.request.user)])
-    
-        context = {
-        	'video_notification_list': video_notification_list
-        }
-    
-
-        return render(request, 'notifications/search.html', context)
-

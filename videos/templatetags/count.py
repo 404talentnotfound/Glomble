@@ -54,6 +54,13 @@ def has_messages(user):
     return False
 
 @register.simple_tag
+def unread_messages(user, chat):
+    profile = Profile.objects.get(username=user)
+    if chat.messages.exclude(sender=profile).filter(read=False).exists():
+        return chat.messages.exclude(sender=profile).filter(read=False).count()
+    return 0
+
+@register.simple_tag
 def notification_type(object):
     if object.comment_notification != None:
         return 1
@@ -61,7 +68,7 @@ def notification_type(object):
         return 2
     elif object.video_notification != None:
         return 3
-    elif object.follow_notification != None:
+    elif object.milestone_notification != None:
         return 4
     else:
         return 0

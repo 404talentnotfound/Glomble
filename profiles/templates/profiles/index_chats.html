@@ -15,14 +15,50 @@
         </form>
     </div>
         {% for chat in chat_list %}
+        {% unread_messages request.user chat as unread_message_count %}
         <div class="row justify-content-center mt-3">
             <div class="col-md-5 col-sm-12 border-bottom position-relative text-center">
                 {% other_chatter chat request.user as chatter %}
                 <p><a style="text-decoration: none;" class="link-text" href="{% url 'chat-detail' chatter.id %}">
                 <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ chatter.profile_picture }}">
                 <h5>{{ chatter.username }}</h5></a></p>
+                {% if unread_message_count > 0 %}
+                <h4 class="text-center" style="color: red;">{{ unread_message_count }} unread message(s)</h2>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
+
+        {% if is_paginated %}
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-12 col-sm-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock content %}

@@ -8,15 +8,15 @@ from django.core.exceptions import ValidationError
 
 def validate_characters(value):
     for char in value:
-        if len(char.encode('utf-8')) > 1:
+        if len(char.encode('utf-8')) > 3:
             raise ValidationError("Input contains oversized characters.")
 
 class Profile(models.Model):
     username = models.ForeignKey(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500, default="hello, world!", validators=[validate_characters]) #hammed burger
-    profile_picture = models.FileField(default='media/profiles/pfps/default.png', null=True, blank=True, upload_to='media/profiles/pfps/', validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])])
+    profile_picture = models.FileField(default='media/profiles/pfps/default.png', blank=True, upload_to='media/profiles/pfps/', validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 10mb)")
     date_made = models.DateTimeField(default=timezone.now)
-    passed_milestones = models.PositiveIntegerField(default=0)
+    follower_milestones = models.PositiveIntegerField(default=0)
     followers = models.ManyToManyField(User, related_name='followers')
     id = models.SlugField(primary_key=True)
     notifications = models.ManyToManyField("notifications.BaseNotification", blank=True, related_name='notifications')
@@ -26,6 +26,9 @@ class Profile(models.Model):
     rating = models.PositiveIntegerField(default=5)
     moderator = models.BooleanField(default=False)
     helper = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.id
 
 class Chat(models.Model):
     members = models.ManyToManyField("profiles.Profile", related_name="members")
@@ -38,5 +41,3 @@ class Message(models.Model):
     message = models.TextField(max_length=1000, validators=[validate_characters])
     date_sent = models.DateTimeField(default=timezone.now)
     read = models.BooleanField(default=False)
-
-    

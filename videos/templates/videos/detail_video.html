@@ -6,22 +6,6 @@
 
 {% block content %}
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        {% if request.user.is_authenticated %}
-		<div style="position:absolute;right:-30%;width:60%;height:100px;">
-			{% for object in recommended %}
-        			<div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0" style="background-color: rgb(200, 200, 200);">
-       	    				<a href="{% url 'video-detail' object.id %}" style="width: 100%; overflow: hidden; margin: 0; padding-top: 56.25%; position: relative;"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" style="position: absolute; top: 50%; left: 50%; width: 100%; height:100%; transform: translate(-50%, -50%);"></a>
-            				<div class="card-body">
-                				<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fas fa-eye-slash"></i></div>{% endif %}</h6></a>
-                				<h6 class="text-muted text-center shit"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}">{{ object.uploader.username }}</a></h6>
-				                <h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
-				                <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
-				                <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
-				        </div>
-        			</div>
-        		{% endfor %}
-		</div>
-        {% endif %}
 	<div class="container" id="post-container">
 		<div class="row mt-5">
 			<div class="col-md-8 col-sm-12 col-xs-12">
@@ -241,7 +225,7 @@
 						</div>
 					</form>
 				</div>
-
+				<div style="display: none;">
 				{% for reply in replies %}
 				{% if reply.replying_to.id == comment.id %}
 				<div class="row justify-content-center">
@@ -287,9 +271,49 @@
 				{% endfor %}
 			</div>
 		</div>
-		<br>
-		{% endfor %}
 	</div>
+	<br>
+	{% endfor %}
+	</div>
+	{% if request.user.is_authenticated %}
+		<div class="col-12 col-md-3 order-1 order-md-2 sidebar">
+            <div class="sticky-top">
+                <div class="recommendations">
+                    {% for object in recommended %}
+                    <div class="card mb-3" style="background-color: rgb(200, 200, 200);">
+                        <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
+                            <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
+                                 class="position-absolute w-100 h-100" 
+                                 style="top: 0; left: 0; object-fit: cover;">
+                        </a>
+                        <div class="card-body p-2">
+                            <a class="link-text text-decoration-none" href="{% url 'video-detail' object.id %}">
+                                <h6 class="text-center shit">{{ object.title }}
+                                    {% if object.unlisted %}
+                                    <div class="d-inline-block" title="Unlisted">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </div>
+                                    {% endif %}
+                                </h6>
+                            </a>
+                            <h6 class="text-muted text-center">
+                                <a class="link-text text-decoration-none d-flex align-items-center justify-content-center" 
+                                   href="{% url 'detail-profile' object.uploader.id %}">
+                                    <img class="rounded-circle mr-2" width="35" height="35" 
+                                         src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}">
+                                    {{ object.uploader.username }}
+                                </a>
+                            </h6>
+                            <h6 class="text-muted text-center">Views: {{ object.views.count }}</h6>
+                            <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
+                            <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 	<script>
 		function onClick(ele) {
 			if (document.getElementById('reply'+ele.id).style.display === 'none') {

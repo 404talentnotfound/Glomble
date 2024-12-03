@@ -22,6 +22,7 @@ import random
 from Glomble.pc_prod import *
 import subprocess
 from django.shortcuts import render
+from notifications.models import MilestoneNotification
 
 def generate_recommendations():
     all_videos = Video.objects.all().annotate(num_likes=Count('likes')).order_by('-num_likes').order_by("-recommendations").exclude(unlisted=True)
@@ -506,17 +507,19 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request, *args, **kwargs):
         hi = self.kwargs['id']
-        video = Video.objects.get(id=hi)
 
+        video = Video.objects.get(id=hi)
         profile = Profile.objects.all().get(username=self.request.user)
         
         profile.recommendations_left -= 1
-
-        profile.save()
-
         video.recommendations += 1
 
+        if (video.recommendations in MILESTONES) and video.recommendations > video.recommendation_milestones:
+            video.recommendation_milestones = video.recommendations
+            MilestoneNotification.objects.create(video=video)
+
         video.save()
+        profile.save()
 
         recommend_count = video.recommendations
         

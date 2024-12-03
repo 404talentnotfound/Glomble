@@ -32,7 +32,7 @@ import magic
 import tempfile
 import subprocess
 from django.core.cache import cache
-from notifications.models import FollowNotification
+from notifications.models import MilestoneNotification
 
 def update_profile_follow_count(request, id):
     follow_count = Profile.objects.get(id=id).followers.count()
@@ -43,24 +43,6 @@ def resend_activation(req, id):
     user = User.objects.all().get(id=id)
     activateEmail(req, user, user.email)
     return redirect("login")
-
-def send_emails(request):
-    if request.user.id == 1:
-        for i in User.objects.all().filter(username="almighty"):
-            activation_url = request.build_absolute_uri(
-                reverse('resend_activation', args=[i.id])
-            )
-            mail_subject = 'Glomble Notice'
-            html_thing = render_to_string('notice.html', {"user": i.username, "activation_url": activation_url, "id": i.id})
-            sg = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
-            from_email = Email(EMAIL_HOST_USER)
-            to_email_sendgrid = To(i.email)
-            content = Content("text/html", html_thing)
-            mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
-            mail_json = mail.get()
-            sg.client.mail.send.post(request_body=mail_json)
-
-            return redirect("index")
 
 def redirect_profile(request, id):
     return redirect(f"{reverse('detail-profile', kwargs={'id': id})}")
@@ -255,10 +237,10 @@ def create_profile(request):
             form.instance.id = out
             if 'profile_picture' in request.FILES:
                 pfp = request.FILES['profile_picture']
-                mime_type = magic.Magic(mime=True).from_buffer(pfp.read(1024))
-                if mime_type in ['image/jpeg', 'image/png']:
-                    form.save(commit=False)
-                    if form.is_valid() and pfp.size < 5000000 and pfp.size > 1:
+                if form.is_valid() and pfp.size < 10000000 and pfp.size > 1024:
+                    mime_type = magic.Magic(mime=True).from_buffer(pfp.read(1024))
+                    if mime_type in ['image/jpeg', 'image/png']:
+                        form.save(commit=False)
                         temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                         for chunk in pfp.chunks():
                             temp_pfp.write(chunk)
@@ -272,10 +254,10 @@ def create_profile(request):
 
                         return redirect('profile-page')
                     else:
-                        form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under five megabytes and try again.")
+                        form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format (png or jpg) and try again.")
                         return redirect('create-profile')
                 else:
-                    form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format and try again.")
+                    form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under 10mb and over 1kb, then try again.")
                     return redirect('create-profile')
             else:
                 form.instance.profile_picture.name = "media/profiles/pfps/default.png"
@@ -369,8 +351,9 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     newpfp = self.request.FILES['profile_picture']
                     mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
                     
-                    if mime_type in ['image/jpeg', 'image/png']:
-                        if 1 < newpfp.size < 10000000:
+                    if form.is_valid() and newpfp.size < 10000000 and newpfp.size > 1024:
+                        mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
+                        if mime_type in ['image/jpeg', 'image/png']:
                             temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                             for chunk in newpfp.chunks():
                                 temp_pfp.write(chunk)
@@ -389,12 +372,11 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                             os.remove(temp_pfp.name)
 
                             return super().form_valid(form)
-                        
                         else:
-                            form.add_error(None, "An error occurred while updating your profile. Please make sure the profile picture is under 10 megabytes and try again.")
+                            form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format (png or jpg) and try again.")
                             return super().form_invalid(form)
                     else:
-                        form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format and try again.")
+                        form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under 10mb and over 1kb, then try again.")
                         return super().form_invalid(form)
                 else:
                     return super().form_valid(form)
@@ -448,12 +430,10 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
         
         followers_count = profilething.followers.count()
 
-        milestones = [5, 10, 25, 50, 100, 250, 500, 1000]
-
-        if (followers_count in milestones) and followers_count > profilething.passed_milestones:
-            profilething.passed_milestones = followers_count
+        if (followers_count in MILESTONES) and followers_count > profilething.follower_milestones:
+            profilething.follower_milestones = followers_count
             profilething.save()
-            FollowNotification.objects.create(profile=profilething)
+            MilestoneNotification.objects.create(profile=profilething)
 
         return JsonResponse({'follow_count': followers_count})
     
@@ -573,7 +553,7 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 class ChatIndex(ListView):
     model = Chat
     template_name = "profiles/index_chats.html"
-    paginate_by = 9
+    paginate_by = 20
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')

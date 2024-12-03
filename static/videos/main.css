@@ -376,8 +376,7 @@ a.login:hover {
   background-color:#ca3d00d5
 }
 .shit {
-  width: 10em;
-  margin-left: 12%;
+  width: 12em;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -394,3 +393,17 @@ a.login:hover {
   width:100%;
 }
 
+.sidebar {
+  height: 100vh;
+}
+
+.sidebar h5 {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
