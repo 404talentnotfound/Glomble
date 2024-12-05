@@ -225,7 +225,6 @@
 						</div>
 					</form>
 				</div>
-				<div style="display: none;">
 				{% for reply in replies %}
 				{% if reply.replying_to.id == comment.id %}
 				<div class="row justify-content-center">
@@ -266,10 +265,9 @@
 							<p class="lmao">{{ reply.comment }}</p>
 						</p>
 					</div>
-				</div>
+					</div>
 				{% endif %}
 				{% endfor %}
-			</div>
 		</div>
 	</div>
 	<br>

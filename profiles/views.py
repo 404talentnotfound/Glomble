@@ -348,11 +348,10 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         if form.is_valid():
             try:
                 if 'profile_picture' in self.request.FILES:
-                    newpfp = self.request.FILES['profile_picture']
-                    mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
-                    
+                    newpfp = self.request.FILES['profile_picture']                    
                     if form.is_valid() and newpfp.size < 10000000 and newpfp.size > 1024:
                         mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
+                        print(mime_type)
                         if mime_type in ['image/jpeg', 'image/png']:
                             temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                             for chunk in newpfp.chunks():
@@ -379,6 +378,9 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                         form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under 10mb and over 1kb, then try again.")
                         return super().form_invalid(form)
                 else:
+                    if profile.profile_picture.name == "media/profiles/pfps/default.png" or profile.profile_picture.name == "":
+                        form.instance.profile_picture = f"media/profiles/pfps/default.png"
+
                     return super().form_valid(form)
 
             except Exception as e:
