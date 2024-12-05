@@ -378,7 +378,7 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                         form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under 10mb and over 1kb, then try again.")
                         return super().form_invalid(form)
                 else:
-                    if profile.profile_picture.name == "media/profiles/pfps/default.png" or profile.profile_picture.name == "":
+                    if form.instance.profile_picture == "" or profile.profile_picture.name == "":
                         form.instance.profile_picture = f"media/profiles/pfps/default.png"
 
                     return super().form_valid(form)
