@@ -4,12 +4,6 @@ from django.views.generic.list import ListView
 from itertools import chain
 from operator import attrgetter
 
-def reset_notifications(request):
-    if request.user.is_superuser:
-        for profile in Profile.objects.all():
-            while BaseNotification.objects.all().filter(profile=profile).count() > 50:
-                BaseNotification.objects.all().filter(profile=profile).first().delete()
-
 class NotificationsIndex(ListView):
     template_name = "notifications/index.html"
     paginate_by = 15

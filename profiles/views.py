@@ -71,7 +71,7 @@ def customise_profile(request, id):
                         temp_banner = tempfile.NamedTemporaryFile(delete=False)
                         for chunk in banner.chunks():
                             temp_banner.write(chunk)
-                        form.instance.banner_image = f"media/profiles/banners/{customised_profile.id}.png"
+                        form.instance.banner_image = f"profiles/banners/{customised_profile.id}.png"
 
                         subprocess.run(f"sudo ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
 
