@@ -256,7 +256,7 @@ class DetailVideo(DetailView):
         if self.request.user.is_authenticated:
             if Profile.objects.filter(username=self.request.user).exists():
                 profile = Profile.objects.get(username=self.request.user)
-                posts = Video.objects.all().exclude(unlisted=True).order_by("recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
+                posts = Video.objects.all().exclude(unlisted=True).order_by("-recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
             else:
                 posts = None
         else:
@@ -349,7 +349,7 @@ class DetailVideo(DetailView):
         if self.request.user.is_authenticated:
             if Profile.objects.filter(username=self.request.user).exists():
                 profile = Profile.objects.get(username=self.request.user)
-                posts = Video.objects.all().exclude(unlisted=True).order_by("recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
+                posts = Video.objects.all().exclude(unlisted=True).order_by("-recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
             else:
                 posts = None
         else:
