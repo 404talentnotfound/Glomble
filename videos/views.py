@@ -99,6 +99,8 @@ class Index(ListView):
             queryset = queryset.filter(category="Memes")
         elif category == 'gaming':
             queryset = queryset.filter(category="Gaming")
+        elif category == 'education':
+            queryset = queryset.filter(category="Education")
         elif category == 'animation':
             queryset = queryset.filter(category="Animation")
         elif category == 'entertainment':
