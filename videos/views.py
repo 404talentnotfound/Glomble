@@ -109,8 +109,8 @@ class Index(ListView):
             queryset = queryset.filter(category="Music")
         elif category == 'discussion':
             queryset = queryset.filter(category="Discussion")
-        elif category == 'miscellanious':
-            queryset = queryset.filter(category="Miscellanious")
+        elif category == 'miscellaneous':
+            queryset = queryset.filter(category="Miscellaneous")
 
         if sort_by == 'newest':
             queryset = queryset.order_by('-date_posted')

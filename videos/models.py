@@ -20,7 +20,7 @@ ANIMATION = "Animation"
 ENTERTAINMENT = "Entertainment"
 MUSIC = "Music"
 DISCUSSION = "Discussion"
-MISCELLANIOUS = "Misc"
+MISCELLANEOUS = "Miscellaneous"
         
 CATAGORIES = (
     (MEMES, "Memes"),
@@ -30,7 +30,7 @@ CATAGORIES = (
     (ENTERTAINMENT, "Entertainment"),
     (MUSIC, "Music"),
     (DISCUSSION, "Discussion"),
-    (MISCELLANIOUS, "Miscellanious"),
+    (MISCELLANEOUS, "Miscellaneous"),
 )
 
 class Video(models.Model, object):
