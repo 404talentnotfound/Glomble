@@ -73,7 +73,7 @@ def customise_profile(request, id):
                             temp_banner.write(chunk)
                         form.instance.banner_image = f"media/profiles/banners/{customised_profile.id}.png"
 
-                        subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
+                        subprocess.run(f"sudo ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
 
                         temp_banner.close()
 
@@ -401,7 +401,7 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
                             cache.set(f"last_profileupdate_{self.request.user.id}", datetime.now(), timeout=None)
 
-                            subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 media/profiles/pfps/{profile.id}.png", shell=True, check=True)
+                            subprocess.run(f"sudo ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 media/profiles/pfps/{profile.id}.png", shell=True, check=True)
 
                             form.instance.profile_picture = f"media/profiles/pfps/{profile.id}.png"
 
@@ -516,8 +516,6 @@ class UserSearch(View):
         profile_list = Profile.objects.filter(
         	Q(username__username__icontains=query)
         ).exclude(shadowbanned=True)
-
-        profile = Profile.objects.get(username=self.request.user)
     
         context = {
         	'profile_list': profile_list

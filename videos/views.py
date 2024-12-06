@@ -192,14 +192,14 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
 
             subprocess.run(
-                f"ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}",
+                f"sudo ffmpeg -i {temp_video_file.name} -h encoder=h264_vaapi -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}",
                 shell=True,
                 check=True,
             )
 
             if uploaded_thumbnail:
                 subprocess.run(
-                    f"ffmpeg -i {temp_thumbnail_file.name} {thumbnail_filename}",
+                    f"sudo ffmpeg -i {temp_thumbnail_file.name} {thumbnail_filename}",
                     shell=True,
                     check=True,
                 )
