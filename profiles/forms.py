@@ -4,6 +4,25 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Profile, Message
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
+from django import forms
+from .models import ProfileCustomisation
+from django.core.validators import MaxValueValidator, MinValueValidator
+
+class ProfileCustomisationForm(forms.ModelForm):
+    class Meta:
+        model = ProfileCustomisation
+        fields = ['background_color', 'text_color', 'banner_image']
+        widgets = {
+            'background_color': forms.TextInput(attrs={'type': 'color'}),
+            'text_color': forms.TextInput(attrs={'type': 'color'}),
+        }
+
+class ProfileRatingForm(forms.Form):
+    rating = forms.IntegerField(
+        label="Rate this profile",
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        widget=forms.Select(choices=[(i, f"{i} Star{'s' if i != 1 else ''}") for i in range(6)])
+    )
 
 def validate_email(value):
     if User.objects.filter(email = value).exists():

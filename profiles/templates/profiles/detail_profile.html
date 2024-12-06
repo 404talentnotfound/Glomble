@@ -4,9 +4,16 @@
 {% load humanize %}
 
 {% block content %}
+
+<div style="background-color: {{ profile.customisation.background_color }}; color: {{ profile.customisation.text_color }}; {% if profile.customisation.banner_image %} background-image: url({{ profile.customisation.banner_image.url }}); {% endif %}">
 	<div class="container">
+		{% if profile.customisation.banner_image %}
+		{% endif %}
         <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto; margin-top: 2em;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ pfp }}">
         <h1 class="text-center">{{ username }}</h1>
+		{% if profile.customisation.custom_html %}
+		{{ profile.customisation.custom_html|safe }}
+		{% endif %}
 		<h4 class="text-center">
 			{% if username.is_superuser %}
 				<i title="Admin" class="fas fa-clipboard-user"></i>
@@ -28,6 +35,9 @@
 			{% elif username == user or user.is_superuser %}
 			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
 			<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
+			{% endif %}
+			{% if username == user %}
+			<a class="btn btn-outline-success" href="{% url 'customise-profile' poopie %}">Customise page</a>
 			{% endif %}
 			{% if username != request.user %}
 			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fas fa-flag"></i></a>
@@ -57,6 +67,19 @@
 			{% endif %}
 			{% endif %}
 		</div>
+		<br>
+			<h3 class="text-center">Profile Rating: <span id="rating">{{ profile.rating|floatformat:1 }}</span></h3>
+			{% if username != request.user %}
+			<form id="rating-form" class="text-center" method="POST">
+				{% csrf_token %}
+				<select id="rating-select" name="rating">
+					{% for i in '12345'|make_list %}
+						<option value="{{ i }}" {% if i == current_user_rating %}selected{% endif %}>{{ i }} Star{% if i != '1' %}s{% endif %}</option>
+					{% endfor %}
+				</select>
+				<button type="submit" class="btn btn-success">Submit Rating</button>
+			</form>
+			{% endif %}
 		<div class="row justify-content-center">
 			{% for object in detail_profile_list %}
 			<div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
@@ -72,6 +95,7 @@
 			{% endfor %}
 		</div>
 	</div>
+</div>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<script>
 		function updateFollowCount(videoId) {
@@ -87,11 +111,30 @@
 		}
 
 		$(document).ready(function() {
-			// Replace 'videoId' with the actual ID of the video being watched
-			var videoId = $(".follow-count").attr('id'); // Assuming you pass the video ID from the server
+			var videoId = $(".follow-count").attr('id');
 			var interval = setInterval(function() {
 				updateFollowCount(videoId);
 			}, 20000);
+		});
+	</script>
+	<script>
+		document.getElementById('rating-form').addEventListener('submit', function (event) {
+			event.preventDefault();
+			const formData = new FormData(this);
+			
+			fetch("{% url 'rate-profile' profile.id %}", {
+				method: "POST",
+				headers: {
+					"X-CSRFToken": "{{ csrf_token }}",
+				},
+				body: formData,
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					document.getElementById('rating').textContent = data.new_rating.toFixed(1);
+				}
+			});
 		});
 	</script>
 {% endblock content %}

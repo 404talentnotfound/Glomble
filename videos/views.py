@@ -16,18 +16,13 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from datetime import datetime, timedelta
 import tempfile
-import magic
 import os
+from django.core.files.base import ContentFile
 import random
 from Glomble.pc_prod import *
 import subprocess
 from django.shortcuts import render
 from notifications.models import MilestoneNotification
-
-def generate_recommendations():
-    all_videos = Video.objects.all().annotate(num_likes=Count('likes')).order_by('-num_likes').order_by("-recommendations").exclude(unlisted=True)
-
-    return all_videos
 
 def update_video_view_count(request, id):
     viewed = False
@@ -73,7 +68,6 @@ def update_comments_like_count(request, id):
     for comment in Video.objects.get(id=id).comments.all():
         like_count = comment.likes.count()
         dislike_count = comment.dislikes.count()
-        print(like_count, dislike_count, comment.pk)
         return JsonResponse({"like_count": like_count, "dislike_count": dislike_count, "pk_comment": comment.pk})
 
 def handler500(request, exception, template_name="500.html"):
@@ -94,35 +88,52 @@ class Index(ListView):
     model = Video
     template_name = 'videos/index.html'
     context_object_name = 'videos'
-    paginate_by = 24
+    paginate_by = 54
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = Video.objects.all().exclude(unlisted=True)
+        category = self.request.GET.get('category')
+        queryset = Video.objects.all().exclude(unlisted=True).exclude(uploader__shadowbanned=True)
 
-        if sort_by == 'date-desc':
+        if category == 'memes':
+            queryset = queryset.filter(category="Memes")
+        elif category == 'gaming':
+            queryset = queryset.filter(category="Gaming")
+        elif category == 'animation':
+            queryset = queryset.filter(category="Animation")
+        elif category == 'entertainment':
+            queryset = queryset.filter(category="Entertainment")
+        elif category == 'music':
+            queryset = queryset.filter(category="Music")
+        elif category == 'discussion':
+            queryset = queryset.filter(category="Discussion")
+        elif category == 'miscellanious':
+            queryset = queryset.filter(category="Miscellanious")
+
+        if sort_by == 'newest':
             queryset = queryset.order_by('-date_posted')
-        elif sort_by == 'date-asc':
+        elif sort_by == 'oldest':
             queryset = queryset.order_by('date_posted')
-        elif sort_by == 'likes-desc':
+        elif sort_by == 'likes':
             queryset = queryset.annotate(num_likes=Count('likes')).order_by('-num_likes')
-        elif sort_by == 'views-desc':
+        elif sort_by == 'views':
             queryset = queryset.annotate(num_views=Count('views')).order_by('-num_views')
         elif sort_by == "recommended":
-            queryset = generate_recommendations()
+            queryset = queryset.order_by("-recommendations")
         else:
-            queryset = generate_recommendations()
+            queryset = queryset.order_by("-recommendations")
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['sort_by'] = self.request.GET.get('sort-by')
+        context['category'] = self.request.GET.get('category')
         return context
 
 class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Video
-    fields = ['title', 'notification_message', 'description', 'video_file', 'thumbnail', 'unlisted', 'push_notification']
+    fields = ['title', 'notification_message', 'description', 'category', 'video_file', 'thumbnail', 'unlisted', 'push_notification']
     template_name = 'videos/create_video.html'
     redirect_field_name = reverse_lazy('video-create')
     is_valid = None
@@ -131,115 +142,102 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return Profile.objects.all().filter(username=self.request.user).exists()
 
     def form_valid(self, form):
-        cooldown_valid = True
         last_upload_time = cache.get(f"last_upload_{self.request.user.id}")
 
-        if last_upload_time is not None and datetime.now() < last_upload_time + timedelta(minutes=2):
+        if last_upload_time and datetime.now() < last_upload_time + timedelta(minutes=2):
             form.add_error(None, "You can only upload one video every 2 minutes.")
-            cooldown_valid = False
-            return super().form_invalid(form)
+            return self.form_invalid(form)
 
-        form.instance.uploader = Profile.objects.all().get(username=self.request.user)
+        form.instance.uploader = Profile.objects.get(username=self.request.user)
+
         unique = False
         chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-        out = random.choice(chars)
-        
+        video_id = random.choice(chars)
+
         while not unique:
-            for i in range(11):
-                out += random.choice(chars)
-            if not Video.objects.filter(id=out).exists():
+            video_id += "".join(random.choice(chars) for _ in range(10))
+            if not Video.objects.filter(id=video_id).exists():
                 unique = True
             else:
-                out = out[:1]
+                video_id = video_id[:1]
 
-        form.instance.id = out
+        form.instance.id = video_id
 
-        if not 'thumbnail' in self.request.FILES:
-            video_check = self.request.FILES['video_file']
-            if cooldown_valid:
-                if video_check.size < 5000000000 and video_check.size > 1:
-                    try:
-                        video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
-                        print(video_filename)
-                        form.instance.video_file.name = f"{out}.mp4"
-                        temp_video_file = tempfile.NamedTemporaryFile(delete=False)
-                        temp_video_file.write(video_check.file.read())
-                        vid = VideoFileClip(temp_video_file.name)
-                        thumbnail_filename = os.path.join(BASE_DIR, f'media/uploads/thumbnails/{out}.png')
-                        form.instance.thumbnail.name = f"media/uploads/thumbnails/{out}.png"
-                        vid.save_frame(thumbnail_filename, t = 0)
-                        if vid.duration <= 7200 and vid.duration > 1:
-                            subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset slow {video_filename}''', shell=True, check=True)
-                            form.instance.duration = vid.duration
-                            cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
-                            os.remove(temp_video_file.name)
-                            self.is_valid = True
-                            return super().form_valid(form)
-                        else:
-                            form.add_error(None, "This video is longer than an hour or shorter than 1 second, please upload a video within these limits.")
-                            return super().form_invalid(form)
-                        
-                    except Exception as e:
-                        if self.is_valid != True:
-                            form.add_error(None, f"An error occurred while processing your video, please try again later.")
-                            return super().form_invalid(form)
-                    finally:
-                        try:
-                            temp_video_file.close()
-                        except:
-                            pass
-                else:
-                    form.add_error(None, "An error occurred while uploading your video. Please make sure the video is under 2 gigabytes and try again.")
-                    return super().form_invalid(form)
-        else:
-            video_check = self.request.FILES['video_file']
-            thumbnail_check = self.request.FILES['thumbnail']
-            form.instance.thumbnail.name = f"{out}.png"
+        uploaded_video = self.request.FILES['video_file']
+        if not 1024 < uploaded_video.size < 5000000000:
+            form.add_error(None, "The video size must be between 1kb and 5gb.")
+            return self.form_invalid(form)
+        
+        temp_video_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_video_file.write(uploaded_video.read())
+        
+        try:
+            uploaded_thumbnail = self.request.FILES['thumbnail']
+            if not 1024 < uploaded_thumbnail.size < 10000000:
+                form.add_error(None, "The thumbnail size must be between 1kb and 10mb.")
+                return self.form_invalid(form)
             temp_thumbnail_file = tempfile.NamedTemporaryFile(delete=False)
-            for chunk in thumbnail_check.chunks():
-                temp_thumbnail_file.write(chunk)
-            mime = magic.Magic(mime=True).from_file(temp_thumbnail_file.name)
-            if mime in ['image/jpeg', 'image/png']:
-                if cooldown_valid:
-                    if video_check.size < 5000000000 and thumbnail_check.size < 10000000 and video_check.size > 1 and thumbnail_check.size > 1:
-                        try:
-                            video_filename = os.path.join(BASE_DIR, f'media/uploads/video_files/{out}.mp4')
-                            form.instance.video_file.name = f"{out}.mp4"
-                            temp_video_file = tempfile.NamedTemporaryFile(delete=False)
-                            temp_video_file.write(video_check.file.read())
-                            thumbnail_filename = os.path.join(BASE_DIR, f'media/uploads/thumbnails/{out}.png')
-                            form.instance.thumbnail.name = f"{out}.png"
-                            vid = VideoFileClip(temp_video_file.name)
-                            if vid.duration <= 7200 and vid.duration > 1:
-                                cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
-                                subprocess.run(f'''sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset slow {video_filename}''', shell=True, check=True)
-                                subprocess.run(f'sudo ffmpeg -y -i {temp_thumbnail_file.name} -vf scale=512:512 {thumbnail_filename}', shell=True, check=True)
-                                form.instance.duration = vid.duration
-                                cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
-                                self.is_valid = True
-                                return super().form_valid(form)
-                            else:
-                                form.add_error(None, "This video is longer than an hour or shorter than 1 second, please upload a video within these limits.")
-                                return super().form_invalid(form)
-                        except Exception as e:
-                            if self.is_valid != True:
-                                form.add_error(None, f"An error occurred while processing your video, please try again later.")
-                                return super().form_invalid(form)
-                        finally:
-                            try:
-                                os.remove(temp_video_file.name)
-                                os.remove(temp_thumbnail_file.name)
-                            except:
-                                pass
-                    else:
-                        form.add_error(None, "An error occurred while uploading your video. Please make sure the video is under 2 gigabytes and the thumbnail is under 10 megabytes.")
-                        return super().form_invalid(form)
+            temp_thumbnail_file.write(uploaded_thumbnail.read())
+        except:
+            uploaded_thumbnail = False
+
+        try:            
+            vid = VideoFileClip(temp_video_file.name)
+
+            if vid.duration > 7200 or vid.duration < 1:
+                form.add_error(None, "The video duration must be between 1 second and 2 hours.")
+                return self.form_invalid(form)
+
+            video_filename = os.path.join(BASE_DIR, f"media/uploads/video_files/{video_id}.mp4")
+            thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
+
+            subprocess.run(
+                f"ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}",
+                shell=True,
+                check=True,
+            )
+
+            if uploaded_thumbnail:
+                subprocess.run(
+                    f"ffmpeg -i {temp_thumbnail_file.name} {thumbnail_filename}",
+                    shell=True,
+                    check=True,
+                )
             else:
-                form.add_error(None, "Invalid thumbnail, please try again with a valid thumbnail.")
-                return super().form_invalid(form)
+                vid.save_frame(thumbnail_filename, t=0)
+
+            processed_video_filename = f"media/uploads/video_files/{video_id}.mp4"
+            processed_thumbnail_filename = f"media/uploads/thumbnails/{video_id}.png"
+
+            with open(video_filename, "rb") as processed_file:
+                form.instance.video_file = ContentFile(processed_file.read(), name=processed_video_filename)
+
+            with open(thumbnail_filename, "rb") as thumbnail_file:
+                form.instance.thumbnail = ContentFile(thumbnail_file.read(), name=processed_thumbnail_filename)
+
+            form.instance.duration = vid.duration
+            cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
+
+            return super().form_valid(form)
+
+        except:
+            form.add_error(None, f"An error occurred during processing")
+            return self.form_invalid(form)
+
+        finally:
+            try:
+                os.remove(temp_video_file.name)
+            except OSError:
+                pass
 
     def form_invalid(self, form):
-        Video.objects.all().filter(id=self.object.id).delete()
+        if hasattr(self, 'object') and self.object:
+            try:
+                os.remove(f"media/uploads/thumbnails/{self.object.id}.png")
+                os.remove(f"media/uploads/thumbnails/{self.object.id}.png")
+            except OSError:
+                pass
+            self.object.delete()
 
         return super().form_invalid(form)
 
@@ -258,7 +256,7 @@ class DetailVideo(DetailView):
         if self.request.user.is_authenticated:
             if Profile.objects.filter(username=self.request.user).exists():
                 profile = Profile.objects.get(username=self.request.user)
-                posts = generate_recommendations().exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
+                posts = Video.objects.all().exclude(unlisted=True).order_by("recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
             else:
                 posts = None
         else:
@@ -351,7 +349,7 @@ class DetailVideo(DetailView):
         if self.request.user.is_authenticated:
             if Profile.objects.filter(username=self.request.user).exists():
                 profile = Profile.objects.get(username=self.request.user)
-                posts = generate_recommendations().exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e])
+                posts = Video.objects.all().exclude(unlisted=True).order_by("recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
             else:
                 posts = None
         else:
@@ -403,7 +401,7 @@ class UpdateVideo(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Video
     slug_url_kwarg = "id"
     slug_field = "id"
-    fields = ['title', 'description', 'unlisted']
+    fields = ['title', 'description', 'category', 'unlisted']
     template_name = 'videos/update_video.html'
         
     def get_success_url(self):
@@ -502,6 +500,7 @@ class Dislike(LoginRequiredMixin, UserPassesTestMixin, View):
         return Profile.objects.all().filter(username=self.request.user).exists()
 
 class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
+    model = Video
     def get_redirect_url(self):
         return reverse('video-detail', kwargs={'id': self.object.id})
 
@@ -526,8 +525,12 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({'recommend_count': recommend_count, 'recommendations_left': profile.recommendations_left})
     
     def test_func(self):
+        id = self.kwargs['id']
+        video = Video.objects.get(id=id)
         if Profile.objects.all().filter(username=self.request.user).exists():
-            return Profile.objects.all().get(username=self.request.user).recommendations_left > 0
+            if Profile.objects.all().get(username=self.request.user) != video.uploader:
+                return Profile.objects.all().get(username=self.request.user).recommendations_left > 0
+            return False
         return False
 
 class DownloadVideo(View):
@@ -550,10 +553,9 @@ class DownloadVideo(View):
 class VideoSearch(View):
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get('query')
-        excluded_uploaders = []
         video_list = Video.objects.filter(
             Q(title__icontains=query)
-        ).exclude(uploader__in=excluded_uploaders).exclude(unlisted=True)
+        ).exclude(unlisted=True).exclude(uploader__shadowbanned=True)
 
         context = {
             'video_list': video_list

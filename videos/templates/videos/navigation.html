@@ -68,7 +68,7 @@
       {% if test2 %}
       {% find request.user as obj %}
       <li class="nav-item">
-        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center nav-link"><img class="shot" style="margin-left: 15px; margin-top: -2px" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ obj.profile_picture }}"></a>
+        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center nav-link"><img class="shot" width="35" height="35" style="margin-left: 15px; margin-top: -2px" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ obj.profile_picture }}"></a>
       </li>
       {% endif %}
       {% else %}

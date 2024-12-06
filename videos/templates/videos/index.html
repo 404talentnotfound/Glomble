@@ -9,20 +9,39 @@
                 <label for="sort-by">Sort by:</label>
                 <select name="sort-by" id="sort-by" onchange="this.form.submit()">
                     <option value="recommended"{% if sort_by == 'recommended' %} selected{% else %} selected="selected"{% endif %}>Most Recommended</option>
-                    <option value="likes-desc"{% if sort_by == 'likes-desc' %} selected{% endif %}>Most Liked</option>
-                    <option value="views-desc"{% if sort_by == 'views-desc' %} selected{% endif %}>Most Popular</option>
-                    <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
-                    <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
+                    <option value="likes"{% if sort_by == 'likes' %} selected{% endif %}>Most Liked</option>
+                    <option value="views"{% if sort_by == 'views' %} selected{% endif %}>Most Popular</option>
+                    <option value="newest"{% if sort_by == 'newest' %} selected{% endif %}>Newest First</option>
+                    <option value="oldest"{% if sort_by == 'oldest' %} selected{% endif %}>Oldest First</option>
+                </select>
+            </form>
+            <form method="get">
+                <label for="category">Category:</label>
+                <select name="category" id="category" onchange="this.form.submit()">
+                    <option value="all"{% if category == 'all' %} selected{% else %} selected="selected"{% endif %}>All</option>
+                    <option value="entertainment"{% if category == 'entertainment' %} selected{% endif %}>Entertainment</option>
+                    <option value="memes"{% if category == 'memes' %} selected{% endif %}>Memes</option>
+                    <option value="gaming"{% if category == 'gaming' %} selected{% endif %}>Gaming</option>
+                    <option value="education"{% if category == 'education' %} selected{% endif %}>Education</option>
+                    <option value="animation"{% if category == 'animation' %} selected{% endif %}>Animation</option>
+                    <option value="music"{% if category == 'music' %} selected{% endif %}>Music</option>
+                    <option value="discussion"{% if category == 'discussion' %} selected{% endif %}>Discussion</option>
+                    <option value="miscellanious"{% if category == 'miscellanious' %} selected{% endif %}>Miscellanious</option>
                 </select>
             </form>
         </div>
         {% for object in object_list %}
-        <div class="card col-md-2 col-sm-12 mr-md-1 p-3 border-0">
-            <a href="{% url 'video-detail' object.id %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" width="256" height="144"></a>
+        <div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color: whitesmoke;">
+            <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
+                <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
+                     class="position-absolute w-100 h-100" 
+                     style="top: 0; left: 0; object-fit: cover;">
+            </a>
             <div class="card-body">
-                <a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class="fas fa-eye-slash"></i></div>{% endif %}</h6></a>
-                <h6 class="text-muted text-center shit"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}">{{ object.uploader.username }}</a></h6>
+                <a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
+                <h6 class="text-muted text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}">{{ object.uploader.username }}</a></h6>
                 <h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
+                <h6 class="text-muted text-center">recommendations: {{ object.recommendations }}</h6>
                 <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
                 <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
             </div>
@@ -37,23 +56,23 @@
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Previous</a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}">Previous</a>
                     </li>
                     {% endif %}
                     {% for num in page_obj.paginator.page_range %}
                     {% if page_obj.number == num %}
                     <li class="page-item active">
-                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}">{{ num }}</a>
                     </li>
                     {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
+                        <a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}">{{ num }}</a>
                     </li>
                     {% endif %}
                     {% endfor %}
                     {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Next</a>
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}">Next</a>
                     </li>
                     {% endif %}
                 </ul>

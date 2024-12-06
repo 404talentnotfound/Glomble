@@ -1,5 +1,5 @@
 from django.shortcuts import render, reverse, redirect
-from .models import Profile, Chat, Message
+from .models import Profile, Chat, Message, ProfileCustomisation
 from django.utils.html import strip_tags
 import random
 from videos.models import Video
@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.views import View
 from django.db.models import Q, Count, Max
-from .forms import UserRegisterForm, CreateProfileForm, MessageForm
+from .forms import UserRegisterForm, CreateProfileForm, MessageForm, ProfileCustomisationForm, ProfileRatingForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .decorators import user_not_authenticated
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -33,6 +33,69 @@ import tempfile
 import subprocess
 from django.core.cache import cache
 from notifications.models import MilestoneNotification
+from django.shortcuts import render, redirect, get_object_or_404
+
+@login_required
+def rate_profile(request, id):
+    profile = get_object_or_404(Profile, id=id)
+
+    if request.method == "POST":
+        form = ProfileRatingForm(request.POST)
+        if form.is_valid():
+            rating = form.cleaned_data['rating']
+            profile.ratings[str(request.user.id)] = rating
+            profile.update_rating()
+            return JsonResponse({"success": True, "new_rating": profile.rating}, status=200)
+        return JsonResponse({"success": False, "errors": form.errors}, status=400)
+    else:
+        current_user_rating = profile.ratings.get(str(request.user.id), 0)
+        form = ProfileRatingForm(initial={"rating": current_user_rating})
+        return JsonResponse({"form": form.as_p()})
+
+@login_required
+def customise_profile(request, id):
+    customised_profile = get_object_or_404(Profile, id=id)
+    if request.user != customised_profile.username:
+        return redirect('detail-profile', id=id)
+    
+    customisation, created = ProfileCustomisation.objects.get_or_create(customised_profile=customised_profile)
+    if request.method == "POST":
+        form = ProfileCustomisationForm(request.POST, request.FILES, instance=customisation)
+        if form.is_valid():
+            if 'banner_image' in request.FILES:
+                banner = request.FILES['banner_image']
+                if 1024 < banner.size < 10000000:
+                    mime_type = magic.Magic(mime=True).from_buffer(banner.read(1024))
+                    if mime_type in ['image/jpeg', 'image/png']:
+                        form.save(commit=False)
+                        temp_banner = tempfile.NamedTemporaryFile(delete=False)
+                        for chunk in banner.chunks():
+                            temp_banner.write(chunk)
+                        form.instance.banner_image = f"media/profiles/banners/{customised_profile.id}.png"
+
+                        subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
+
+                        temp_banner.close()
+
+                        os.remove(temp_banner.name)
+                    else:
+                        form.add_error(None, "An error occurred while customising your profile. Please make sure the banner image is the correct format (png or jpg) and try again.")
+                        return redirect('detail-profile', id=id)
+                else:
+                    form.add_error(None, "An error occurred while customising your profile. Please make sure the banner image is under 10mb and over 1kb, then try again.")
+                    return redirect('detail-profile', id=id)
+                
+            form.save()
+
+            customised_profile.customisation = form.instance
+            customised_profile.save()
+
+            return redirect('detail-profile', id=id)
+    else:
+        form = ProfileCustomisationForm(instance=customisation)
+    
+    return render(request, 'profiles/customise_profile.html', {'form': form, 'customised_profile': customised_profile})
+
 
 def update_profile_follow_count(request, id):
     follow_count = Profile.objects.get(id=id).followers.count()
@@ -65,8 +128,7 @@ class ProfileIndex(ListView):
             queryset = queryset.order_by('-num_followers')
         else:
             queryset = queryset.order_by('-num_followers')
-        excluded_profiles = ['.']
-        queryset = queryset.exclude(username__username__in=excluded_profiles)
+        queryset = queryset.exclude(shadowbanned=True)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -90,33 +152,6 @@ def activate(request, uidb64, token):
         return redirect('login')
     else:
         messages.error(request, "Activation link is invalid!")
-
-class CreateProfile(LoginRequiredMixin, CreateView):
-    model = Profile
-    fields = ['profile_picture', 'bio']
-    template_name = "profiles/create-profile.html"
-    def form_valid(self, form):
-        if Profile.objects.filter(username=self.request.user).exists():
-            raise ValidationError("you already have a profile associated with this account")
-        else:
-            form.instance.username = self.request.user
-            chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-            out = ""
-            
-            while True:
-                for i in range(12):
-                    out += random.choice(chars)
-                if not Profile.objects.filter(id=out).exists():
-                    break
-                else:
-                    out = ""
-
-            form.instance.id = out
-            print(out)
-            return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse('detail-profile', kwargs={'id': self.object.id})
 
 @user_not_authenticated
 def register(req):
@@ -250,6 +285,8 @@ def create_profile(request):
 
                         os.remove(temp_pfp.name)
 
+                        temp_pfp.close()
+
                         form.save()
 
                         return redirect('profile-page')
@@ -328,6 +365,7 @@ class DetailProfileIndex(ListView):
             'developer': developer,
             'creator': creator,
             'supporter': supporter,
+            'profile': profile,
         }
         return render(request, 'profiles/detail_profile.html', context)
 
@@ -348,10 +386,9 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         if form.is_valid():
             try:
                 if 'profile_picture' in self.request.FILES:
-                    newpfp = self.request.FILES['profile_picture']                    
+                    newpfp = self.request.FILES['profile_picture']
                     if form.is_valid() and newpfp.size < 10000000 and newpfp.size > 1024:
                         mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
-                        print(mime_type)
                         if mime_type in ['image/jpeg', 'image/png']:
                             temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                             for chunk in newpfp.chunks():
@@ -360,13 +397,15 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                                 if profile.profile_picture.name != "media/profiles/pfps/default.png":
                                     os.remove(f'media/profiles/pfps/{profile.id}.png')
                             except Exception as e:
-                                print(e)
+                                pass
 
                             cache.set(f"last_profileupdate_{self.request.user.id}", datetime.now(), timeout=None)
 
                             subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 media/profiles/pfps/{profile.id}.png", shell=True, check=True)
 
                             form.instance.profile_picture = f"media/profiles/pfps/{profile.id}.png"
+
+                            temp_pfp.close()
 
                             os.remove(temp_pfp.name)
 
@@ -474,11 +513,9 @@ class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
 class UserSearch(View):
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get('query')
-        print(query)
-        excluded_profiles = ['.']
         profile_list = Profile.objects.filter(
         	Q(username__username__icontains=query)
-        ).exclude(username__username__in=excluded_profiles)
+        ).exclude(shadowbanned=True)
 
         profile = Profile.objects.get(username=self.request.user)
     

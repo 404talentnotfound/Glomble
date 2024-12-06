@@ -10,7 +10,6 @@ def update_video_view_count(user_id, video_id):
         cache.set(key, start_time, timeout=None)
 
     elapsed_time = timezone.now().timestamp() - start_time
-    print(elapsed_time)
     if elapsed_time >= 0.7 * Video.objects.get(id=video_id).duration:
         if not cache.get(f"{key}:viewed"):
             video = Video.objects.get(id=video_id)

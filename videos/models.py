@@ -12,14 +12,34 @@ def validate_characters(value):
     for char in value:
         if len(char.encode('utf-8')) > 3 :
             raise ValidationError("Input contains oversized characters.")
+        
+MEMES = "Memes"
+GAMING = "Gaming"
+EDUCATION = "Education"
+ANIMATION = "Animation"
+ENTERTAINMENT = "Entertainment"
+MUSIC = "Music"
+DISCUSSION = "Discussion"
+MISCELLANIOUS = "Misc"
+        
+CATAGORIES = (
+    (MEMES, "Memes"),
+    (GAMING, "Gaming"),
+    (EDUCATION, "Education"),
+    (ANIMATION, "Animation"),
+    (ENTERTAINMENT, "Entertainment"),
+    (MUSIC, "Music"),
+    (DISCUSSION, "Discussion"),
+    (MISCELLANIOUS, "Miscellanious"),
+)
 
 class Video(models.Model, object):
     uploader = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     notification_message = models.CharField(max_length=50, default="new video", null=True, validators=[validate_characters])
     title = models.CharField(max_length=75, validators=[validate_characters])
     description = models.CharField(max_length=500, null=True, blank=True, validators=[validate_characters])
-    video_file = models.FileField(upload_to='media/uploads/video_files/', validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])], help_text="(must be an mp4 or mov between 1kb and 5gb and be under 2 hours)")
-    thumbnail = models.FileField(upload_to='media/uploads/thumbnails/', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 10mb)")
+    video_file = models.FileField(upload_to='uploads/video_files/', validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])], help_text="(must be an mp4 or mov between 1kb and 5gb and be under 2 hours)")
+    thumbnail = models.FileField(upload_to='uploads/thumbnails/', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 10mb)")
     date_posted = models.DateTimeField(default=timezone.now)
     likes = models.ManyToManyField(User, blank=True, related_name='video_likes')
     dislikes = models.ManyToManyField(User, blank=True, related_name='video_dislikes')
@@ -31,6 +51,9 @@ class Video(models.Model, object):
     comments = models.ManyToManyField("Comment", blank=True, related_name='video_comments')
     push_notification = models.BooleanField(default=True)
     recommendation_milestones = models.PositiveIntegerField(default=0)
+    category = models.CharField(max_length=13,
+                  choices=CATAGORIES,
+                  default=ENTERTAINMENT)
 
     def __str__(self):
         return self.id

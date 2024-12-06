@@ -93,7 +93,7 @@
 					</button>
 					{% endif %}
 				</h5>
-				<h6><a class="link-text" href="{% url 'detail-profile' post.uploader.id %}"><img class="shot" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
+				<h6><a class="link-text" href="{% url 'detail-profile' post.uploader.id %}"><img class="rounded-circle" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
 					{{ post.uploader.username }} {% if post.uploader.username != user and request.user.is_authenticated %}
 					<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
 						{% if is_following %}
@@ -114,7 +114,7 @@
 				{% endif %}
 				{% endif %}
 				<p>views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span></p>
-				<p>recommendations: <span class="recommendation-count" id="{{ post.id }}">{{ post.recommendations }}</span></p>
+				<p>recommendations: <span class="recommendation-count">{{ post.recommendations }}</span></p>
 				<div class="row">
 					<div class="col-md-6 text-muted">
 						<p>{{ post.date_posted|naturaltime }}</p>
@@ -179,7 +179,7 @@
 		<div class="row justify-content-center border-bottom">
 			<div class="col-md-9">
 				<p>
-					<strong><a class="link-text" href="{% url 'detail-profile' comment.commenter.pk %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ comment.commenter.profile_picture }}">{{ comment.commenter.username }}</a></strong> {{ comment.date_posted|naturaltime }}
+					<strong><a class="link-text" href="{% url 'detail-profile' comment.commenter.pk %}"><img class="rounded-circle" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ comment.commenter.profile_picture }}">{{ comment.commenter.username }}</a></strong> {{ comment.date_posted|naturaltime }}
 					{% if request.user == comment.commenter.username or request.user.is_superuser %}
 					<a href="{% url 'comments:comment-delete' comment.pk %}" style="color: #333;"><ion-icon name="close-outline"></ion-icon></a>
 					{% endif %}
@@ -230,7 +230,7 @@
 				<div class="row justify-content-center">
 					<div class="col-md-9">
 						<p>
-							<strong><a class="link-text" href="{% url 'detail-profile' reply.commenter.pk %}"><img class="shot" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">{{ reply.commenter.username }}</a></strong> {{ reply.date_posted|naturaltime }}
+							<strong><a class="link-text" href="{% url 'detail-profile' reply.commenter.pk %}"><img class="rounded-circle" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">{{ reply.commenter.username }}</a></strong> {{ reply.date_posted|naturaltime }}
 							{% if request.user == reply.commenter.username or request.user.is_superuser %}
 							<a href="{% url 'comments:comment-delete' reply.pk %}" style="color: #333;"><ion-icon name="close-outline"></ion-icon></a>
 							{% endif %}
@@ -278,35 +278,21 @@
             <div class="sticky-top">
                 <div class="recommendations">
                     {% for object in recommended %}
-                    <div class="card mb-3" style="background-color: rgb(200, 200, 200);">
-                        <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
-                            <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
-                                 class="position-absolute w-100 h-100" 
-                                 style="top: 0; left: 0; object-fit: cover;">
-                        </a>
-                        <div class="card-body p-2">
-                            <a class="link-text text-decoration-none" href="{% url 'video-detail' object.id %}">
-                                <h6 class="text-center shit">{{ object.title }}
-                                    {% if object.unlisted %}
-                                    <div class="d-inline-block" title="Unlisted">
-                                        <i class="fas fa-eye-slash"></i>
-                                    </div>
-                                    {% endif %}
-                                </h6>
-                            </a>
-                            <h6 class="text-muted text-center">
-                                <a class="link-text text-decoration-none d-flex align-items-center justify-content-center" 
-                                   href="{% url 'detail-profile' object.uploader.id %}">
-                                    <img class="rounded-circle mr-2" width="35" height="35" 
-                                         src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}">
-                                    {{ object.uploader.username }}
-                                </a>
-                            </h6>
-                            <h6 class="text-muted text-center">Views: {{ object.views.count }}</h6>
-                            <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
-                            <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
-                        </div>
-                    </div>
+					<div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color: whitesmoke;">
+						<a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
+							<img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
+								 class="position-absolute w-100 h-100" 
+								 style="top: 0; left: 0; object-fit: cover;">
+						</a>
+						<div class="card-body">
+							<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
+							<h6 class="text-muted text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}">{{ object.uploader.username }}</a></h6>
+							<h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
+							<h6 class="text-muted text-center">recommendations: {{ object.recommendations }}</h6>
+							<h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
+							<h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
+						</div>
+					</div>
                     {% endfor %}
                 </div>
             </div>
@@ -338,7 +324,7 @@
 				type: "GET",
 				url: `${videoId}/update-recommendation-count/`,
 				success: function(data) {
-					$(".recommend-count").text(data.recommend_count);
+					$(".recommendation-count").text(data.recommendation_count);
 				},
 			});
 		}

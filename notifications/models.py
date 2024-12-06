@@ -23,8 +23,8 @@ class UpdateNotification(models.Model, object):
     date_made = models.DateTimeField(default=timezone.now)
 
 class MilestoneNotification(models.Model, object):
-    profile = models.ForeignKey('profiles.Profile', blank=True, on_delete=models.CASCADE, related_name="milestone_profile")
-    video = models.ForeignKey('videos.Video', blank=True, on_delete=models.CASCADE, related_name="milestone_profile")
+    profile = models.ForeignKey('profiles.Profile', blank=True, null=True, on_delete=models.CASCADE, related_name="milestone_profile")
+    video = models.ForeignKey('videos.Video', blank=True, null=True, on_delete=models.CASCADE, related_name="milestone_video")
     message = models.CharField(max_length=75, null=True, default="You reached a new follower milestone!")
     notified_profiles = models.ManyToManyField(Profile, blank=True, through="BaseNotification")
     date_made = models.DateTimeField(default=timezone.now)
@@ -64,9 +64,11 @@ def milestone_notify(sender, instance, created, **kwargs):
         if instance.profile != None:
             BaseNotification.objects.create(milestone_notification=instance, profile=instance.profile)
         elif instance.video != None:
-            BaseNotification.objects.create(milestone_notification=instance, video=instance.video.uploader)
+            BaseNotification.objects.create(milestone_notification=instance, profile=instance.video.uploader)
 
 @receiver(post_save, sender=BaseNotification)
 def add_notification_to_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.all().get(id=instance.profile.id).notifications.add(instance)
+        if Profile.objects.all().get(id=instance.profile.id).notifications.count() > 50:
+            Profile.objects.all().get(id=instance.profile.id).notifications.remove(Profile.objects.all().get(id=instance.profile.id).notifications.first())
