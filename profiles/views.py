@@ -73,7 +73,7 @@ def customise_profile(request, id):
                             temp_banner.write(chunk)
                         form.instance.banner_image = f"profiles/banners/{customised_profile.id}.png"
 
-                        subprocess.run(f"sudo ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
+                        subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
 
                         temp_banner.close()
 
@@ -83,6 +83,29 @@ def customise_profile(request, id):
                         return redirect('detail-profile', id=id)
                 else:
                     form.add_error(None, "An error occurred while customising your profile. Please make sure the banner image is under 10mb and over 1kb, then try again.")
+                    return redirect('detail-profile', id=id)
+                
+            if 'video_banner' in request.FILES:
+                banner = request.FILES['video_banner']
+                if 1024 < banner.size < 10000000:
+                    mime_type = magic.Magic(mime=True).from_buffer(banner.read(1024))
+                    if mime_type in ['image/jpeg', 'image/png']:
+                        form.save(commit=False)
+                        temp_banner = tempfile.NamedTemporaryFile(delete=False)
+                        for chunk in banner.chunks():
+                            temp_banner.write(chunk)
+                        form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}.png"
+
+                        subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 media/profiles/video_banners/{customised_profile.id}.png", shell=True, check=True)
+
+                        temp_banner.close()
+
+                        os.remove(temp_banner.name)
+                    else:
+                        form.add_error(None, "An error occurred while customising your profile. Please make sure the video banner is the correct format (png or jpg) and try again.")
+                        return redirect('detail-profile', id=id)
+                else:
+                    form.add_error(None, "An error occurred while customising your profile. Please make sure the video banner is under 10mb and over 1kb, then try again.")
                     return redirect('detail-profile', id=id)
                 
             form.save()

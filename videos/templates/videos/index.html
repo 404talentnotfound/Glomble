@@ -31,17 +31,17 @@
             </form>
         </div>
         {% for object in object_list %}
-        <div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color: whitesmoke;">
+        <div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color: {{ object.uploader.customisation.background_color }};">
             <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
                 <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
                      class="position-absolute w-100 h-100" 
                      style="top: 0; left: 0; object-fit: cover;">
             </a>
-            <div class="card-body">
+            <div class="card-body" style="{% if object.uploader.customisation.video_banner %} background-image: url({{ object.uploader.customisation.video_banner.url }}); {% endif %}">
                 <a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
-                <h6 class="text-muted text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}">{{ object.uploader.username }}</a></h6>
-                <h6 class="text-muted text-center">views: {{ object.views.count }}</h6>
-                <h6 class="text-muted text-center">recommendations: {{ object.recommendations }}</h6>
+                <h6 class="text-muted text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"> {{ object.uploader.username }}</a></h6>
+                <h6 class="text-muted text-center">Views: {{ object.views.count }}</h6>
+                <h6 class="text-muted text-center">Recommendations: {{ object.recommendations }}</h6>
                 <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
                 <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
             </div>

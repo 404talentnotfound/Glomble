@@ -44,6 +44,7 @@ class ProfileCustomisation(models.Model):
     background_color = models.CharField(max_length=7, default="#ffffff", help_text="Background color in hex.")
     text_color = models.CharField(max_length=7, default="#000000", help_text="Text color in hex.")
     banner_image = models.FileField(blank=True, upload_to='profiles/banners/', validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 10mb)")
+    video_banner = models.FileField(blank=True, upload_to='profiles/video_banners/', validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 10mb)")
 
     def __str__(self):
         return f"{self.customised_profile}'s customised profile"
