@@ -1,13 +1,11 @@
 from django.shortcuts import render, reverse, redirect
 from .models import Profile, Chat, Message, ProfileCustomisation
-from django.utils.html import strip_tags
 import random
 from videos.models import Video
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import UpdateView, DeleteView
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.views import View
 from django.db.models import Q, Count, Max
 from .forms import UserRegisterForm, CreateProfileForm, MessageForm, ProfileCustomisationForm, ProfileRatingForm
@@ -34,6 +32,18 @@ import subprocess
 from django.core.cache import cache
 from notifications.models import MilestoneNotification
 from django.shortcuts import render, redirect, get_object_or_404
+
+def send_email(request):
+    for user in Profile.objects.all():
+        mail_subject = "Monthly Glomble Update #2"
+        html_thing = render_to_string('profiles/monthly_email_2.html')
+        sg = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
+        from_email = Email(EMAIL_HOST_USER)
+        to_email_sendgrid = To(user.username.email)
+        content = Content("text/html", html_thing)
+        mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
+        mail_json = mail.get()
+        sg.client.mail.send.post(request_body=mail_json)
 
 @login_required
 def rate_profile(request, id):
@@ -149,6 +159,8 @@ class ProfileIndex(ListView):
             queryset = queryset.order_by('date_made')
         elif sort_by == 'followers-desc':
             queryset = queryset.order_by('-num_followers')
+        elif sort_by == 'ratings':
+            queryset = queryset.order_by('-rating', '-num_followers')
         else:
             queryset = queryset.order_by('-num_followers')
         queryset = queryset.exclude(shadowbanned=True)

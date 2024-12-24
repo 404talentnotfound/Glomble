@@ -1,7 +1,7 @@
 from django.shortcuts import reverse
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic.edit import DeleteView
+from django.views.generic.edit import DeleteView, UpdateView
 from django.http import JsonResponse
 from videos.models import Comment
 from profiles.models import Profile
@@ -14,6 +14,21 @@ class DeleteComment(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 	def get_redirect_url(self):
 		return reverse('video-detail', kwargs={'id': self.object.post.id})
 
+
+	def get_success_url(self):
+		return reverse('video-detail', kwargs={'id': self.object.post.id})
+	
+	def test_func(self):
+		comment = self.get_object()
+		return self.request.user == comment.commenter.username or self.request.user.is_superuser
+
+class UpdateComment(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+	model = Comment
+	fields = ['comment']
+	template_name = 'videos/update_comment.html'
+
+	def get_redirect_url(self):
+		return reverse('video-detail', kwargs={'id': self.object.post.id})
 
 	def get_success_url(self):
 		return reverse('video-detail', kwargs={'id': self.object.post.id})

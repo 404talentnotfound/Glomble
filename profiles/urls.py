@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ProfileIndex, DetailProfileIndex, UpdateProfile, DeleteProfile, AddFollower, RemoveFollower, UserSearch, DetailChat, ChatIndex, create_profile, update_profile_follow_count, redirect_profile, customise_profile, rate_profile
+from .views import ProfileIndex, DetailProfileIndex, UpdateProfile, DeleteProfile, AddFollower, RemoveFollower, UserSearch, DetailChat, ChatIndex, create_profile, update_profile_follow_count, redirect_profile, customise_profile, rate_profile, send_email
 urlpatterns = [
     path('', ProfileIndex.as_view(), name='profile-index'),
     path('create', create_profile, name='create-profile'),

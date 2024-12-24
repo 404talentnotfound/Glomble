@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container">
     <div class="row justify-content-center" style="width:150%; margin-left: -25%;">
-        <div class=" mt-5 ml-5 mb-3">
+        <div class="mt-5 ml-5 mb-3">
             <form method="get">
                 <label for="sort-by">Sort by:</label>
                 <select name="sort-by" id="sort-by" onchange="this.form.submit()">
@@ -14,8 +14,7 @@
                     <option value="newest"{% if sort_by == 'newest' %} selected{% endif %}>Newest First</option>
                     <option value="oldest"{% if sort_by == 'oldest' %} selected{% endif %}>Oldest First</option>
                 </select>
-            </form>
-            <form method="get">
+                <br>
                 <label for="category">Category:</label>
                 <select name="category" id="category" onchange="this.form.submit()">
                     <option value="all"{% if category == 'all' %} selected{% else %} selected="selected"{% endif %}>All</option>
@@ -35,15 +34,15 @@
             <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
                 <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
                      class="position-absolute w-100 h-100" 
-                     style="top: 0; left: 0; object-fit: cover;">
+                     style="top: 0; left: 0;">
             </a>
             <div class="card-body" style="{% if object.uploader.customisation.video_banner %} background-image: url({{ object.uploader.customisation.video_banner.url }}); {% endif %}">
-                <a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
-                <h6 class="text-muted text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"> {{ object.uploader.username }}</a></h6>
-                <h6 class="text-muted text-center">Views: {{ object.views.count }}</h6>
-                <h6 class="text-muted text-center">Recommendations: {{ object.recommendations }}</h6>
-                <h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
-                <h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
+                <a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center outline shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
+                <h6 class="outline text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"> {{ object.uploader.username }}</a></h6>
+                <h6 class="outline text-center">Views: {{ object.views.count }}</h6>
+                <h6 class="outline text-center">Recommendations: {{ object.recommendations }}</h6>
+                <h6 class="outline text-center">{{ object.date_posted|naturaltime }}</h6>
+                <h6 class="outline text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
             </div>
         </div>
         {% endfor %}

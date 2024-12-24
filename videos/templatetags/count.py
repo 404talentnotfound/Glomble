@@ -2,7 +2,8 @@ from django import template
 from reports.models import VideoReport, ProfileReport, BugReport, Suggestion
 from profiles.models import Profile
 from creatorfund.models import Creator
-from datetime import datetime, timedelta
+from videos.models import Video
+import random
 
 register = template.Library()
 
@@ -99,3 +100,8 @@ def is_in_creatorfund(profile):
 @register.simple_tag
 def has_profile(user):
     return Profile.objects.all().filter(username=user).exists()
+
+@register.simple_tag
+def get_recommended_videos(category):
+    videos = list(Video.objects.all().filter(category=category))
+    return random.sample(videos, 3)

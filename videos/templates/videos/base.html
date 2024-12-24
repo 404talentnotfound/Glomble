@@ -12,7 +12,7 @@
     <link rel="shortcut icon" href="{% static 'videos/favicon.ico' %}" >
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
     <link href="https://unpkg.com/@videojs/themes@1/dist/sea/index.css" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/9c1018d8da.js" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/a173183fd5.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/share.js@1.0.4/dist/share.min.js"></script>
 
     <link href="https://vjs.zencdn.net/7.8.3/video-js.css" rel="stylesheet" />
@@ -67,6 +67,7 @@
     </script>
     <script>
             $(document).ready(function() {
+		$('.NO-CACHE').attr('src',function () { return $(this).attr('src') + "?a=" + Math.random() });
                 $(".recommend-button").click(function(e) {
                     e.preventDefault();
                     

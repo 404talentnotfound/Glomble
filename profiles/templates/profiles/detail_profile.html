@@ -33,8 +33,8 @@
 			{% if username != user and user.moderator %}
 			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
 			{% elif username == user or user.is_superuser %}
-			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
-			<a class="video-icons icon-color" href="{% url 'profile-delete' poopie %}"><ion-icon name="close-outline"></ion-icon></a></h6>
+			<h6><a class="btn btn-outline-primary" href="{% url 'profile-update' poopie %}">Edit</a>
+			<a class="btn btn-outline-danger" href="{% url 'profile-delete' poopie %}">Delete</a></h6>
 			{% endif %}
 			{% if username == user %}
 			<a class="btn btn-outline-success" href="{% url 'customise-profile' poopie %}">Customise page</a>
@@ -82,19 +82,19 @@
 			{% endif %}
 		<div class="row justify-content-center">
 			{% for object in detail_profile_list %}
-			<div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color: {{ object.uploader.customisation.background_color }};">
+			<div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color: {{ object.uploader.customisation.background_color }}; color: black;">
 				<a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
 					<img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
 						 class="position-absolute w-100 h-100" 
-						 style="top: 0; left: 0; object-fit: cover;">
+						 style="top: 0; left: 0;">
 				</a>
 				<div class="card-body" style="{% if object.uploader.customisation.video_banner %} background-image: url({{ object.uploader.customisation.video_banner.url }}); {% endif %}">
-					<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
-					<h6 class="text-muted text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"> {{ object.uploader.username }}</a></h6>
-					<h6 class="text-muted text-center">Views: {{ object.views.count }}</h6>
-					<h6 class="text-muted text-center">Recommendations: {{ object.recommendations }}</h6>
-					<h6 class="text-muted text-center">{{ object.date_posted|naturaltime }}</h6>
-					<h6 class="text-muted text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
+					<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center outline shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
+					<h6 class="outline text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"> {{ object.uploader.username }}</a></h6>
+					<h6 class="outline text-center">Views: {{ object.views.count }}</h6>
+					<h6 class="outline text-center">Recommendations: {{ object.recommendations }}</h6>
+					<h6 class="outline text-center">{{ object.date_posted|naturaltime }}</h6>
+					<h6 class="outline text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
 				</div>
 			</div>
 			{% endfor %}

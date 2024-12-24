@@ -9,6 +9,7 @@
             <label for="sort-by">Sort by:</label>
             <select name="sort-by" id="sort-by" onchange="this.form.submit()">
                 <option value="followers-desc"{% if sort_by == 'followers-desc' %} selected{% else %} selected="selected"{% endif %}>Most Popular</option>
+                <option value="ratings"{% if sort_by == 'ratings' %} selected{% endif %}>Highest Rated</option>
                 <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
                 <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
             </select>
@@ -21,6 +22,7 @@
                 <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ profile.profile_picture }}">
                 <h5>{{ profile.username }}</h5></a></p>
                 <p>{{ profile.followers.all.count }} Followers</p>
+                <p>{{ profile.rating|floatformat:1 }} Stars</p>
             </div>
         </div>
         {% endfor %}

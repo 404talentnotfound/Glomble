@@ -17,7 +17,6 @@ from django.core.cache import cache
 from datetime import datetime, timedelta
 import tempfile
 import os
-from django.core.files.base import ContentFile
 import random
 from Glomble.pc_prod import *
 import subprocess
@@ -117,7 +116,7 @@ class Index(ListView):
         elif sort_by == 'oldest':
             queryset = queryset.order_by('date_posted')
         elif sort_by == 'likes':
-            queryset = queryset.annotate(num_likes=Count('likes')).order_by('-num_likes')
+            queryset = queryset.annotate(num_likes=Count('likes')-Count('dislikes')).order_by('-num_likes')
         elif sort_by == 'views':
             queryset = queryset.annotate(num_views=Count('views')).order_by('-num_views')
         elif sort_by == "recommended":
@@ -183,7 +182,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         except:
             uploaded_thumbnail = False
 
-        try:            
+        try:
             vid = VideoFileClip(temp_video_file.name)
 
             if vid.duration > 7200 or vid.duration < 1:
@@ -194,7 +193,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
 
             subprocess.run(
-                f"sudo ffmpeg -i {temp_video_file.name} -h encoder=h264_vaapi -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}",
+                f"sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}",
                 shell=True,
                 check=True,
             )
@@ -205,17 +204,12 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                     shell=True,
                     check=True,
                 )
+                form.instance.thumbnail.name = f"{video_id}.png"
             else:
+                form.instance.thumbnail.name = f"media/uploads/thumbnails/{video_id}.png"
                 vid.save_frame(thumbnail_filename, t=0)
 
-            processed_video_filename = f"media/uploads/video_files/{video_id}.mp4"
-            processed_thumbnail_filename = f"media/uploads/thumbnails/{video_id}.png"
-
-            with open(video_filename, "rb") as processed_file:
-                form.instance.video_file = ContentFile(processed_file.read(), name=processed_video_filename)
-
-            with open(thumbnail_filename, "rb") as thumbnail_file:
-                form.instance.thumbnail = ContentFile(thumbnail_file.read(), name=processed_thumbnail_filename)
+            form.instance.video_file.name = f"{video_id}.mp4"
 
             form.instance.duration = vid.duration
             cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
@@ -235,7 +229,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def form_invalid(self, form):
         if hasattr(self, 'object') and self.object:
             try:
-                os.remove(f"media/uploads/thumbnails/{self.object.id}.png")
+                os.remove(f"media/uploads/video_files/{self.object.id}.mp4")
                 os.remove(f"media/uploads/thumbnails/{self.object.id}.png")
             except OSError:
                 pass
@@ -255,14 +249,6 @@ class DetailVideo(DetailView):
         desclen = None
         pre = None
         readmore = None
-        if self.request.user.is_authenticated:
-            if Profile.objects.filter(username=self.request.user).exists():
-                profile = Profile.objects.get(username=self.request.user)
-                posts = Video.objects.all().exclude(unlisted=True).order_by("-recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
-            else:
-                posts = None
-        else:
-            posts = None
         if pen.description is not None:
             has_desc = True
             desclen = len(pen.description)
@@ -271,7 +257,7 @@ class DetailVideo(DetailView):
         else:
             has_desc = False
 
-        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')-Count('dislikes')).order_by('-num_likes')
         comment_count = pen.comments.count()
 
         replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
@@ -299,7 +285,6 @@ class DetailVideo(DetailView):
             'readmore': readmore,
             'desclen': desclen,
             'has': has_desc,
-            'recommended': posts,
             'is_following': is_following,
             'replies': replies
         }
@@ -347,15 +332,6 @@ class DetailVideo(DetailView):
         desclen = None
         pre = None
         readmore = None
-
-        if self.request.user.is_authenticated:
-            if Profile.objects.filter(username=self.request.user).exists():
-                profile = Profile.objects.get(username=self.request.user)
-                posts = Video.objects.all().exclude(unlisted=True).order_by("-recommendations").exclude(id__in=profile.watched_videos.values_list('id', flat=True)).exclude(id__in=[e]).exclude(uploader__shadowbanned=True)
-            else:
-                posts = None
-        else:
-            posts = None
         
         if pen.description is not None:
             has_desc = True
@@ -377,7 +353,7 @@ class DetailVideo(DetailView):
             else:
                 is_following = False
         
-        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')-Count('dislikes')).order_by('-num_likes')
         comment_count = pen.comments.count()
 
         replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
@@ -392,7 +368,6 @@ class DetailVideo(DetailView):
             'readmore': readmore,
             'desclen': desclen,
             'has': has_desc,
-            'recommended': posts,
             'is_following': is_following,
             'comment_amount': comment_count,
             'replies': replies
@@ -517,7 +492,7 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
 
         if (video.recommendations in MILESTONES) and video.recommendations > video.recommendation_milestones:
             video.recommendation_milestones = video.recommendations
-            MilestoneNotification.objects.create(video=video)
+            MilestoneNotification.objects.create(video=video, message=f'Your video "{video.title}" reached a recommendation milestone!')
 
         video.save()
         profile.save()

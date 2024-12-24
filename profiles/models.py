@@ -23,7 +23,7 @@ class Profile(models.Model):
     chats = models.ManyToManyField("Chat", blank=True, related_name='chats')
     recommendations_left = models.PositiveIntegerField(default=3)
     ratings = models.JSONField(default=dict, blank=True, null=True)
-    rating = models.PositiveSmallIntegerField(default=5, validators=[MinValueValidator(0), MaxValueValidator(5)])
+    rating = models.FloatField(default=5, validators=[MinValueValidator(0), MaxValueValidator(5)])
     moderator = models.BooleanField(default=False)
     helper = models.BooleanField(default=False)
     customisation = models.ForeignKey("ProfileCustomisation", on_delete=models.SET_NULL, null=True, blank=True)
@@ -33,7 +33,7 @@ class Profile(models.Model):
         if self.ratings:
             self.rating = sum(self.ratings.values()) / len(self.ratings)
         else:
-            self.rating = 0
+            self.rating = 5
         self.save()
 
     def __str__(self):
@@ -47,7 +47,7 @@ class ProfileCustomisation(models.Model):
     video_banner = models.FileField(blank=True, upload_to='profiles/video_banners/', validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 10mb)")
 
     def __str__(self):
-        return f"{self.customised_profile}'s customised profile"
+        return f"{self.customised_profile.id}'s customised profile"
 
 class Chat(models.Model):
     members = models.ManyToManyField("profiles.Profile", related_name="members")

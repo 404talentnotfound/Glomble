@@ -2,7 +2,7 @@
 .card {
   width: 100%;
   max-width: 256px;
-  margin: 10px;
+  margin: 15px;
   transition: transform 0.25s ease-in-out;
 }
 
@@ -393,18 +393,6 @@ a.login:hover {
   width:100%;
 }
 
-.sidebar {
-  height: 100vh;
-  overflow-y: auto;
-}
-
-.sidebar h5 {
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.recommendations {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.outline {
+  text-shadow: 0 0 5px white, 0 0 5px white, 0 0 5px white, 0 0 5px white;
 }
