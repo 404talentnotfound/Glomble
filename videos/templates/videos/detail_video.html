@@ -196,7 +196,8 @@
 						<p>
 							<strong><a class="link-text" href="{% url 'detail-profile' reply.commenter.pk %}"><img class="rounded-circle" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">{{ reply.commenter.username }}</a></strong> {{ reply.date_posted|naturaltime }}
 							{% if request.user == reply.commenter.username or request.user.is_superuser %}
-							<a href="{% url 'comments:comment-delete' reply.pk %}" style="color: #333;"><ion-icon name="close-outline"></ion-icon></a>
+							<a class="btn btn-outline-primary" href="{% url 'comments:comment-update' reply.pk %}">Edit</a>
+							<a class="btn btn-outline-danger" href="{% url 'comments:comment-delete' reply.pk %}">Delete</a>
 							{% endif %}
 							{% if request.user.is_authenticated %}
 							<div class="row mt-3">
