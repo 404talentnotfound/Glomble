@@ -14,6 +14,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core import serializers
 from datetime import datetime, timedelta
 import tempfile
 import os
@@ -22,6 +23,11 @@ from Glomble.pc_prod import *
 import subprocess
 from django.shortcuts import render
 from notifications.models import MilestoneNotification
+
+def get_recommended_videos(request, category):
+    videos = random.sample(list(Video.objects.all().filter(category=category)),3)
+    rendered_html = render(request, 'videos/recommended_videos.html', {'recommended_videos': videos})
+    return JsonResponse({"html": rendered_html.content.decode('utf-8')})
 
 def update_video_view_count(request, id):
     viewed = False
@@ -116,13 +122,13 @@ class Index(ListView):
         elif sort_by == 'oldest':
             queryset = queryset.order_by('date_posted')
         elif sort_by == 'likes':
-            queryset = queryset.annotate(num_likes=Count('likes')-Count('dislikes')).order_by('-num_likes')
+            queryset = queryset.annotate(num_likes=Count('likes')).order_by('-num_likes')
         elif sort_by == 'views':
             queryset = queryset.annotate(num_views=Count('views')).order_by('-num_views')
         elif sort_by == "recommended":
-            queryset = queryset.order_by("-recommendations")
+            queryset = queryset.annotate(num_likes=Count('likes')).order_by("-recommendations", '-num_likes')
         else:
-            queryset = queryset.order_by("-recommendations")
+            queryset = queryset.annotate(num_likes=Count('likes')).order_by("-recommendations", '-num_likes')
 
         return queryset
 
@@ -190,21 +196,33 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                 return self.form_invalid(form)
 
             video_filename = os.path.join(BASE_DIR, f"media/uploads/video_files/{video_id}.mp4")
-            thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
+            try:
+                gif = False
+                if uploaded_thumbnail.name[-3:] != "gif":
+                        thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
+                else:
+                        gif = True
+                        thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.gif")
+            except:
+                gif = False
+                thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
 
             subprocess.run(
-                f"sudo ffmpeg -i {temp_video_file.name} -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}",
+                f"sudo ffmpeg -i {temp_video_file.name} -vf scale=1920:-2 -c:v libx264 -crf 26 -c:a copy -preset medium {video_filename}",
                 shell=True,
                 check=True,
             )
 
             if uploaded_thumbnail:
                 subprocess.run(
-                    f"sudo ffmpeg -i {temp_thumbnail_file.name} {thumbnail_filename}",
+                    f"sudo ffmpeg -i {temp_thumbnail_file.name} -vf scale=1280:-2 {thumbnail_filename}",
                     shell=True,
                     check=True,
                 )
-                form.instance.thumbnail.name = f"{video_id}.png"
+                if not gif:
+                    form.instance.thumbnail.name = f"{video_id}.png"
+                else:
+                    form.instance.thumbnail.name = f"{video_id}.gif"
             else:
                 form.instance.thumbnail.name = f"media/uploads/thumbnails/{video_id}.png"
                 vid.save_frame(thumbnail_filename, t=0)
@@ -257,7 +275,7 @@ class DetailVideo(DetailView):
         else:
             has_desc = False
 
-        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')-Count('dislikes')).order_by('-num_likes')
+        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
         comment_count = pen.comments.count()
 
         replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
@@ -297,42 +315,10 @@ class DetailVideo(DetailView):
         form = CommentForm(request.POST)
         replyform = ReplyForm(request.POST)
 
-        form_type = request.POST.get("form_type")
-
-        if form_type == "comment" and form.is_valid():
-            cooldown_key = f"user:{request.user.id}:cooldown"
-            last_comment_time = cache.get(cooldown_key)
-            if last_comment_time:
-                time_passed = datetime.now() - last_comment_time
-                if time_passed < timedelta(seconds=30):
-                    return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
-
-            new_comment = form.save(commit=False)
-            new_comment.commenter = Profile.objects.get(username=request.user)
-            new_comment.post = pen
-            new_comment.save()
-
-            pen.comments.add(new_comment)
-
-            cache.set(cooldown_key, datetime.now(), timeout=30)
-            return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
-
-        elif form_type == "reply" and replyform.is_valid():
-            new_reply = replyform.save(commit=False)
-            new_reply.replying_to = Comment.objects.get(id=int(request.POST.get("comment_id")))
-            new_reply.commenter = Profile.objects.get(username=request.user)
-            new_reply.post = pen
-            new_reply.save()
-
-            Comment.objects.get(id=int(request.POST.get("comment_id"))).replies.add(new_reply)
-            pen.comments.add(new_reply)
-
-            return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
-        
         desclen = None
         pre = None
         readmore = None
-        
+
         if pen.description is not None:
             has_desc = True
             desclen = len(pen.description)
@@ -352,8 +338,8 @@ class DetailVideo(DetailView):
                 break
             else:
                 is_following = False
-        
-        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')-Count('dislikes')).order_by('-num_likes')
+
+        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
         comment_count = pen.comments.count()
 
         replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
@@ -361,8 +347,8 @@ class DetailVideo(DetailView):
         context = {
             'e': e,
             'post': pen,
-            'form': form,
-            'replyform': replyform,
+            'form': CommentForm(),
+            'replyform': ReplyForm(),
             'comments': comments,
             'pre': pre,
             'readmore': readmore,
@@ -372,6 +358,42 @@ class DetailVideo(DetailView):
             'comment_amount': comment_count,
             'replies': replies
         }
+        
+        form_type = request.POST.get("form_type")
+
+        last_comment_time = cache.get(f"last_comment_{self.request.user.id}")
+
+        if last_comment_time and datetime.now() < last_comment_time + timedelta(seconds=10):
+            if form_type == "comment":
+                form.add_error(None, "You can only upload one comment every 10 seconds")
+            else:
+                replyform.add_error(None, "You can only upload one comment every 10 seconds")
+            return render(request, 'videos/detail_video.html', context)
+
+        elif form_type == "comment" and form.is_valid():
+            new_comment = form.save(commit=False)
+            new_comment.commenter = Profile.objects.get(username=request.user)
+            new_comment.post = pen
+            new_comment.save()
+
+            pen.comments.add(new_comment)
+
+            cache.set(f"last_comment_{self.request.user.id}", datetime.now(), timeout=None)
+            return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
+
+        elif form_type == "reply" and replyform.is_valid():
+            new_reply = replyform.save(commit=False)
+            new_reply.replying_to = Comment.objects.get(id=int(request.POST.get("comment_id")))
+            new_reply.commenter = Profile.objects.get(username=request.user)
+            new_reply.post = pen
+            new_reply.save()
+
+            Comment.objects.get(id=int(request.POST.get("comment_id"))).replies.add(new_reply)
+            pen.comments.add(new_reply)
+
+            cache.set(f"last_comment_{self.request.user.id}", datetime.now(), timeout=None)
+            return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
+
         return render(request, 'videos/detail_video.html', context)
 
 class UpdateVideo(LoginRequiredMixin, UserPassesTestMixin, UpdateView):

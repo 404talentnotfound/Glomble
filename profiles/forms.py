@@ -11,10 +11,11 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 class ProfileCustomisationForm(forms.ModelForm):
     class Meta:
         model = ProfileCustomisation
-        fields = ['background_color', 'text_color', 'banner_image', 'video_banner']
+        fields = ['background_color', 'text_color', 'text_shadow_color', 'banner_image', 'video_banner']
         widgets = {
             'background_color': forms.TextInput(attrs={'type': 'color'}),
             'text_color': forms.TextInput(attrs={'type': 'color'}),
+            'text_shadow_color': forms.TextInput(attrs={'type': 'color'}),
         }
 
 class ProfileRatingForm(forms.Form):

@@ -30,7 +30,7 @@ SUPPORTER_IDS = open(os.path.join(BASE_DIR, "supporters.txt")).read().split("\n"
 MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 LOGIN_URL = 'login'
 
@@ -49,7 +49,6 @@ CRONJOBS = [
 
 INSTALLED_APPS = [
     'dumbshit',
-    'django_crontab',
 
     'creatorfund',
     'notifications',

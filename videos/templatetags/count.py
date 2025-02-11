@@ -2,7 +2,7 @@ from django import template
 from reports.models import VideoReport, ProfileReport, BugReport, Suggestion
 from profiles.models import Profile
 from creatorfund.models import Creator
-from videos.models import Video
+from videos.models import Video, Comment
 import random
 
 register = template.Library()
@@ -102,6 +102,5 @@ def has_profile(user):
     return Profile.objects.all().filter(username=user).exists()
 
 @register.simple_tag
-def get_recommended_videos(category):
-    videos = list(Video.objects.all().filter(category=category))
-    return random.sample(videos, 3)
+def has_replies(pk):
+    return Comment.objects.all().get(pk=pk).replies.count() > 0

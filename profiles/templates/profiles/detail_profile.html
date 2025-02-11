@@ -82,21 +82,23 @@
 			{% endif %}
 		<div class="row justify-content-center">
 			{% for object in detail_profile_list %}
-			<div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color: {{ object.uploader.customisation.background_color }}; color: black;">
-				<a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
-					<img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
-						 class="position-absolute w-100 h-100" 
-						 style="top: 0; left: 0;">
-				</a>
-				<div class="card-body" style="{% if object.uploader.customisation.video_banner %} background-image: url({{ object.uploader.customisation.video_banner.url }}); {% endif %}">
-					<a class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center outline shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
-					<h6 class="outline text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" href="{% url 'detail-profile' object.uploader.id %}"> {{ object.uploader.username }}</a></h6>
-					<h6 class="outline text-center">Views: {{ object.views.count }}</h6>
-					<h6 class="outline text-center">Recommendations: {{ object.recommendations }}</h6>
-					<h6 class="outline text-center">{{ object.date_posted|naturaltime }}</h6>
-					<h6 class="outline text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
-				</div>
-			</div>
+			<div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color:black;">
+		            <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
+		                <div style="background-color:black;width:100%">
+		                        <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}"
+		                             class="position-absolute w-100 h-100"
+		                             style="top:0;left:0;object-fit: contain;">
+		                </div>
+		            </a>
+		            <div class="card-body" style="{% if object.uploader.customisation.text_shadow_color %}text-shadow: 0 0 5px {{ object.uploader.customisation.text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.text_shadow_color }};{% else %}text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;{% endif %} {% if object.uploader.customisation.video_banner %} background-image: url({{ object.uploader.customisation.video_banner.url }}); {% endif %}{% if object.uploader.customisation.background_color %}background-color: {{ object.uploader.customisation.background_color }};{% else %}background-color: white;{% endif %} {% if object.uploader.customisation.text_color %}color: {{ object.uploader.customisation.text_color }};{% else %}color: #000000;{% endif %}">
+						<a style="{% if object.uploader.customisation.text_color %}color: {{ object.uploader.customisation.text_color }};{% endif %}" class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
+						<h6 class="text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" style="{% if object.uploader.customisation.text_color %}color: {{ object.uploader.customisation.text_color }};{% endif %}" href="{% url 'detail-profile' object.uploader.id %}">{{ object.uploader.username }}</a></h6>
+						<h6 class="text-center">Views: {{ object.views.count }}</h6>
+						<h6 class="text-center">Recommendations: {{ object.recommendations }}</h6>
+						<h6 class="text-center">{{ object.date_posted|naturaltime }}</h6>
+						<h6 class="text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
+					</div>
+        		</div>
 			{% endfor %}
 		</div>
 	</div>
@@ -142,4 +144,9 @@
 			});
 		});
 	</script>
+	<style>
+	.outline {
+		text-shadow: 0 0 5px {{ profile.customisation.text_color }}, 0 0 5px {{ profile.customisation.text_color }}, 0 0 5px {{ profile.customisation.text_color }}, 0 0 5px {{ profile.customisation.text_color }};
+	}
+	</style>
 {% endblock content %}
