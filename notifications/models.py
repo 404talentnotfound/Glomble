@@ -50,7 +50,14 @@ def comment_notify(sender, instance, created, **kwargs):
         if instance.comment.replying_to == None:
             BaseNotification.objects.create(comment_notification=instance, profile=instance.comment.post.uploader)
         else:
-            BaseNotification.objects.create(comment_notification=instance, profile=instance.comment.replying_to.commenter)
+            if instance.comment.replying_to.commenter != instance.comment.commenter:
+                BaseNotification.objects.create(comment_notification=instance, profile=instance.comment.replying_to.commenter)
+
+            if instance.comment.comment.count(" ") > 0:
+                if instance.comment.comment.startswith("@") and Profile.objects.all().filter(username__username=instance.comment.comment.split(" ")[0][1:]).exists():
+                    if instance.comment.replying_to.commenter != Profile.objects.all().get(username__username=instance.comment.comment.split(" ")[0][1:]) != instance.comment.commenter:
+                        BaseNotification.objects.create(comment_notification=instance, profile=Profile.objects.all().get(username__username=instance.comment.comment.split(" ")[0][1:]))
+
 
 @receiver(post_save, sender=UpdateNotification)
 def update_notify(sender, instance, created, **kwargs):

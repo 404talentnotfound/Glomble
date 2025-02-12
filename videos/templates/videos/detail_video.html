@@ -160,6 +160,11 @@
 				<p class="lmao">{{ comment.comment }}</p>
 				<button id="{{ comment.pk }}" onclick="onClick(this)" style="border: none; background-color: transparent;"><i class="far fa-comments"></i></button>
 
+				{% has_replies comment.pk as has_replies %}
+				{% if has_replies %}
+				<button id="{{ comment.pk }}" onclick="onShowReplies(this);" class="btn btn-outline-info">Show replies</button>
+				{% endif %}
+
 				<div class="reply" style="display: none;" id="reply{{ comment.pk }}">
 					<form method="POST">
 						{% csrf_token %}
@@ -171,10 +176,6 @@
 						</div>
 					</form>
 				</div>
-				{% has_replies comment.pk as has_replies %}
-				{% if has_replies %}
-				<button id="{{ comment.pk }}" onclick="onShowReplies(this);" class="btn btn-outline-info">Show replies</button>
-				{% endif %}
 				<div style="display: none;" id="replies{{ comment.pk }}">
 					{% for reply in replies %}
 					{% if reply.replying_to.id == comment.pk %}
