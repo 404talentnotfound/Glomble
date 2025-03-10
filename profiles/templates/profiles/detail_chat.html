@@ -36,28 +36,44 @@
 		<div class="col-md-12 col-sm-12">
 			<nav aria-label="Pagination">
 				<ul class="pagination justify-content-center">
-					{% if page_obj.has_previous %}
-					<li class="page-item">
-						<a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Previous</a>
-					</li>
-					{% endif %}
-					{% for num in page_obj.paginator.page_range %}
-					{% if page_obj.number == num %}
-					<li class="page-item active">
-						<a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
-					</li>
-					{% else %}
-					<li class="page-item">
-						<a class="page-link" href="?page={{ num }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ num }}</a>
-					</li>
-					{% endif %}
-					{% endfor %}
-					{% if page_obj.has_next %}
-					<li class="page-item">
-						<a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">Next</a>
-					</li>
-					{% endif %}
-				</ul>
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="fa fa-chevron-left" aria-hidden="true"></i></a>
+                    </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-left" aria-hidden="true"></i></span></li>
+                    {% endif %}
+
+                    {% if page_obj.number|add:'-4' > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}">&hellip;</a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only">(current)</span></span></li>
+                        {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.paginator.num_pages > page_obj.number|add:'4' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}">&hellip;</a>
+                        </li>
+                    {% endif %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-right" aria-hidden="true"></i></span></li>
+                    {% endif %}
+                </ul>
 			</nav>
 		</div>
 	</div>
