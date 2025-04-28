@@ -2,8 +2,9 @@ from django import template
 from reports.models import VideoReport, ProfileReport, BugReport, Suggestion
 from profiles.models import Profile
 from creatorfund.models import Creator
-from videos.models import Video, Comment
-import random
+from videos.models import Comment, Video
+import datetime
+from django.db.models import Count
 
 register = template.Library()
 
@@ -104,3 +105,27 @@ def has_profile(user):
 @register.simple_tag
 def has_replies(pk):
     return Comment.objects.all().get(pk=pk).replies.count() > 0
+
+@register.simple_tag
+def most_recent_video(id):
+    video = Profile.objects.all().get(id=id).videos.all().order_by("-date_posted").first()
+    return Video.objects.all().filter(id=video.id)
+
+@register.simple_tag
+def most_liked_video(id):
+    video = Profile.objects.all().get(id=id).videos.all().annotate(num_likes=Count('likes')).order_by("-num_likes").first()
+    return Video.objects.all().filter(id=video.id)
+
+@register.simple_tag
+def has_videos(id):
+    if Profile.objects.all().get(id=id).videos.count() == 0:
+        return False
+    return True
+
+@register.simple_tag
+def duration_to_hms(duration):
+    return str(datetime.timedelta(seconds=round(duration))).removeprefix("0:")
+
+@register.simple_tag
+def reply_count(pk):
+    return Comment.objects.all().get(pk=pk).replies.count()

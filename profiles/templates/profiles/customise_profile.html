@@ -3,6 +3,7 @@
 {% block content %}
 <div class="container mt-5">
     <h1>Customise Your Profile</h1>
+    <p class="text-muted">(images must be a png or jpg between 1kb and 10mb)</p>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form|crispy }}

@@ -1,10 +1,27 @@
 from django.contrib import admin
 from .models import VideoNotification, BaseNotification, UpdateNotification, CommentNotification, MilestoneNotification
 
-# Register your models here.
+@admin.register(VideoNotification)
+class VideoNotificationAdmin(admin.ModelAdmin):
+    list_display = ['video__id', 'message']
+    search_fields = ['video__id', 'message']
 
-admin.site.register(VideoNotification)
-admin.site.register(BaseNotification)
-admin.site.register(UpdateNotification)
-admin.site.register(CommentNotification)
-admin.site.register(MilestoneNotification)
+@admin.register(UpdateNotification)
+class UpdateNotificationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'message']
+    search_fields = ['id', 'message']
+
+@admin.register(CommentNotification)
+class CommentNotificationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'message']
+    search_fields = ['id', 'message']
+
+@admin.register(MilestoneNotification)
+class MilestoneNotificationAdmin(admin.ModelAdmin):
+    list_display = ['id']
+    search_fields = ['id']
+
+@admin.register(BaseNotification)
+class BaseNotificationAdmin(admin.ModelAdmin):
+    list_display = ['id']
+    search_fields = ['id']

@@ -1,11 +1,24 @@
 {% extends 'profiles/base.html' %}
 {% load current_profile %}
+{% load count %}
+{% load humanize %}
 
 {% block content %}
+<style>
+    @media screen and (max-width: 980px) {
+    .too_wide {
+        display: none;
+    }
+    }
+</style>
 <div class="container">
-    <h1 class="border-bottom text-center" style="width: 20em; margin-left: 3em; margin-top: 0.5em;">Profiles</h1>
-    <div class="col-md-3 col-sm-12 mt-5 mb-3">
+    <div class="row justify-content-center mt-3">
         <form method="get">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1" name="query" value="{% if query != None %}{{ query }}{% endif %}">
+                <button style="border: none; background-color: transparent; box-shadow: none" type="submit"><i class='bx bx-search-alt' ></i></button>
+            </div>
+            <br>
             <label for="sort-by">Sort by:</label>
             <select name="sort-by" id="sort-by" onchange="this.form.submit()">
                 <option value="followers-desc"{% if sort_by == 'followers-desc' %} selected{% else %} selected="selected"{% endif %}>Most Popular</option>
@@ -17,7 +30,27 @@
     </div>
         {% for profile in profile_list %}
         <div class="row justify-content-center mt-3">
-            <div class="col-md-5 col-sm-12 border-bottom position-relative">
+            {% has_videos profile.id as should %}
+            <div class="col-md-12 border-bottom position-relative text-center">
+                {% if should %}
+                <div style="float:left; width: 286px;" class="too_wide">
+                    <h4>Most recent video:</h4>
+                    {% most_recent_video profile.id as object_list %}
+                    {% include 'videos/video_cards.html' %}
+                </div>
+                <div style="float:right; width: 286px;" class="too_wide">
+                    <h4>Most liked video:</h4>
+                    {% most_liked_video profile.id as object_list %}
+                    {% include 'videos/video_cards.html' %}
+                </div>
+                {% else %}
+                <div style="float:left; width: 286px;" class="too_wide">
+                    <h4>No videos</h4>
+                </div>
+                <div style="float:right; width: 286px;" class="too_wide">
+                    <h4>(yet)</h4>
+                </div>
+                {% endif %}
                 <p><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' profile.id %}">
                 <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ profile.profile_picture }}">
                 <h5>{{ profile.username }}</h5></a></p>
@@ -33,15 +66,15 @@
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="fa fa-chevron-left" aria-hidden="true"></i></a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}"><i class='bx bxs-chevrons-left' ></i></a>
                     </li>
                     {% else %}
-                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-left" aria-hidden="true"></i></span></li>
+                        <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-left' ></i></span></li>
                     {% endif %}
 
                     {% if page_obj.number|add:'-4' > 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}">&hellip;</a>
+                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">&hellip;</a>
                     </li>
                     {% endif %}
 
@@ -57,16 +90,16 @@
 
                     {% if page_obj.paginator.num_pages > page_obj.number|add:'4' %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}">&hellip;</a>
+                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">&hellip;</a>
                         </li>
                     {% endif %}
 
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}"><i class='bx bxs-chevrons-right' ></i></a>
                         </li>
                     {% else %}
-                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-right" aria-hidden="true"></i></span></li>
+                        <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-right' ></i></span></li>
                     {% endif %}
                 </ul>
             </nav>

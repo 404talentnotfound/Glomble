@@ -19,63 +19,17 @@
 			</div>
 		</div>
 		{% for message in messages %}
-		<div class="row justify-content-center mt-3 mb-5 border-bottom">
+		<div class="row justify-content-center mt-2 mb-5 border-bottom">
 			<div class="col-md-6 col-sm-12">
 				<p><a class="link-text" href="{% url 'detail-profile' message.sender.id %}">
-					<img class="rounded-circle" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}">
-					<b>{{ message.sender.username }}{% if message.sender.username.is_superuser %} <i title="Admin" class="fas fa-clipboard-user"></i>{% endif %}:</b></a>
-					<i style="max-width: 10ch; word-wrap: break-word;">{{ message.message }}<i>
+					<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}">
+					<b>{{ message.sender.username }}{% if message.sender.username.is_superuser %} <i title="Admin" class='bx bxs-user-badge' ></i>{% endif %}:</b></a>
+					<i style="max-width: 50ch; word-wrap: break-word;">{{ message.message|linebreaksbr }}</i>
 				</p>
+                <br>
 				<p class="text-muted">{{ message.date_sent|naturaltime }}</p>
 			</div>
 		</div>
 		{% endfor %}
-		{% if is_paginated %}
 	</div>
-	<div class="row justify-content-center mt-5">
-		<div class="col-md-12 col-sm-12">
-			<nav aria-label="Pagination">
-				<ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="fa fa-chevron-left" aria-hidden="true"></i></a>
-                    </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-left" aria-hidden="true"></i></span></li>
-                    {% endif %}
-
-                    {% if page_obj.number|add:'-4' > 1 %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}">&hellip;</a>
-                    </li>
-                    {% endif %}
-
-                    {% for i in page_obj.paginator.page_range %}
-                        {% if page_obj.number == i %}
-                            <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only">(current)</span></span></li>
-                        {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% if page_obj.paginator.num_pages > page_obj.number|add:'4' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}">&hellip;</a>
-                        </li>
-                    {% endif %}
-
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="fa fa-chevron-right" aria-hidden="true"></i></a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-right" aria-hidden="true"></i></span></li>
-                    {% endif %}
-                </ul>
-			</nav>
-		</div>
-	</div>
-	{% endif %}
 {% endblock content %}

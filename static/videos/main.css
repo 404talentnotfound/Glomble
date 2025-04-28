@@ -21,8 +21,10 @@ a {
 }
 
 .lmao { 
-  max-width: 75ch; word-wrap: break-word;
- }
+  word-break: break-word;
+  word-wrap: break-word;
+  max-width:90vh;
+}
 
 .landing {
   height: 100vh;

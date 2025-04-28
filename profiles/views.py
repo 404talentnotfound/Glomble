@@ -33,17 +33,10 @@ from django.core.cache import cache
 from notifications.models import MilestoneNotification
 from django.shortcuts import render, redirect, get_object_or_404
 
-def send_email(request):
-    for user in Profile.objects.all():
-        mail_subject = "Monthly Glomble Update #2"
-        html_thing = render_to_string('profiles/monthly_email_2.html')
-        sg = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
-        from_email = Email(EMAIL_HOST_USER)
-        to_email_sendgrid = To(user.username.email)
-        content = Content("text/html", html_thing)
-        mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
-        mail_json = mail.get()
-        sg.client.mail.send.post(request_body=mail_json)
+def change(request):
+    if request.user.id == 1:
+        for video in Video.objects.all():
+            video.uploader.videos.add(video)
 
 @login_required
 def rate_profile(request, id):
@@ -74,49 +67,31 @@ def customise_profile(request, id):
         if form.is_valid():
             if 'banner_image' in request.FILES:
                 banner = request.FILES['banner_image']
-                if 1024 < banner.size < 10000000:
-                    mime_type = magic.Magic(mime=True).from_buffer(banner.read(1024))
-                    if mime_type in ['image/jpeg', 'image/png']:
-                        form.save(commit=False)
-                        temp_banner = tempfile.NamedTemporaryFile(delete=False)
-                        for chunk in banner.chunks():
-                            temp_banner.write(chunk)
-                        form.instance.banner_image = f"profiles/banners/{customised_profile.id}.png"
+                form.save(commit=False)
+                temp_banner = tempfile.NamedTemporaryFile(delete=False)
+                for chunk in banner.chunks():
+                    temp_banner.write(chunk)
+                form.instance.banner_image = f"profiles/banners/{customised_profile.id}.png"
 
-                        subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
+                subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
 
-                        temp_banner.close()
+                temp_banner.close()
 
-                        os.remove(temp_banner.name)
-                    else:
-                        form.add_error(None, "An error occurred while customising your profile. Please make sure the banner image is the correct format (png or jpg) and try again.")
-                        return redirect('detail-profile', id=id)
-                else:
-                    form.add_error(None, "An error occurred while customising your profile. Please make sure the banner image is under 10mb and over 1kb, then try again.")
-                    return redirect('detail-profile', id=id)
-                
+                os.remove(temp_banner.name)
+                    
             if 'video_banner' in request.FILES:
                 banner = request.FILES['video_banner']
-                if 1024 < banner.size < 10000000:
-                    mime_type = magic.Magic(mime=True).from_buffer(banner.read(1024))
-                    if mime_type in ['image/jpeg', 'image/png']:
-                        form.save(commit=False)
-                        temp_banner = tempfile.NamedTemporaryFile(delete=False)
-                        for chunk in banner.chunks():
-                            temp_banner.write(chunk)
-                        form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}.png"
+                form.save(commit=False)
+                temp_banner = tempfile.NamedTemporaryFile(delete=False)
+                for chunk in banner.chunks():
+                    temp_banner.write(chunk)
+                form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}.png"
 
-                        subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 media/profiles/video_banners/{customised_profile.id}.png", shell=True, check=True)
+                subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 media/profiles/video_banners/{customised_profile.id}.png", shell=True, check=True)
 
-                        temp_banner.close()
+                temp_banner.close()
 
-                        os.remove(temp_banner.name)
-                    else:
-                        form.add_error(None, "An error occurred while customising your profile. Please make sure the video banner is the correct format (png or jpg) and try again.")
-                        return redirect('detail-profile', id=id)
-                else:
-                    form.add_error(None, "An error occurred while customising your profile. Please make sure the video banner is under 10mb and over 1kb, then try again.")
-                    return redirect('detail-profile', id=id)
+                os.remove(temp_banner.name)
                 
             form.save()
 
@@ -151,7 +126,11 @@ class ProfileIndex(ListView):
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
         queryset = Profile.objects.all()
+        query = self.request.GET.get('query')
         queryset = queryset.annotate(num_followers=Count('followers'))
+
+        if query:
+            queryset = queryset.filter(Q(username__username__icontains=query))
 
         if sort_by == 'date-desc':
             queryset = queryset.order_by('-date_made')
@@ -169,6 +148,7 @@ class ProfileIndex(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['sort_by'] = self.request.GET.get('sort-by')
+        context['query'] = self.request.GET.get('query')
         return context
 
 def activate(request, uidb64, token):
@@ -361,9 +341,9 @@ class DetailProfileIndex(ListView):
         poopie = Profile.objects.get(id=hi).id
         profile = Profile.objects.get(id=poopie)
         if (request.user.is_superuser or profile.moderator) or username == request.user:
-            posts = Video.objects.all().order_by('-date_posted').filter(uploader=profile)
+            posts = profile.videos.all().order_by("-date_posted")
         else:
-            posts = Video.objects.all().order_by('-date_posted').filter(uploader=profile).exclude(unlisted=True)
+            posts = profile.videos.all().exclude(unlisted=True).order_by("-date_posted")
         followers = profile.followers.all()
         follow_num = len(followers)
         developer = False
@@ -394,7 +374,7 @@ class DetailProfileIndex(ListView):
             'poopie': poopie,
             'pfp': pfp,
             'username': username,
-            'detail_profile_list': posts,
+            'object_list': posts,
             'follow_num': follow_num,
             'is_following': is_following,
             'developer': developer,
@@ -545,21 +525,8 @@ class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
         currentprofile = Profile.objects.get(username=self.request.user)
         return currentprofile != profilething
 
-class UserSearch(View):
-    def get(self, request, *args, **kwargs):
-        query = self.request.GET.get('query')
-        profile_list = Profile.objects.filter(
-        	Q(username__username__icontains=query)
-        ).exclude(shadowbanned=True)
-    
-        context = {
-        	'profile_list': profile_list
-        }
-    
-
-        return render(request, 'profiles/search.html', context)
-
 class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    paginate_by = 20
     def get(self, request, *args, **kwargs):
         e = self.kwargs['id']
         form = MessageForm()
@@ -583,7 +550,7 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             'messages': messages,
             'message_amount': chat_count,
         }
-        for i in messages:
+        for i in messages.exclude(read=True):
             if i.sender != Profile.objects.get(username=request.user):
                 i.read = True
                 i.save()

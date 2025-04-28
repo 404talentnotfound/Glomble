@@ -1,12 +1,11 @@
 from profiles.models import Profile
-from .models import BaseNotification
 from django.views.generic.list import ListView
 from itertools import chain
 from operator import attrgetter
 
 class NotificationsIndex(ListView):
     template_name = "notifications/index.html"
-    paginate_by = 15
+    paginate_by = 25
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
@@ -30,7 +29,7 @@ class NotificationsIndex(ListView):
                 reverse=True
             )
         
-        for i in queryset:
+        for i in Profile.objects.all().get(username=self.request.user).notifications.exclude(read=True):
             i.read = True
             i.save()
 

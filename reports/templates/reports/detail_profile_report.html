@@ -16,10 +16,10 @@
         <br>
     </div>
         <div style="text-align:center">
-            <a href="{% url 'profile-delete' report.profile.pk %}"><h3 style="color: #dd0000;">Remove profile</h3><i class="fas fa-trash-can fa-2xl" style="color: #dd0000;"></i>
+            <a href="{% url 'profile-delete' report.profile.pk %}"><h3 style="color: #dd0000;">Remove profile</h3><i class="bx bxs-trash" style="color: #dd0000;"></i>
         </div>
         <br>
         <div style="text-align:center">
-            <a href="{% url 'profile-report-delete' report.pk %}"><h3 style="color: #04c604;">Approve profile</h3><i class="fas fa-check fa-2xl" style="color: #04c604;"></i>
+            <a href="{% url 'profile-report-delete' report.pk %}"><h3 style="color: #04c604;">Approve profile</h3><i class="bx bxs-check-square" style="color: #04c604;"></i>
         </div>
 {% endblock content %}

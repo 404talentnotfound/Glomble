@@ -28,14 +28,14 @@
                         <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment_notification.comment.commenter.profile_picture }}">
                     </a>{{ object.comment_notification.comment.commenter.username }} {{ object.comment_notification.message }}</h4>
                     <div class="col-md-3 col-sm-12">
-                        <a href="{% url 'video-detail' object.comment_notification.comment.post.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment_notification.comment.post.thumbnail }}" width="128" height="72"></a>
+                        <a href="{% url 'video-detail' object.comment_notification.comment.post.id %}#comment={{ object.comment_notification.comment.pk }}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment_notification.comment.post.thumbnail }}" width="128" height="72"></a>
                         <div class="card-body">
                             <a class="link-text" href="{% url 'video-detail' object.comment_notification.comment.post.id %}"><h6 class="text-center shit">{{ object.comment_notification.comment.post.title }}</h6></a>
                             <h6 class="text-muted text-center">{{ object.comment_notification.comment.date_made|naturaltime }}</h6>
                         </div>
                     </div>
                 {% elif type == 2 %}
-                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fas fa-check"></i>: {{ object.update_notification.message }}</h4>
+                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class='bx bxs-check-circle' ></i>: {{ object.update_notification.message }}</h4>
                 {% elif type == 3 %}
                     <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.video_notification.video.uploader.id %}">
                         <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video_notification.video.uploader.profile_picture }}">
@@ -48,7 +48,7 @@
                         </div>
                     </div>
                 {% elif type == 4 %}
-                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class="fas fa-check"></i>: {{ object.milestone_notification.message }}</h4>
+                    <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class='bx bxs-check-circle' ></i>: {{ object.milestone_notification.message }}</h4>
                 {% endif %}
             </div>
             {% endif %}
@@ -60,10 +60,12 @@
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="fa fa-chevron-left" aria-hidden="true"></i></a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">back</a>
                     </li>
                     {% else %}
-                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-left" aria-hidden="true"></i></span></li>
+                        <li class="page-item disabled">
+                            <span class="page-link">back</span>
+                        </li>
                     {% endif %}
 
                     {% if page_obj.number|add:'-4' > 1 %}
@@ -90,10 +92,12 @@
 
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">next</a>
                         </li>
                     {% else %}
-                        <li class="page-item disabled"><span class="page-link"><i class="fa fa-chevron-right" aria-hidden="true"></i></span></li>
+                        <li class="page-item disabled">
+                            <span class="page-link">next</span>
+                        </li>
                     {% endif %}
                 </ul>
             </nav>

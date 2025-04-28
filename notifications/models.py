@@ -41,8 +41,12 @@ class BaseNotification(models.Model, object):
 @receiver(post_save, sender=VideoNotification)
 def video_notify(sender, instance, created, **kwargs):
     if created:
-        for follower in instance.video.uploader.followers.all():
-            BaseNotification.objects.create(video_notification=instance, profile=Profile.objects.all().get(username=follower))
+        followers = instance.video.uploader.followers.all()
+        profiles = Profile.objects.filter(id__in=[f.id for f in followers])
+
+        notifications = [BaseNotification(video_notification=instance, profile=profile) for profile in profiles]
+
+        BaseNotification.objects.bulk_create(notifications)
 
 @receiver(post_save, sender=CommentNotification)
 def comment_notify(sender, instance, created, **kwargs):
@@ -62,8 +66,8 @@ def comment_notify(sender, instance, created, **kwargs):
 @receiver(post_save, sender=UpdateNotification)
 def update_notify(sender, instance, created, **kwargs):
     if created:
-        for profile in Profile.objects.all():
-            BaseNotification.objects.create(update_notification=instance, profile=profile)
+        notifications = [BaseNotification(update_notification=instance, profile=profile) for profile in Profile.objects.all()]
+        BaseNotification.objects.bulk_create(notifications)
 
 @receiver(post_save, sender=MilestoneNotification)
 def milestone_notify(sender, instance, created, **kwargs):

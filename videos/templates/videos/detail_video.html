@@ -5,6 +5,49 @@
 {% load count %}
 
 {% block content %}
+	<style>
+		.cool-div {
+			{% if post.uploader.customisation.text_shadow_color %}
+			text-shadow: 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }};
+			{% else %}
+			text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
+			{% endif %}
+			{% if post.uploader.customisation.banner_image %}
+			background-image: url({{ post.uploader.customisation.banner_image.url }});
+			{% endif %}
+			{% if post.uploader.customisation.background_color %}
+			background-color: {{ post.uploader.customisation.background_color }};
+			{% else %}background-color: white;
+			{% endif %}
+			{% if post.uploader.customisation.text_color %}
+			color: {{ post.uploader.customisation.text_color }};
+			{% else %}
+			color: #000000;
+			{% endif %}
+		}
+		
+		.cool-element {
+			{% if post.uploader.customisation.text_shadow_color %}
+			text-shadow: 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }};
+			{% else %}
+			text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
+			{% endif %}
+			{% if post.uploader.customisation.text_color %}
+			color: {{ post.uploader.customisation.text_color }};
+			{% endif %}
+		}
+
+		.highlight {
+			{% if post.uploader.customisation.background_color %}
+			background-color: {{ post.uploader.customisation.background_color }};
+			-webkit-filter: invert(100%);
+			{% else %}
+			background-color: #000000;
+			{% endif %}
+			transition: background-color 1s ease;
+		}
+		/* in my IDE syntax highlighting bugs out on this file, but this comment line fixes it... wtf */
+	</style>
 	<head>
 		<meta property="og:title" content="{{ post.title }}">
 		<meta property="og:type" content="video.other">
@@ -14,218 +57,255 @@
 		<meta property="og:video:type" content="video/mp4">
 	</head>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<div class="container" id="post-container">
-		<div class="row mt-5">
-					<video src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.video_file }}" type="video/mp4" style="max-height:40vw" controls>
-					</video>
-				  </div>
-				<h5 class="mt-4">{{ post.title }}
-					{% if not user.is_anonymous and post.uploader.username != user %}
-					{% can_recommend request.user as recommend_available %}
-					<button class="recommend-button {% if recommend_available %} btn btn-success {% else %}btn btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
-						{% if recommend_available %}
-						<span>Recommend ({% recommendations_left request.user %})</span>
-						{% else %}
-						<span>Recommend (on cooldown)</span>
-						{% endif %}
-					</button>
-					{% endif %}
-					{% if post.uploader.username == user or request.user.is_superuser %}
-						<a style="float: right;" class="btn btn-outline-danger" href="{% url 'video-delete' post.id %}">Delete</a>
-						<a style="float: right;" class="btn btn-outline-primary" href="{% url 'video-update' post.id %}">Edit</a>
-					{% endif %}
-				</h5>
-				<h6><a class="link-text" href="{% url 'detail-profile' post.uploader.id %}"><img class="rounded-circle" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
-					{{ post.uploader.username }} {% if post.uploader.username != user and request.user.is_authenticated %}
-					<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
-						{% if is_following %}
-						<span>Following</span>
-						{% else %}
-						<span>Follow</span>
-						{% endif %}
-					</button>
-					{% endif %}
-				</a></h6>
-				{% if has %}
-				{% if desclen <= 50 %}
-					<p>{{ post.description }}</p>
-				{% else %}
-					<p class="lmao">
-						{{ pre }}<span id="dots">...</span><span id="more" style="display: none;">{{ readmore }}</span><button style="background-color: transparent; border: none; box-shadow: none;" onclick="showmore()" id="myBtn"><b><i>Read more</i></b></button>
-					</p>
-				{% endif %}
-				{% endif %}
-				<p>Views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span><br>
-				Recommendations: <span class="recommendation-count">{{ post.recommendations }}</span><br>
-				Category: <span>{{ post.category }}</span></p>
-				<div class="row">
-					<div class="col-md-6 text-muted">
-						<p>{{ post.date_posted|naturaltime }}</p>
+	<div id="notification" class="text-center" style="position: sticky; top: 0px; background-color: #c51717; z-index: 1;">
+	</div>
+	<div class="cool-div">
+		<div class="container" id="post-container">
+					<div class="row">
+								<video class="mt-5" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.video_file }}" type="video/mp4" style="max-height:40vw; background-color: black !important;" controls autoplay>
+								</video>
 					</div>
-
-					<div class="col-md-6 text-muted text-right">
-						<a class="video-icons icon-color" href="{% url 'video-download' post.id %}"><i class="fas fa-download"></i></a>
-						{% if post.uploader.username != request.user %}
-						<a href="{% url 'video-report' post.id %}"><i class="fas fa-flag video-icons icon-color"></i></a>
-						{% endif %}
-					</div>
-				</div>
-		{% if request.user.is_authenticated %}
-		<div class="row mt-3 mb-5 border-bottom">
-			<button style="background-color: transparent; border: none; box-shadow: none;" class="like-button" data-url="{% url 'video-like' post.id %}">
-				{% if request.user in post.likes.all %}
-				<i class="fa fa-thumbs-up"><span class="like-count">{{ post.likes.all.count }}</span></i>
-				{% else %}
-				<i class="far fa-thumbs-up"><span class="dislike-count">{{ post.likes.all.count }}</span></i>
-				{% endif %}
-			</button>
-			<button style="background-color: transparent; border: none; box-shadow: none;" class="dislike-button" data-url="{% url 'video-dislike' post.id %}">
-				{% if request.user in post.dislikes.all %}
-				<i class="fa fa-thumbs-down"><span>{{ post.dislikes.all.count }}</span></i>
-				{% else %}
-				<i class="far fa-thumbs-down"><span>{{ post.dislikes.all.count }}</span></i>
-				{% endif %}
-			</button>
-		</div>
-		{% else %}
-		<div class="row mt-3 mb-5 border-bottom">
-			<button style="background-color: transparent; border: none; box-shadow: none;">
-				<i class="far fa-thumbs-up"><span class="dislike-count">{{ post.likes.all.count }}</span></i>
-			</button>
-			<button style="background-color: transparent; border: none; box-shadow: none;">
-				<i class="far fa-thumbs-down"><span>{{ post.dislikes.all.count }}</span></i>
-			</button>
-		</div>
-		{% endif %}
-		<div class="row justify-content-center">
-			<button onclick="onClickRecommend(this);" class="btn btn-outline-success">Recommend more videos</button>
-		</div>
-		<br>
-		<div style="display: none;" class="row justify-content-center" id="recommended-videos">
-		</div>
-		<div class="row justify-content-center mt-3 mb-5">
-			<div class="col-md-5 col-sm-12">
-				<form method="POST">
-					{% if request.user.is_authenticated %}
-					{% csrf_token %}
-					<legend class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
-					{{ form | crispy }}
-					<input type="hidden" name="form_type" value="comment">
-					<div class="d-grid gap-2">
-						<button class="btn btn-success mt-3">Submit!</button>
-					</div>
-					{% else %}
-					<legend class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
-					{% endif %}
-				</form>
-			</div>
-		</div>
-		{% for comment in comments %}
-		<div class="row justify-content-center border-bottom">
-			<div class="col-md-9">
-				<p>
-					<strong><a class="link-text" href="{% url 'detail-profile' comment.commenter.pk %}"><img class="rounded-circle" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ comment.commenter.profile_picture }}">{{ comment.commenter.username }}</a></strong> {{ comment.date_posted|naturaltime }}
-					{% if request.user == comment.commenter.username or request.user.is_superuser %}
-					<a class="btn btn-outline-primary" href="{% url 'comments:comment-update' comment.pk %}">Edit</a>
-					<a class="btn btn-outline-danger" href="{% url 'comments:comment-delete' comment.pk %}">Delete</a>
-					{% endif %}
-					{% if request.user.is_authenticated %}
-					<div class="row mt-3">
-						<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-like-button" data-url="{% url 'comments:comment-like' comment.pk %}">
-							{% if request.user in comment.likes.all %}
-							<i class="fa fa-thumbs-up"><span class="comment-like-count" id="{{ comment.pk }}-like">{{ comment.likes.all.count }}</span></i>
+					<h5 class="mt-4">{{ post.title }}
+						{% if not user.is_anonymous and post.uploader.username != user %}
+						{% can_recommend request.user as recommend_available %}
+						<button class="recommend-button {% if recommend_available %} cool-element btn cool-element btn-success {% else %}cool-element btn cool-element btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
+							{% if recommend_available %}
+							<span>Recommend ({% recommendations_left request.user %})</span>
 							{% else %}
-							<i class="far fa-thumbs-up"><span class="comment-dislike-count" id="{{ comment.pk }}-dislike">{{ comment.likes.all.count }}</span></i>
+							<span>Recommend (on cooldown)</span>
 							{% endif %}
 						</button>
-						<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-dislike-button" data-url="{% url 'comments:comment-dislike' comment.pk %}">
-							{% if request.user in comment.dislikes.all %}
-							<i class="fa fa-thumbs-down"><span>{{ comment.dislikes.all.count }}</span></i>
+						{% endif %}
+						{% if post.uploader.username == user or request.user.is_superuser %}
+							<a style="float: right;" class="cool-element btn cool-element btn-outline-danger" href="{% url 'video-delete' post.id %}">Delete</a>
+							<a style="float: right;" class="cool-element btn cool-element btn-outline-primary" href="{% url 'video-update' post.id %}">Edit</a>
+						{% endif %}
+					</h5>
+					<h6><a class="link-text cool-element" href="{% url 'detail-profile' post.uploader.id %}"><img class="rounded-circle" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
+						{{ post.uploader.username }}
+						{% if post.uploader.username != user and request.user.is_authenticated %}
+						<button class="follow-button {% if is_following %}following cool-element btn cool-element btn-outline-danger {% else %}cool-element btn cool-element btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
+							{% if is_following %}
+							<span>Following</span>
 							{% else %}
-							<i class="far fa-thumbs-down"><span>{{ comment.dislikes.all.count }}</span></i>
+							<span>Follow</span>
 							{% endif %}
 						</button>
-					</div>
-					{% else %}
-					<div class="row mt-3">
-						<button style="background-color: transparent; border: none; box-shadow: none;">
-							<i class="far fa-thumbs-up"><span class="dislike-count">{{ comment.likes.all.count }}</span></i>
-						</button>
-						<button style="background-color: transparent; border: none; box-shadow: none;">
-							<i class="far fa-thumbs-down"><span>{{ comment.dislikes.all.count }}</span></i>
-						</button>
+						{% endif %}
+					</a><h6>
+					{% if has %}
+					<div class="lmao">
+						{% if desclen <= 250 %}
+						<p>
+							{{ post.description|linebreaksbr }}
+						</p>
+						{% else %}
+						<p>
+							{{ pre|linebreaksbr }}<span id="dots">...</span><span id="more" style="display: none;">{{ readmore|linebreaksbr }}</span><button class="cool-element" style="background-color: transparent; border: none; box-shadow: none;" onclick="showmore()" id="myBtn"><b><i>Read more</i></b></button>
+						</p>
+						{% endif %}
 					</div>
 					{% endif %}
-				</p>
-				<p class="lmao">{{ comment.comment }}</p>
-				<button id="{{ comment.pk }}" onclick="onClick(this)" style="border: none; background-color: transparent;"><i class="far fa-comments"></i></button>
-
-				{% has_replies comment.pk as has_replies %}
-				{% if has_replies %}
-				<button id="{{ comment.pk }}" onclick="onShowReplies(this);" class="btn btn-outline-info">Show replies</button>
-				{% endif %}
-
-				<div class="reply" style="display: none;" id="reply{{ comment.pk }}">
-					<form method="POST">
-						{% csrf_token %}
-						<input type="hidden" name="form_type" value="reply">
-						<input type="hidden" name="comment_id" value="{{comment.pk}}">
-						{{ replyform | crispy }}
-						<div class="d-grid gap-2">
-						<button class="btn btn-success mt-3">Submit!</button>
+					<p>Views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span><br>
+					Recommendations: <span class="recommendation-count">{{ post.recommendations }}</span><br>
+					Category: <span>{{ post.category }}</span></p>
+					<div class="row">
+						<div class="col-md-6">
+							<p>{{ post.date_posted|naturaltime }}</p>
 						</div>
-					</form>
+					</div>
+				{% if request.user.is_authenticated %}
+				<div class="row mt-3 mb-5 border-bottom">
+					<button style="background-color: transparent; border: none; box-shadow: none;" class="like-button cool-element" data-url="{% url 'video-like' post.id %}">
+						{% if request.user in post.likes.all %}
+						<i class="bx bxs-like cool-element"><span class="like-count">{{ post.likes.all.count }}</span></i>
+						{% else %}
+						<i class="bx bx-like cool-element"><span class="dislike-count">{{ post.likes.all.count }}</span></i>
+						{% endif %}
+					</button>
+					<button style="background-color: transparent; border: none; box-shadow: none;" class="dislike-button cool-element" data-url="{% url 'video-dislike' post.id %}">
+						{% if request.user in post.dislikes.all %}
+						<i class="bx bxs-dislike cool-element"><span>{{ post.dislikes.all.count }}</span></i>
+						{% else %}
+						<i class="bx bx-dislike cool-element"><span>{{ post.dislikes.all.count }}</span></i>
+						{% endif %}
+					</button>
+					<div class="col-md-6">
+						<a class="video-icons icon-color" href="{% url 'video-download' post.id %}"><i class='bx bxs-download cool-element' ></i></a>
+						{% if post.uploader.username != request.user %}
+						<a class="video-icons icon-color" href="{% url 'video-report' post.id %}"><i class='bx bxs-flag-alt cool-element' ></i></a>
+						{% endif %}
+					</div>
 				</div>
-				<div style="display: none;" id="replies{{ comment.pk }}">
-					{% for reply in replies %}
-					{% if reply.replying_to.id == comment.pk %}
-					<div class="row justify-content-center">
+				{% else %}
+				<div class="row mt-3 mb-5 border-bottom">
+					<button class="cool-element" style="background-color: transparent; border: none; box-shadow: none;">
+						<i class="bx bx-like cool-element"><span class="dislike-count">{{ post.likes.all.count }}</span></i>
+					</button>
+					<button class="cool-element" style="background-color: transparent; border: none; box-shadow: none;">
+						<i class="bx bx-dislike cool-element"><span>{{ post.dislikes.all.count }}</span></i>
+					</button>
+				</div>
+				{% endif %}
+				<div class="row justify-content-center">
+					<button onclick="onClickRecommend(this);" class="cool-element btn cool-element btn-outline-success">Recommend more videos</button>
+				</div>
+				<br>
+				<div style="display: none;" class="row justify-content-center" id="recommended-videos">
+				</div>
+				<div class="row justify-content-center mt-3 mb-5">
+					<div class="col-md-5 col-sm-12">
+						<form id="comment-form" method="POST">
+							{% if request.user.is_authenticated %}
+							<legend id="cool" class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
+							{% csrf_token %}
+							{{ form | crispy }}
+							<input type="hidden" name="form_type" value="comment">
+							<div class="d-grid gap-2">
+								<button type="submit" class="cool-element btn cool-element btn-success mt-3">Submit!</button>
+							</div>
+							{% else %}
+							<legend class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
+							{% endif %}
+						</form>
+					</div>
+				</div>
+					{% for comment in comments %}
+					<div class="lmao row justify-content-center border-bottom mt-4 comment-{{ comment.pk }}">
+						{% if pinned_comment == comment %}
+						<h3><i title="Pinned" class='bx bxs-pin'></i></h3>
+						{% endif %}
 						<div class="col-md-9">
 							<p>
-								<strong><a class="link-text" href="{% url 'detail-profile' reply.commenter.pk %}"><img class="rounded-circle" style="margin-right: 10px; margin-left: -35px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">{{ reply.commenter.username }}</a></strong> {{ reply.date_posted|naturaltime }}
-								{% if request.user == reply.commenter.username or request.user.is_superuser %}
-								<a class="btn btn-outline-primary" href="{% url 'comments:comment-update' reply.pk %}">Edit</a>
-								<a class="btn btn-outline-danger" href="{% url 'comments:comment-delete' reply.pk %}">Delete</a>
+								<strong><a class="link-text cool-element" href="{% url 'detail-profile' comment.commenter.id %}">
+									<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ comment.commenter.profile_picture }}"> 
+									{{ comment.commenter.username }}
+									{% if comment.commenter.username.is_superuser %}
+									<i title="Admin" class='bx bxs-user-badge' ></i>
+									{% endif %}</a></strong> 
+								{{ comment.date_posted|naturaltime }}
+								{% if request.user == comment.commenter.username or request.user.is_superuser %}
+								<a class="cool-element btn cool-element btn-outline-primary" href="{% url 'comments:comment-update' comment.pk %}">Edit</a>
+								<a class="cool-element btn cool-element btn-outline-danger" href="{% url 'comments:comment-delete' comment.pk %}">Delete</a>
 								{% endif %}
 								{% if request.user.is_authenticated %}
 								<div class="row mt-3">
-									<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-like-button" data-url="{% url 'comments:comment-like' reply.pk %}">
-										{% if request.user in reply.likes.all %}
-										<i class="fa fa-thumbs-up"><span class="reply-like-count" id="{{ reply.pk }}-like">{{ reply.likes.all.count }}</span></i>
+									<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-like-button cool-element" data-url="{% url 'comments:comment-like' comment.pk %}">
+										{% if request.user in comment.likes.all %}
+										<i class="bx bxs-like cool-element"><span class="comment-like-count" id="{{ comment.pk }}-like">{{ comment.likes.all.count }}</span></i>
 										{% else %}
-										<i class="far fa-thumbs-up"><span class="reply-dislike-count" id="{{ reply.pk }}-dislike">{{ reply.likes.all.count }}</span></i>
+										<i class="bx bx-like cool-element"><span class="comment-dislike-count" id="{{ comment.pk }}-dislike">{{ comment.likes.all.count }}</span></i>
 										{% endif %}
 									</button>
-									<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-dislike-button" data-url="{% url 'comments:comment-dislike' reply.pk %}">
-										{% if request.user in reply.dislikes.all %}
-										<i class="fa fa-thumbs-down"><span>{{ reply.dislikes.all.count }}</span></i>
+									<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-dislike-button cool-element" data-url="{% url 'comments:comment-dislike' comment.pk %}">
+										{% if request.user in comment.dislikes.all %}
+										<i class="bx bxs-dislike cool-element"><span>{{ comment.dislikes.all.count }}</span></i>
 										{% else %}
-										<i class="far fa-thumbs-down"><span>{{ reply.dislikes.all.count }}</span></i>
+										<i class="bx bx-dislike cool-element"><span>{{ comment.dislikes.all.count }}</span></i>
 										{% endif %}
 									</button>
 								</div>
 								{% else %}
 								<div class="row mt-3">
 									<button style="background-color: transparent; border: none; box-shadow: none;">
-										<i class="far fa-thumbs-up"><span class="dislike-count">{{ reply.likes.all.count }}</span></i>
+										<i class="bx bx-like cool-element"><span class="dislike-count">{{ comment.likes.all.count }}</span></i>
 									</button>
 									<button style="background-color: transparent; border: none; box-shadow: none;">
-										<i class="far fa-thumbs-down"><span>{{ reply.dislikes.all.count }}</span></i>
+										<i class="bx bx-dislike cool-element"><span>{{ comment.dislikes.all.count }}</span></i>
 									</button>
 								</div>
 								{% endif %}
-
-								<p class="lmao">{{ reply.comment }}</p>
 							</p>
+								<p class="lmao">{{ comment.comment|linebreaksbr }}</p>
+								{% if post.uploader.username == request.user %}
+								<a class="cool-element btn cool-element btn-outline-primary" href="{% url 'comments:comment-pin' comment.pk %}"><i class='bx bx-pin'></i></a>
+								{% endif %}
+								<button id="{{ comment.pk }}" onclick="onClick(this)" class="cool-element btn btn-outline-success"><i class='bx bx-comment-detail' ></i></button>
+					
+								{% has_replies comment.pk as has_replies %}
+								{% if has_replies %}
+								{% reply_count comment.pk as count_replies %}
+								<button id="{{ comment.pk }}" onclick="onShowReplies(this);" class="cool-element btn btn-outline-info">Show {{ count_replies }} {% if count_replies == 1 %}reply{% else %}replies{% endif %}</button>
+								{% endif %}
+					
+								<div class="reply" style="display: none;" id="reply{{ comment.pk }}">
+									<form id="reply-form" method="POST">
+										{% csrf_token %}
+										<input type="hidden" name="form_type" value="reply">
+										<input type="hidden" name="comment_id" value="{{comment.pk}}">
+										{{ replyform | crispy }}
+										<div class="d-grid gap-2">
+											<button type="submit" class="cool-element btn btn-success mt-3">Submit!</button>
+										</div>
+									</form>
+								</div>
+								{% with comment_replies=replies|dictsort:"date_posted" %}
+								{% if comment_replies %}
+								<div style="display: none;" class="lmao reply-container" id="replies{{ comment.pk }}">
+									{% for reply in comment_replies %}
+										{% if reply.replying_to and reply.replying_to.id == comment.pk %}
+										<div class="row justify-content-center comment-{{ reply.pk }}">
+											<div class="col-md-9">
+												<p>
+													<strong>
+														<a class="link-text cool-element" href="{% url 'detail-profile' reply.commenter.id %}">
+															<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">
+															{{ reply.commenter.username }}
+															{% if comment.commenter.username.is_superuser %}
+															<i title="Admin" class='bx bxs-user-badge' ></i>
+															{% endif %}</a></strong>
+														</a>
+													</strong> 
+													{{ reply.date_posted|naturaltime }}
+													{% if request.user == reply.commenter.username or request.user.is_superuser %}
+														<a class="cool-element btn btn-outline-primary" href="{% url 'comments:comment-update' reply.pk %}">Edit</a>
+														<a class="cool-element btn btn-outline-danger" href="{% url 'comments:comment-delete' reply.pk %}">Delete</a>
+													{% endif %}
+												</p>
+							
+												{% if request.user.is_authenticated %}
+												<div class="row mt-3">
+													<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-like-button" data-url="{% url 'comments:comment-like' reply.pk %}">
+														{% if request.user in reply.likes.all %}
+														<i class="bx bxs-like cool-element"><span class="reply-like-count" id="{{ reply.pk }}-like">{{ reply.likes.all.count }}</span></i>
+														{% else %}
+														<i class="bx bx-like cool-element"><span class="reply-dislike-count" id="{{ reply.pk }}-dislike">{{ reply.likes.all.count }}</span></i>
+														{% endif %}
+													</button>
+													<button style="background-color: transparent; border: none; box-shadow: none;" class="comment-dislike-button" data-url="{% url 'comments:comment-dislike' reply.pk %}">
+														{% if request.user in reply.dislikes.all %}
+														<i class="bx bxs-dislike cool-element"><span>{{ reply.dislikes.all.count }}</span></i>
+														{% else %}
+														<i class="bx bx-dislike cool-element"><span>{{ reply.dislikes.all.count }}</span></i>
+														{% endif %}
+													</button>
+												</div>
+												{% else %}
+												<div class="row mt-3">
+													<button style="background-color: transparent; border: none; box-shadow: none;">
+														<i class="bx bx-like cool-element"><span class="dislike-count">{{ reply.likes.all.count }}</span></i>
+													</button>
+													<button style="background-color: transparent; border: none; box-shadow: none;">
+														<i class="bx bx-dislike cool-element"><span>{{ reply.dislikes.all.count }}</span></i>
+													</button>
+												</div>
+												{% endif %}
+							
+												<p>{{ reply.comment|linebreaksbr }}</p>
+											</div>
+										</div>
+										{% endif %}
+									{% endfor %}
+								</div>
+								{% endif %}
+							{% endwith %}
+							
 						</div>
 					</div>
-					{% endif %}
 					{% endfor %}
-				</div>
+				<br>
 			</div>
 		</div>
-		<br>
-		{% endfor %}
 	</div>
 	<script>
 		function onClick(ele) {
@@ -298,6 +378,174 @@
 				updateViewCount(videoId);
 				updateRecommendCount(videoId);
 			}, 20000);
+		});
+
+		$(document).ready(function() {
+			const video = $("video")[0];
+			const videoId = "{{ post.id }}";
+			const progressKey = "video-progress-" + videoId;
+
+			function makeTimestampsClickable(container) {
+				const timestampRegex = /\b(\d{1,2}):([0-5]\d)\b/g;
+
+				$(container).html(function(_, oldHtml) {
+					return oldHtml.replace(timestampRegex, function(match, min, sec) {
+						const seconds = parseInt(min) * 60 + parseInt(sec);
+						return `<a href="#" class="timestamp" data-seconds="${seconds}">${match}</a>`;
+					});
+				});
+			}
+
+			makeTimestampsClickable("p");
+
+			$(document).on('click', '.timestamp', function(e) {
+				e.preventDefault();
+				const seconds = $(this).data('seconds');
+				video.currentTime = seconds;
+				video.play();
+			});
+
+			if (localStorage.getItem(progressKey)) {
+				video.currentTime = parseFloat(localStorage.getItem(progressKey));
+			}
+
+			video.addEventListener('timeupdate', function() {
+				localStorage.setItem(progressKey, video.currentTime);
+			});
+
+			video.addEventListener('ended', function() {
+				localStorage.removeItem(progressKey);
+			});
+		});
+
+		$(document).ready(function() {
+			function expandParentReplies($comment) {
+				const parentContainers = $comment.parents('.reply-container');
+				parentContainers.each(function() {
+					if ($(this).is(":hidden")) {
+						$(this).show();
+					}
+				});
+			}
+
+			function highlightComment(id) {
+				const $comment = $(".comment-" + id);
+				if ($comment.length) {
+					expandParentReplies($comment);
+
+					$('html, body').animate({
+						scrollTop: $comment.offset().top - 100
+					}, 500, function() {
+						$comment.addClass('highlight');
+						setTimeout(function() {
+							$comment.removeClass('highlight');
+						}, 1000);
+					});
+				}
+			}
+
+			const hash = window.location.hash;
+			if (hash.startsWith("#comment=")) {
+				const commentId = hash.split("=")[1];
+				highlightComment(commentId);
+			}
+		});
+	
+		document.addEventListener("DOMContentLoaded", function() {
+			const commentForm = document.getElementById("comment-form");
+			const replyForm = document.getElementById("reply-form");
+			globalThis.timer = 0
+
+			if (commentForm) {
+				commentForm.addEventListener("submit", function(e) {
+					e.preventDefault();
+
+					const formData = new FormData(commentForm);
+
+					fetch(commentForm.action, {
+						method: "POST",
+						headers: {
+							"X-Requested-With": "XMLHttpRequest",
+						},
+						body: formData
+					})
+					.then(response => response.json())
+					.then(data => {
+						if (data.success) {
+							clearTimeout(globalThis.timer);
+							const newComment = document.getElementById('notification');
+							newComment.innerHTML = 'Comment added!';
+							newComment.style.backgroundColor = '#32cd32';
+
+							const commentCount = document.getElementById("cool");
+							commentCount.innerHTML = data.count + ' Comments';
+
+							globalThis.timer = setTimeout(() => {
+								newComment.innerHTML = '';
+							}, 2000);
+
+							replyForm.reset();
+						} else {
+							clearTimeout(globalThis.timer);
+							const newComment = document.getElementById('notification');
+							newComment.innerHTML = 'Comment failed to post due to cooldown.';
+							newComment.style.backgroundColor = '#c51717';
+
+							const commentCount = document.getElementById("cool");
+							commentCount.innerHTML = data.count + ' Comments';
+
+							globalThis.timer = setTimeout(() => {
+								newComment.innerHTML = '';
+							}, 2000);
+						}
+					})
+				});
+			} 
+			if (replyForm) {
+				replyForm.addEventListener("submit", function(e) {
+					e.preventDefault();
+
+					const formData = new FormData(replyForm);
+
+					fetch(replyForm.action, {
+						method: "POST",
+						headers: {
+							"X-Requested-With": "XMLHttpRequest",
+						},
+						body: formData
+					})
+					.then(response => response.json())
+					.then(data => {
+						if (data.success) {
+							clearTimeout(globalThis.timer);
+							const newComment = document.getElementById('notification');
+							newComment.innerHTML = 'Comment added!';
+							newComment.style.backgroundColor = '#32cd32';
+
+							const commentCount = document.getElementById("cool");
+							commentCount.innerHTML = data.count + ' Comments';
+
+							globalThis.timer = setTimeout(() => {
+								newComment.innerHTML = '';
+							}, 2000);
+
+							replyForm.reset();
+						} else {
+							clearTimeout(globalThis.timer);
+							const newComment = document.getElementById('notification');
+							newComment.innerHTML = 'Comment failed to post due to cooldown.';
+							newComment.style.backgroundColor = '#c51717';
+
+							const commentCount = document.getElementById("cool");
+							commentCount.innerHTML = data.count + ' Comments';
+
+							globalThis.timer = setTimeout(() => {
+								newComment.innerHTML = '';
+							}, 2000);
+						}
+					})
+				});
+			}
 		});
 	</script>
 {% endblock content %}

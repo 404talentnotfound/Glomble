@@ -5,42 +5,73 @@
 
 {% block content %}
 
-<div style="background-color: {{ profile.customisation.background_color }}; color: {{ profile.customisation.text_color }}; {% if profile.customisation.banner_image %} background-image: url({{ profile.customisation.banner_image.url }}); {% endif %}">
-	<div class="container">
-		{% if profile.customisation.banner_image %}
+<style>
+	.cool-div {
+		{% if profile.customisation.text_shadow_color %}
+		text-shadow: 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }};
+		{% else %}
+		text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
 		{% endif %}
-        <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto; margin-top: 2em;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ pfp }}">
+		{% if profile.customisation.banner_image %}
+		background-image: url({{ profile.customisation.banner_image.url }});
+		{% endif %}
+		{% if profile.customisation.background_color %}
+		background-color: {{ profile.customisation.background_color }};
+		{% else %}background-color: white;
+		{% endif %}
+		{% if profile.customisation.text_color %}
+		color: {{ profile.customisation.text_color }};
+		{% else %}
+		color: #000000;
+		{% endif %}
+	}
+	
+	.cool-element {
+		{% if profile.customisation.text_shadow_color %}
+		text-shadow: 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }};
+		{% else %}
+		text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
+		{% endif %}
+		{% if profile.customisation.text_color %}
+		color: {{ profile.customisation.text_color }};
+		{% endif %}
+	}
+</style>
+
+<div class="cool-div" style="min-height: 100vh;">
+		<br>
+        <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ pfp }}">
         <h1 class="text-center">{{ username }}</h1>
 		{% if profile.customisation.custom_html %}
 		{{ profile.customisation.custom_html|safe }}
 		{% endif %}
 		<h4 class="text-center">
 			{% if username.is_superuser %}
-				<i title="Admin" class="fas fa-clipboard-user"></i>
+				<i title="Admin" class='bx bxs-user-badge' ></i>
 			{% endif %}
 			{% if developer %}
-				<i title="Developer" class="fas fa-screwdriver-wrench"></i>
+				<i title="developer" class='bx bxs-wrench' ></i>
 			{% endif %}
 			{% if creator %}
-				<i title="Creator" class="fas fa-palette"></i>
+				<i title="Creator" class='bx bxs-palette' ></i>
 			{% endif %}
 			{% if supporter %}
-				<i title="Patreon supporter" class="fa-brands fa-patreon"></i>
+				<i title="Patreon supporter" class='bx bxl-patreon' ></i>
 			{% endif %}
 		</h4>
         <h5 class="text-center">{{ info }}</h5>
 		<div class="text-center">
 			{% if username != user and user.moderator %}
-			<h6><a class="video-icons icon-color" href="{% url 'profile-update' poopie %}"><ion-icon name="pencil-outline"></ion-icon></a>
+			<a class="cool-element btn btn-outline-primary" href="{% url 'profile-update' poopie %}">Edit</a>
 			{% elif username == user or user.is_superuser %}
-			<h6><a class="btn btn-outline-primary" href="{% url 'profile-update' poopie %}">Edit</a>
-			<a class="btn btn-outline-danger" href="{% url 'profile-delete' poopie %}">Delete</a></h6>
+			<h6><a class="cool-element btn btn-outline-primary" href="{% url 'profile-update' poopie %}">Edit</a>
+			<a class="cool-element btn btn-outline-danger" href="{% url 'profile-delete' poopie %}">Delete</a></h6>
 			{% endif %}
 			{% if username == user %}
-			<a class="btn btn-outline-success" href="{% url 'customise-profile' poopie %}">Customise page</a>
+			<a class="cool-element btn btn-outline-success" href="{% url 'customise-profile' poopie %}">Customise page</a>
 			{% endif %}
 			{% if username != request.user %}
-			<a class="video-icons icon-color" href="{% url 'profile-report' poopie %}"><i class="fas fa-flag"></i></a>
+			<a class="video-icons icon-color cool-element" href="{% url 'profile-report' poopie %}"><i class='bx bxs-flag-alt' ></i></a>
 			{% endif %}
 			<p class="follow-count" id="{{ poopie }}">{{ follow_num }} followers</p>
 			{% if request.user.is_authenticated %}
@@ -53,7 +84,7 @@
 			<b>(Follows you)</b>
 			{% endif %}
 			<div class="follow-button-container">
-				<button class="follow-button {% if is_following %}following btn btn-outline-danger {% else %}btn btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' poopie %}" data-url-remove="{% url 'remove-follower' poopie %}">
+				<button class="follow-button {% if is_following %}following cool-element btn cool-element btn-outline-danger {% else %}cool-element btn cool-element btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' poopie %}" data-url-remove="{% url 'remove-follower' poopie %}">
 					{% if is_following %}
 					<span>Following</span>
 					{% else %}
@@ -61,7 +92,7 @@
 					{% endif %}
 				</button>
 				{% if fe or request.user.is_superuser %}
-					<a class="btn btn-outline-success" href="{% url 'chat-detail' poopie %}">Message</a>
+					<a class="cool-element btn cool-element btn-outline-success" href="{% url 'chat-detail' poopie %}">Message</a>
 				{% endif %}
 			</div>
 			{% endif %}
@@ -77,31 +108,12 @@
 						<option value="{{ i }}" {% if i == current_user_rating %}selected{% endif %}>{{ i }} Star{% if i != '1' %}s{% endif %}</option>
 					{% endfor %}
 				</select>
-				<button type="submit" class="btn btn-success">Submit Rating</button>
+				<button type="submit" class="cool-element btn cool-element btn-success">Submit Rating</button>
 			</form>
 			{% endif %}
-		<div class="row justify-content-center">
-			{% for object in detail_profile_list %}
-			<div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color:black;">
-		            <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
-		                <div style="background-color:black;width:100%">
-		                        <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}"
-		                             class="position-absolute w-100 h-100"
-		                             style="top:0;left:0;object-fit: contain;">
-		                </div>
-		            </a>
-		            <div class="card-body" style="{% if object.uploader.customisation.text_shadow_color %}text-shadow: 0 0 5px {{ object.uploader.customisation.text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.text_shadow_color }};{% else %}text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;{% endif %} {% if object.uploader.customisation.video_banner %} background-image: url({{ object.uploader.customisation.video_banner.url }}); {% endif %}{% if object.uploader.customisation.background_color %}background-color: {{ object.uploader.customisation.background_color }};{% else %}background-color: white;{% endif %} {% if object.uploader.customisation.text_color %}color: {{ object.uploader.customisation.text_color }};{% else %}color: #000000;{% endif %}">
-						<a style="{% if object.uploader.customisation.text_color %}color: {{ object.uploader.customisation.text_color }};{% endif %}" class="link-text" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}{% if object.unlisted %} <i title="Unlisted" class="fas fa-eye-slash"></i>{% endif %}</h6></a>
-						<h6 class="text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}"><a class="link-text" style="{% if object.uploader.customisation.text_color %}color: {{ object.uploader.customisation.text_color }};{% endif %}" href="{% url 'detail-profile' object.uploader.id %}">{{ object.uploader.username }}</a></h6>
-						<h6 class="text-center">Views: {{ object.views.count }}</h6>
-						<h6 class="text-center">Recommendations: {{ object.recommendations }}</h6>
-						<h6 class="text-center">{{ object.date_posted|naturaltime }}</h6>
-						<h6 class="text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
-					</div>
-        		</div>
-			{% endfor %}
+		<div class="row justify-content-center mt-5">
+			{% include 'videos/video_cards.html' %}
 		</div>
-	</div>
 </div>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<script>
@@ -124,6 +136,7 @@
 			}, 20000);
 		});
 	</script>
+	{% if username != user %}
 	<script>
 		document.getElementById('rating-form').addEventListener('submit', function (event) {
 			event.preventDefault();
@@ -144,9 +157,5 @@
 			});
 		});
 	</script>
-	<style>
-	.outline {
-		text-shadow: 0 0 5px {{ profile.customisation.text_color }}, 0 0 5px {{ profile.customisation.text_color }}, 0 0 5px {{ profile.customisation.text_color }}, 0 0 5px {{ profile.customisation.text_color }};
-	}
-	</style>
+	{% endif %}
 {% endblock content %}

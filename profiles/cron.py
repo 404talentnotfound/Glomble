@@ -1,6 +1,9 @@
 from .models import Profile
 
 def reset_recommendations_left():
-    for i in Profile.objects.all():
+    profiles = Profile.objects.all()
+
+    for i in profiles:
         i.recommendations_left = 3
-        i.save()
+
+    Profile.objects.bulk_update(profiles, ['recommendations_left'])

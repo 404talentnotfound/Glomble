@@ -8,10 +8,12 @@ from django.dispatch import receiver
 import os
 from django.core.exceptions import ValidationError
 
-def validate_characters(value):
-    for char in value:
-        if len(char.encode('utf-8')) > 3 :
-            raise ValidationError("Input contains oversized characters.")
+# does more than just validate the length but renaming a validator function messes migrations up
+def validate_length(value: str):
+    if len(value) > 500:
+        raise ValidationError("Input is too long.")
+    if value.count('\n') > 10:
+        raise ValidationError("Too many newlines.")
         
 MEMES = "Memes"
 GAMING = "Gaming"
@@ -35,9 +37,9 @@ CATAGORIES = (
 
 class Video(models.Model, object):
     uploader = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
-    notification_message = models.CharField(max_length=50, default="new video", null=True, validators=[validate_characters])
-    title = models.CharField(max_length=75, validators=[validate_characters])
-    description = models.CharField(max_length=500, null=True, blank=True, validators=[validate_characters])
+    notification_message = models.CharField(max_length=50, default="new video", null=True)
+    title = models.CharField(max_length=75)
+    description = models.TextField(null=True, blank=True, validators=[validate_length], help_text="(must be under 500 characters)")
     video_file = models.FileField(upload_to='media/uploads/video_files/', validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])], help_text="(must be an mp4 or mov between 1kb and 5gb and be under 2 hours)")
     thumbnail = models.FileField(upload_to='media/uploads/thumbnails/', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'gif'])], help_text="(must be a png or jpg between 1kb and 10mb)")
     date_posted = models.DateTimeField(default=timezone.now)
@@ -49,6 +51,7 @@ class Video(models.Model, object):
     id = models.SlugField(primary_key=True)
     recommendations = models.PositiveIntegerField(default=0)
     comments = models.ManyToManyField("Comment", blank=True, related_name='video_comments')
+    pinned_comment = models.ForeignKey("Comment", null=True, blank=True, on_delete=models.CASCADE)
     push_notification = models.BooleanField(default=True)
     recommendation_milestones = models.PositiveIntegerField(default=0)
     category = models.CharField(max_length=13,
@@ -59,9 +62,11 @@ class Video(models.Model, object):
         return self.id
     
 @receiver(post_save, sender=Video)
-def video_notify(sender, instance, created, **kwargs):
-    if created and instance.push_notification:
-        VideoNotification.objects.create(video=instance, message=instance.notification_message)
+def video_created(sender, instance, created, **kwargs):
+    if created:
+        instance.uploader.videos.add(instance)
+        if instance.push_notification:
+            VideoNotification.objects.create(video=instance, message=instance.notification_message)
 
 @receiver(post_delete, sender=Video)
 def delete_files(sender, instance, using, **kwargs):
@@ -75,7 +80,7 @@ def delete_files(sender, instance, using, **kwargs):
             pass
 
 class Comment(models.Model):
-    comment = models.CharField(max_length=500, validators=[validate_characters])
+    comment = models.TextField(validators=[validate_length])
     date_posted = models.DateTimeField(default=timezone.now)
     commenter = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     post = models.ForeignKey('Video', on_delete=models.CASCADE)

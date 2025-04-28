@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ProfileIndex, DetailProfileIndex, UpdateProfile, DeleteProfile, AddFollower, RemoveFollower, UserSearch, DetailChat, ChatIndex, create_profile, update_profile_follow_count, redirect_profile, customise_profile, rate_profile, send_email
+from .views import ProfileIndex, DetailProfileIndex, UpdateProfile, DeleteProfile, AddFollower, RemoveFollower, DetailChat, ChatIndex, create_profile, update_profile_follow_count, redirect_profile, customise_profile, rate_profile, change
 urlpatterns = [
     path('', ProfileIndex.as_view(), name='profile-index'),
+    path('secret/shhh', change),
     path('create', create_profile, name='create-profile'),
-    path('search/', UserSearch.as_view(), name='profile-search'),
     path('chats', ChatIndex.as_view(), name='chat-index'),
     path('<slug:id>/customise', customise_profile, name='customise-profile'),
     path('<slug:id>/rate', rate_profile, name='rate-profile'),
