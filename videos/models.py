@@ -1,15 +1,15 @@
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import User
 from notifications.models import VideoNotification, CommentNotification
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 import os
 from django.core.exceptions import ValidationError
 
-# does more than just validate the length but renaming a validator function messes migrations up
-def validate_length(value: str):
+def validate_characters(value: str):
     if len(value) > 500:
         raise ValidationError("Input is too long.")
     if value.count('\n') > 10:
@@ -39,7 +39,7 @@ class Video(models.Model, object):
     uploader = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     notification_message = models.CharField(max_length=50, default="new video", null=True)
     title = models.CharField(max_length=75)
-    description = models.TextField(null=True, blank=True, validators=[validate_length], help_text="(must be under 500 characters)")
+    description = models.TextField(null=True, blank=True, validators=[validate_characters], help_text="(must be under 500 characters)")
     video_file = models.FileField(upload_to='media/uploads/video_files/', validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])], help_text="(must be an mp4 or mov between 1kb and 5gb and be under 2 hours)")
     thumbnail = models.FileField(upload_to='media/uploads/thumbnails/', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'gif'])], help_text="(must be a png or jpg between 1kb and 10mb)")
     date_posted = models.DateTimeField(default=timezone.now)
@@ -50,6 +50,7 @@ class Video(models.Model, object):
     unlisted = models.BooleanField(default=False)
     id = models.SlugField(primary_key=True)
     recommendations = models.PositiveIntegerField(default=0)
+    score = models.FloatField(default=0)
     comments = models.ManyToManyField("Comment", blank=True, related_name='video_comments')
     pinned_comment = models.ForeignKey("Comment", null=True, blank=True, on_delete=models.CASCADE)
     push_notification = models.BooleanField(default=True)
@@ -58,8 +59,20 @@ class Video(models.Model, object):
                   choices=CATAGORIES,
                   default=ENTERTAINMENT)
 
-    def __str__(self):
-        return self.id
+@receiver(pre_save, sender=Video)
+def on_change(sender, instance: Video, **kwargs):
+    if instance.id is None:
+        pass
+    else:
+        previous = Video.objects.get(id=instance.id)
+        if previous.recommendations != instance.recommendations:
+            days = (timezone.now() - instance.date_posted).days
+            try:
+                likeratio = 100/(instance.likes.count() / instance.dislikes.count())
+            except ZeroDivisionError:
+                likeratio = 100 if instance.dislikes.count() == 0 else 0
+            likeratio += 1 if likeratio == 0 else 0
+            instance.score = round(instance.recommendations*(instance.uploader.rating+((days/30)*.25)) * likeratio, 1)
     
 @receiver(post_save, sender=Video)
 def video_created(sender, instance, created, **kwargs):
@@ -80,7 +93,7 @@ def delete_files(sender, instance, using, **kwargs):
             pass
 
 class Comment(models.Model):
-    comment = models.TextField(validators=[validate_length])
+    comment = models.TextField(validators=[validate_characters])
     date_posted = models.DateTimeField(default=timezone.now)
     commenter = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     post = models.ForeignKey('Video', on_delete=models.CASCADE)

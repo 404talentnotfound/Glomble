@@ -63,7 +63,6 @@
         }
         }
             $(document).ready(function() {
-		$('.NO-CACHE').attr('src',function () { return $(this).attr('src') + "?a=" + Math.random() });
                 $(".recommend-button").click(function(e) {
                     e.preventDefault();
                     
@@ -77,12 +76,12 @@
                             csrfmiddlewaretoken: "{{ csrf_token }}",
                         },
                         success: function(data) {
+                            document.getElementById("score").innerHTML = data.score;
                             if (data.recommendations_left == 0) {
                                 recommendbutton.find("span").text("Recommend (on cooldown)");
                                 recommendbutton.toggleClass("btn btn-success btn btn-danger");
                             }
-                            else
-                                recommendbutton.find("span").text("Recommend (||)".replace("||", data.recommendations_left));
+                            // else recommendbutton.find("span").text("Recommend (||)".replace("||", data.recommendations_left));
                         },
                         error: function() {
                         },

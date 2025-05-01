@@ -16,7 +16,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -44,7 +43,7 @@ MEDIA_URL = "media/"
 
 CRONJOBS = [
     ('0 13 * * MON', 'videos.cron.reset_recommendations'),
-    ('0 */8 * * *', 'profiles.cron.reset_recommendations_left')
+    ('0 13 * * MON', 'profiles.cron.reset_recommendations_left')
 ]
 
 INSTALLED_APPS = [
@@ -134,9 +133,10 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, "profiles/static"), os.path.join(BASE
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_POST = 587
-EMAIL_USE_TLS = True
+EMAIL_USE_SSL = True
+EMAIL_USE_TLS = False
+EMAIL_HOST = 'smtp.hostinger.com'
+EMAIL_PORT = 465
 
 with open(os.path.join(BASE_DIR, 'email.txt')) as f:
     EMAIL_HOST_USER = f.read().strip()

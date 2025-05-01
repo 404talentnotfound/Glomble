@@ -108,12 +108,12 @@ def has_replies(pk):
 
 @register.simple_tag
 def most_recent_video(id):
-    video = Profile.objects.all().get(id=id).videos.all().order_by("-date_posted").first()
+    video = Profile.objects.all().get(id=id).videos.all().order_by("-date_posted").exclude(unlisted=True).first()
     return Video.objects.all().filter(id=video.id)
 
 @register.simple_tag
 def most_liked_video(id):
-    video = Profile.objects.all().get(id=id).videos.all().annotate(num_likes=Count('likes')).order_by("-num_likes").first()
+    video = Profile.objects.all().get(id=id).videos.all().annotate(num_likes=Count('likes')).order_by("-num_likes").exclude(unlisted=True).first()
     return Video.objects.all().filter(id=video.id)
 
 @register.simple_tag

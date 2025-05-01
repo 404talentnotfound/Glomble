@@ -1,5 +1,5 @@
 from django.shortcuts import render, reverse, redirect
-from .models import Profile, Chat, Message, ProfileCustomisation
+from .models import Profile, Chat, Message, ProfileCustomisation, ProfileRating
 import random
 from videos.models import Video
 from django.views.generic.list import ListView
@@ -22,8 +22,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
 import os
 from datetime import datetime, timedelta
-import sendgrid
-from sendgrid.helpers.mail import *
 from Glomble.pc_prod import *
 from django.contrib.auth.tokens import default_token_generator
 import magic
@@ -32,11 +30,13 @@ import subprocess
 from django.core.cache import cache
 from notifications.models import MilestoneNotification
 from django.shortcuts import render, redirect, get_object_or_404
+from django.core.mail import EmailMessage
 
 def change(request):
-    if request.user.id == 1:
-        for video in Video.objects.all():
-            video.uploader.videos.add(video)
+    email_body = render_to_string('profiles/email_update_4.html')
+    email = EmailMessage('Glomble Update #4', email_body, to=['phinnjamesbonte@gmail.com'])
+    email.content_subtype = "html"
+    email.send()
 
 @login_required
 def rate_profile(request, id):
@@ -45,14 +45,21 @@ def rate_profile(request, id):
     if request.method == "POST":
         form = ProfileRatingForm(request.POST)
         if form.is_valid():
-            rating = form.cleaned_data['rating']
-            profile.ratings[str(request.user.id)] = rating
+            rating_value = form.cleaned_data['rating']
+            obj, created = ProfileRating.objects.update_or_create(
+                rater=request.user,
+                rated_profile=profile,
+                defaults={'rating': rating_value}
+            )
             profile.update_rating()
             return JsonResponse({"success": True, "new_rating": profile.rating}, status=200)
         return JsonResponse({"success": False, "errors": form.errors}, status=400)
     else:
-        current_user_rating = profile.ratings.get(str(request.user.id), 0)
-        form = ProfileRatingForm(initial={"rating": current_user_rating})
+        try:
+            current_rating = ProfileRating.objects.get(rater=request.user, rated_profile=profile).rating
+        except ProfileRating.DoesNotExist:
+            current_rating = 0
+        form = ProfileRatingForm(initial={"rating": current_rating})
         return JsonResponse({"form": form.as_p()})
 
 @login_required
@@ -60,34 +67,46 @@ def customise_profile(request, id):
     customised_profile = get_object_or_404(Profile, id=id)
     if request.user != customised_profile.username:
         return redirect('detail-profile', id=id)
-    
+
+    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
     customisation, created = ProfileCustomisation.objects.get_or_create(customised_profile=customised_profile)
     if request.method == "POST":
         form = ProfileCustomisationForm(request.POST, request.FILES, instance=customisation)
         if form.is_valid():
             if 'banner_image' in request.FILES:
+                try:
+                    os.remove('media/'+customised_profile.customisation.banner_image.name)
+                except:
+                    pass
+                random_str = ''.join(random.choice(chars) for _ in range(10))
                 banner = request.FILES['banner_image']
                 form.save(commit=False)
                 temp_banner = tempfile.NamedTemporaryFile(delete=False)
                 for chunk in banner.chunks():
                     temp_banner.write(chunk)
-                form.instance.banner_image = f"profiles/banners/{customised_profile.id}.png"
+                form.instance.banner_image = f"profiles/banners/{customised_profile.id}-{random_str}.png"
 
-                subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}.png", shell=True, check=True)
+                subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}-{random_str}.png", shell=True, check=True)
 
                 temp_banner.close()
 
                 os.remove(temp_banner.name)
                     
             if 'video_banner' in request.FILES:
+                try:
+                    os.remove('media/'+customised_profile.customisation.video_banner.name)
+                except:
+                    pass
+
+                random_str = ''.join(random.choice(chars) for _ in range(10))
                 banner = request.FILES['video_banner']
                 form.save(commit=False)
                 temp_banner = tempfile.NamedTemporaryFile(delete=False)
                 for chunk in banner.chunks():
                     temp_banner.write(chunk)
-                form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}.png"
+                form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}-{random_str}.png"
 
-                subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 media/profiles/video_banners/{customised_profile.id}.png", shell=True, check=True)
+                subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 media/profiles/video_banners/{customised_profile.id}-{random_str}.png", shell=True, check=True)
 
                 temp_banner.close()
 
@@ -195,13 +214,9 @@ class CustomPasswordResetView(PasswordResetView):
             reverse('password_reset_confirm', args=[uid, token])
         )
         html_thing = render_to_string('profiles/password_reset_email.html', {"reset_url": reset_url, "user": user.username.username})
-        sg = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
-        from_email = Email(EMAIL_HOST_USER)
-        to_email_sendgrid = To(email)
-        content = Content("text/html", html_thing)
-        mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
-        mail_json = mail.get()
-        sg.client.mail.send.post(request_body=mail_json)
+        email_to_send = EmailMessage(mail_subject, html_thing, to=[email])
+        email_to_send.content_subtype = "html"
+        email_to_send.send()
         return redirect('password_reset_done')
 
 def activateEmail(request, user, to_email):
@@ -213,18 +228,11 @@ def activateEmail(request, user, to_email):
         'token': account_activation_token.make_token(user),
         "protocol": 'https' if request.is_secure() else 'http'
     })
-    sg = sendgrid.SendGridAPIClient(api_key=EMAIL_HOST_PASSWORD)
-    from_email = Email(EMAIL_HOST_USER)
-    to_email_sendgrid = To(to_email)
-    content = Content("text/html", message)
-    mail = Mail(from_email, to_email_sendgrid, mail_subject, content)
-    mail_json = mail.get()
-    response = sg.client.mail.send.post(request_body=mail_json)
-    if response.status_code == 202:
-        messages.success(request, f"Hello {user}, please go to your email {to_email} inbox and click on \
-                the activation link to confirm and complete the registration. Note: If you can't find the email, check your spam folder.")
-    else:
-        messages.error(request, f'Problem sending email to {to_email}, check if you typed it correctly.')
+    email_to_send = EmailMessage(mail_subject, message, to=[to_email])
+    email_to_send.content_subtype = "html"
+    email_to_send.send()
+    messages.success(request, f"Hello {user}, please go to your email {to_email} inbox and click on \
+        the activation link to confirm and complete the registration. Note: If you can't find the email, check your spam folder.")
 
 @login_required
 def profile(request):
@@ -410,15 +418,19 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                                 temp_pfp.write(chunk)
                             try:
                                 if profile.profile_picture.name != "media/profiles/pfps/default.png":
-                                    os.remove(f'media/profiles/pfps/{profile.id}.png')
+                                    os.remove(profile.profile_picture.name)
                             except Exception as e:
                                 pass
 
                             cache.set(f"last_profileupdate_{self.request.user.id}", datetime.now(), timeout=None)
 
-                            subprocess.run(f"sudo ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 media/profiles/pfps/{profile.id}.png", shell=True, check=True)
+                            chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 
-                            form.instance.profile_picture = f"media/profiles/pfps/{profile.id}.png"
+                            random_str = ''.join(random.choice(chars) for _ in range(10))
+
+                            subprocess.run(f"sudo ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 media/profiles/pfps/{profile.id}-{random_str}.png", shell=True, check=True)
+
+                            form.instance.profile_picture = f"media/profiles/pfps/{profile.id}-{random_str}.png"
 
                             temp_pfp.close()
 

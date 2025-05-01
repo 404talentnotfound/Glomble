@@ -57,9 +57,7 @@
 		<meta property="og:video:type" content="video/mp4">
 	</head>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<div id="notification" class="text-center" style="position: sticky; top: 0px; background-color: #c51717; z-index: 1;">
-	</div>
-	<div class="cool-div">
+	<div class="cool-div" style="min-height: 100vh;">
 		<div class="container" id="post-container">
 					<div class="row">
 								<video class="mt-5" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.video_file }}" type="video/mp4" style="max-height:40vw; background-color: black !important;" controls autoplay>
@@ -70,7 +68,7 @@
 						{% can_recommend request.user as recommend_available %}
 						<button class="recommend-button {% if recommend_available %} cool-element btn cool-element btn-success {% else %}cool-element btn cool-element btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
 							{% if recommend_available %}
-							<span>Recommend ({% recommendations_left request.user %})</span>
+							<span>Recommend</span>
 							{% else %}
 							<span>Recommend (on cooldown)</span>
 							{% endif %}
@@ -107,7 +105,7 @@
 					</div>
 					{% endif %}
 					<p>Views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span><br>
-					Recommendations: <span class="recommendation-count">{{ post.recommendations }}</span><br>
+					Score: <span id="score">{{ post.score }}</span><br>
 					Category: <span>{{ post.category }}</span></p>
 					<div class="row">
 						<div class="col-md-6">
@@ -225,11 +223,11 @@
 								{% has_replies comment.pk as has_replies %}
 								{% if has_replies %}
 								{% reply_count comment.pk as count_replies %}
-								<button id="{{ comment.pk }}" onclick="onShowReplies(this);" class="cool-element btn btn-outline-info">Show {{ count_replies }} {% if count_replies == 1 %}reply{% else %}replies{% endif %}</button>
+								<button id="{{ comment.pk }}-{{ count_replies }}" onclick="onShowReplies(this);" class="cool-element btn btn-outline-info">Show {{ count_replies }} {% if count_replies == 1 %}reply{% else %}replies{% endif %}</button>
 								{% endif %}
 					
 								<div class="reply" style="display: none;" id="reply{{ comment.pk }}">
-									<form id="reply-form" method="POST">
+									<form class="reply-form" method="POST">
 										{% csrf_token %}
 										<input type="hidden" name="form_type" value="reply">
 										<input type="hidden" name="comment_id" value="{{comment.pk}}">
@@ -251,7 +249,7 @@
 														<a class="link-text cool-element" href="{% url 'detail-profile' reply.commenter.id %}">
 															<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">
 															{{ reply.commenter.username }}
-															{% if comment.commenter.username.is_superuser %}
+															{% if reply.commenter.username.is_superuser %}
 															<i title="Admin" class='bx bxs-user-badge' ></i>
 															{% endif %}</a></strong>
 														</a>
@@ -307,6 +305,7 @@
 			</div>
 		</div>
 	</div>
+	<div id="notification" class="text-center" style="position: sticky; bottom: 0px; background-color: #c51717; z-index: 2;"></div>
 	<script>
 		function onClick(ele) {
 			if (document.getElementById('reply'+ele.id).style.display === 'none') {
@@ -329,68 +328,37 @@
 					container.innerHTML = data.html;
 				},
 				error: function(xhr, status, error) {
-					console.error("Error fetching recommendations:", error);
+					console.error("Error fetching recommendations.");
 				}
 			});
 		}
 
 		function onShowReplies(ele) {
-			if (document.getElementById('replies'+ele.id).style.display === 'none') {
-				document.getElementById('replies'+ele.id).style.display = 'block'
-				ele.innerHTML = "Hide replies"
+			let id_thing = ele.id.split('-')[0]
+			if (document.getElementById('replies'+id_thing).style.display === 'none') {
+				document.getElementById('replies'+id_thing).style.display = 'block'
+				ele.innerHTML = "Hide"
+                                ele.innerHTML += Number(ele.id.split('-')[1]) == 1 ? " reply" : " replies"
 			}
 			else {
-				document.getElementById('replies'+ele.id).style.display = 'none'
-				ele.innerHTML = "Show replies"
+				document.getElementById('replies'+id_thing).style.display = 'none'
+				ele.innerHTML = "Show " + ele.id.split('-')[1]
+                                ele.innerHTML += Number(ele.id.split('-')[1]) == 1 ? " reply" : " replies" 
 			}
 		}
-		
-		function updateViewCount(videoId) {
-			globalThis.viewed = false
-			$.ajax({
-				type: "GET",
-				url: `${videoId}/update-view-count/`,
-				success: function(data) {
-					$(".view-count").text(data.view_count);
-					globalThis.viewed = data.viewed;
-				},
-			});
-		}
-
-		function updateRecommendCount(videoId) {
-			$.ajax({
-				type: "GET",
-				url: `${videoId}/update-recommendation-count/`,
-				success: function(data) {
-					$(".recommendation-count").text(data.recommendation_count);
-				},
-			});
-		}
-
-		$(document).ready(function() {
-			var videoId = $(".view-count").attr('id');
-			var interval = setInterval(function() {
-				if (globalThis.viewed == true) clearInterval(interval);
-				updateViewCount(videoId);
-				updateRecommendCount(videoId);
-			}, 1000);
-			var interval2 = setInterval(function() {
-				updateViewCount(videoId);
-				updateRecommendCount(videoId);
-			}, 20000);
-		});
 
 		$(document).ready(function() {
 			const video = $("video")[0];
 			const videoId = "{{ post.id }}";
 			const progressKey = "video-progress-" + videoId;
+			const volumeKey = "video-volume";
 
 			function makeTimestampsClickable(container) {
-				const timestampRegex = /\b(\d{1,2}):([0-5]\d)\b/g;
+				const timestampRegex = /\b(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)\b/g;
 
 				$(container).html(function(_, oldHtml) {
-					return oldHtml.replace(timestampRegex, function(match, min, sec) {
-						const seconds = parseInt(min) * 60 + parseInt(sec);
+					return oldHtml.replace(timestampRegex, function(match, hour, min, sec) {
+						const seconds = (parseInt(hour || 0) * 3600) + (parseInt(min) * 60) + parseInt(sec);
 						return `<a href="#" class="timestamp" data-seconds="${seconds}">${match}</a>`;
 					});
 				});
@@ -405,9 +373,17 @@
 				video.play();
 			});
 
+			if (localStorage.getItem(volumeKey)) {
+				video.volume = parseFloat(localStorage.getItem(volumeKey));
+			}
+
 			if (localStorage.getItem(progressKey)) {
 				video.currentTime = parseFloat(localStorage.getItem(progressKey));
 			}
+
+			video.addEventListener('volumechange', function() {
+				localStorage.setItem(volumeKey, video.volume);
+			});
 
 			video.addEventListener('timeupdate', function() {
 				localStorage.setItem(progressKey, video.currentTime);
@@ -417,6 +393,7 @@
 				localStorage.removeItem(progressKey);
 			});
 		});
+
 
 		$(document).ready(function() {
 			function expandParentReplies($comment) {
@@ -451,15 +428,14 @@
 			}
 		});
 	
-		document.addEventListener("DOMContentLoaded", function() {
+		document.addEventListener("DOMContentLoaded", function () {
 			const commentForm = document.getElementById("comment-form");
-			const replyForm = document.getElementById("reply-form");
-			globalThis.timer = 0
+			const replyForms = document.querySelectorAll(".reply-form");
+			globalThis.timer = 0;
 
 			if (commentForm) {
-				commentForm.addEventListener("submit", function(e) {
+				commentForm.addEventListener("submit", function (e) {
 					e.preventDefault();
-
 					const formData = new FormData(commentForm);
 
 					fetch(commentForm.action, {
@@ -467,85 +443,51 @@
 						headers: {
 							"X-Requested-With": "XMLHttpRequest",
 						},
-						body: formData
+						body: formData,
 					})
-					.then(response => response.json())
-					.then(data => {
-						if (data.success) {
-							clearTimeout(globalThis.timer);
-							const newComment = document.getElementById('notification');
-							newComment.innerHTML = 'Comment added!';
-							newComment.style.backgroundColor = '#32cd32';
-
-							const commentCount = document.getElementById("cool");
-							commentCount.innerHTML = data.count + ' Comments';
-
-							globalThis.timer = setTimeout(() => {
-								newComment.innerHTML = '';
-							}, 2000);
-
-							replyForm.reset();
-						} else {
-							clearTimeout(globalThis.timer);
-							const newComment = document.getElementById('notification');
-							newComment.innerHTML = 'Comment failed to post due to cooldown.';
-							newComment.style.backgroundColor = '#c51717';
-
-							const commentCount = document.getElementById("cool");
-							commentCount.innerHTML = data.count + ' Comments';
-
-							globalThis.timer = setTimeout(() => {
-								newComment.innerHTML = '';
-							}, 2000);
-						}
-					})
+						.then((response) => response.json())
+						.then((data) => handleResponse(data, commentForm));
 				});
-			} 
-			if (replyForm) {
-				replyForm.addEventListener("submit", function(e) {
+			}
+
+			replyForms.forEach((form) => {
+				form.addEventListener("submit", function (e) {
 					e.preventDefault();
+					const formData = new FormData(form);
 
-					const formData = new FormData(replyForm);
-
-					fetch(replyForm.action, {
+					fetch(form.action, {
 						method: "POST",
 						headers: {
 							"X-Requested-With": "XMLHttpRequest",
 						},
-						body: formData
+						body: formData,
 					})
-					.then(response => response.json())
-					.then(data => {
-						if (data.success) {
-							clearTimeout(globalThis.timer);
-							const newComment = document.getElementById('notification');
-							newComment.innerHTML = 'Comment added!';
-							newComment.style.backgroundColor = '#32cd32';
-
-							const commentCount = document.getElementById("cool");
-							commentCount.innerHTML = data.count + ' Comments';
-
-							globalThis.timer = setTimeout(() => {
-								newComment.innerHTML = '';
-							}, 2000);
-
-							replyForm.reset();
-						} else {
-							clearTimeout(globalThis.timer);
-							const newComment = document.getElementById('notification');
-							newComment.innerHTML = 'Comment failed to post due to cooldown.';
-							newComment.style.backgroundColor = '#c51717';
-
-							const commentCount = document.getElementById("cool");
-							commentCount.innerHTML = data.count + ' Comments';
-
-							globalThis.timer = setTimeout(() => {
-								newComment.innerHTML = '';
-							}, 2000);
-						}
-					})
+						.then((response) => response.json())
+						.then((data) => handleResponse(data, form));
 				});
+			});
+
+			function handleResponse(data, form) {
+				clearTimeout(globalThis.timer);
+				const notification = document.getElementById("notification");
+				const commentCount = document.getElementById("cool");
+
+				if (data.success) {
+					notification.innerHTML = "Comment added!";
+					notification.style.backgroundColor = "#32cd32";
+					form.reset();
+				} else {
+					notification.innerHTML = "Comment failed to post due to cooldown.";
+					notification.style.backgroundColor = "#c51717";
+				}
+
+				commentCount.innerHTML = data.count + " Comments";
+
+				globalThis.timer = setTimeout(() => {
+					notification.innerHTML = "";
+				}, 2000);
 			}
 		});
+
 	</script>
 {% endblock content %}

@@ -42,11 +42,24 @@ class BaseNotification(models.Model, object):
 def video_notify(sender, instance, created, **kwargs):
     if created:
         followers = instance.video.uploader.followers.all()
-        profiles = Profile.objects.filter(id__in=[f.id for f in followers])
+        profiles = Profile.objects.filter(username__in=followers)
 
         notifications = [BaseNotification(video_notification=instance, profile=profile) for profile in profiles]
 
         BaseNotification.objects.bulk_create(notifications)
+
+        created_notifications = BaseNotification.objects.all().filter(
+            video_notification=instance,
+        )
+
+        through_model = Profile.notifications.through
+        through_model.objects.bulk_create([
+            through_model(
+                profile_id=notification.profile_id,
+                basenotification_id=notification.id
+            )
+            for notification in created_notifications
+        ])
 
 @receiver(post_save, sender=CommentNotification)
 def comment_notify(sender, instance, created, **kwargs):
@@ -66,8 +79,23 @@ def comment_notify(sender, instance, created, **kwargs):
 @receiver(post_save, sender=UpdateNotification)
 def update_notify(sender, instance, created, **kwargs):
     if created:
-        notifications = [BaseNotification(update_notification=instance, profile=profile) for profile in Profile.objects.all()]
+        profiles = Profile.objects.all()
+
+        notifications = [BaseNotification(update_notification=instance, profile=profile) for profile in profiles]
         BaseNotification.objects.bulk_create(notifications)
+
+        created_notifications = BaseNotification.objects.all().filter(
+            update_notification=instance,
+        )
+
+        through_model = Profile.notifications.through
+        through_model.objects.bulk_create([
+            through_model(
+                profile_id=notification.profile_id,
+                basenotification_id=notification.id
+            )
+            for notification in created_notifications
+        ])
 
 @receiver(post_save, sender=MilestoneNotification)
 def milestone_notify(sender, instance, created, **kwargs):

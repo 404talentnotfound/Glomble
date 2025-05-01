@@ -24,7 +24,7 @@ import subprocess
 from notifications.models import MilestoneNotification
 
 def get_recommended_videos(request, category):
-    videos = random.sample(list(Video.objects.all().filter(category=category)), 3)
+    videos = random.sample(list(Video.objects.all().filter(category=category).exclude(unlisted=True)), 3)
     rendered_html = render(request, 'videos/video_cards.html', {'object_list': videos})
     return JsonResponse({"html": rendered_html.content.decode('utf-8')})
 
@@ -58,21 +58,6 @@ def update_video_view_count(request, id):
 
     view_count = Video.objects.get(id=id).views.count()
     return JsonResponse({"view_count": view_count, "viewed": viewed})
-
-def update_video_recommendation_count(request, id):
-    recommendation_count = Video.objects.get(id=id).recommendations
-    return JsonResponse({"recommendation_count": recommendation_count})
-
-def update_video_like_count(request, id):
-    like_count = Video.objects.get(id=id).likes.count()
-    dislike_count = Video.objects.get(id=id).dislikes.count()
-    return JsonResponse({"like_count": like_count, "dislike_count": dislike_count})
-
-def update_comments_like_count(request, id):
-    for comment in Video.objects.get(id=id).comments.all():
-        like_count = comment.likes.count()
-        dislike_count = comment.dislikes.count()
-        return JsonResponse({"like_count": like_count, "dislike_count": dislike_count, "pk_comment": comment.pk})
 
 def handler500(request, exception, template_name="500.html"):
     response = render(template_name)
@@ -130,9 +115,9 @@ class Index(ListView):
         elif sort_by == 'views':
             queryset = queryset.annotate(num_views=Count('views')).order_by('-num_views')
         elif sort_by == "recommended":
-            queryset = queryset.annotate(num_likes=Count('likes')).order_by("-recommendations", '-num_likes')
+            queryset = queryset.annotate(num_likes=Count('likes')).order_by("-score", '-num_likes')
         else:
-            queryset = queryset.annotate(num_likes=Count('likes')).order_by("-recommendations", '-num_likes')
+            queryset = queryset.annotate(num_likes=Count('likes')).order_by("-score", '-num_likes')
 
         return queryset
 
@@ -241,7 +226,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             return super().form_valid(form)
 
         except Exception as e:
-            form.add_error(None, f"An error occurred during processing {e}")
+            form.add_error(None, f"An error occurred during processing.")
             return self.form_invalid(form)
 
         finally:
@@ -548,9 +533,9 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
         video.save()
         profile.save()
 
-        recommend_count = video.recommendations
-        
-        return JsonResponse({'recommend_count': recommend_count, 'recommendations_left': profile.recommendations_left})
+        score = video.score
+
+        return JsonResponse({'score': score, 'recommendations_left': profile.recommendations_left})
     
     def test_func(self):
         id = self.kwargs['id']

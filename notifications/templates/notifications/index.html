@@ -31,11 +31,12 @@
                         <a href="{% url 'video-detail' object.comment_notification.comment.post.id %}#comment={{ object.comment_notification.comment.pk }}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.comment_notification.comment.post.thumbnail }}" width="128" height="72"></a>
                         <div class="card-body">
                             <a class="link-text" href="{% url 'video-detail' object.comment_notification.comment.post.id %}"><h6 class="text-center shit">{{ object.comment_notification.comment.post.title }}</h6></a>
-                            <h6 class="text-muted text-center">{{ object.comment_notification.comment.date_made|naturaltime }}</h6>
+                            <h6 class="text-muted text-center">{{ object.comment_notification.comment.date_posted|naturaltime }}</h6>
                         </div>
                     </div>
                 {% elif type == 2 %}
                     <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class='bx bxs-check-circle' ></i>: {{ object.update_notification.message }}</h4>
+                    <h6 class="text-muted text-center">{{ object.date_notified|naturaltime }}</h6>
                 {% elif type == 3 %}
                     <h4><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' object.video_notification.video.uploader.id %}">
                         <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.video_notification.video.uploader.profile_picture }}">
@@ -49,6 +50,7 @@
                     </div>
                 {% elif type == 4 %}
                     <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class='bx bxs-check-circle' ></i>: {{ object.milestone_notification.message }}</h4>
+                    <h6 class="text-muted text-center">{{ object.date_notified|naturaltime }}</h6>
                 {% endif %}
             </div>
             {% endif %}
