@@ -77,11 +77,14 @@
                         },
                         success: function(data) {
                             document.getElementById("score").innerHTML = data.score;
-                            if (data.recommendations_left == 0) {
-                                recommendbutton.find("span").text("Recommend (on cooldown)");
-                                recommendbutton.toggleClass("btn btn-success btn btn-danger");
+                            if (data.has_recommended) {
+                                recommendbutton.find("span").text("Unrecommend");
+                                recommendbutton.toggleClass("btn-success btn-danger");
                             }
-                            // else recommendbutton.find("span").text("Recommend (||)".replace("||", data.recommendations_left));
+                            else {
+                                recommendbutton.find("span").text("Recommend");
+                                recommendbutton.toggleClass("btn-danger btn-success");
+                            }
                         },
                         error: function() {
                         },

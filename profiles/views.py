@@ -501,7 +501,7 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
         if (followers_count in MILESTONES) and followers_count > profilething.follower_milestones:
             profilething.follower_milestones = followers_count
             profilething.save()
-            MilestoneNotification.objects.create(profile=profilething)
+            MilestoneNotification.objects.create(profile=profilething, message=f"Your profile reached a follower milestone of {followers_count} people!")
 
         return JsonResponse({'follow_count': followers_count})
     

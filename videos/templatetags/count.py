@@ -32,15 +32,9 @@ def has_notifications(user):
         return False
     
 @register.simple_tag
-def can_recommend(user):
+def can_recommend(video_id, user):
     if Profile.objects.all().filter(username=user).exists():
-        return Profile.objects.all().get(username=user).recommendations_left > 0
-    return False
-
-@register.simple_tag
-def recommendations_left(user):
-    if Profile.objects.all().filter(username=user).exists():
-        return Profile.objects.all().get(username=user).recommendations_left
+        return Profile.objects.all().get(username=user) not in Video.objects.all().get(id=video_id).recommendations.all()
     return False
     
 @register.simple_tag

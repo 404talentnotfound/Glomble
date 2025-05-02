@@ -65,13 +65,15 @@
 					</div>
 					<h5 class="mt-4">{{ post.title }}
 						{% if not user.is_anonymous and post.uploader.username != user %}
-						{% can_recommend request.user as recommend_available %}
-						<button class="recommend-button {% if recommend_available %} cool-element btn cool-element btn-success {% else %}cool-element btn cool-element btn-danger {% endif %}" data-url="{% url 'video-recommend' post.id %}">
-							{% if recommend_available %}
-							<span>Recommend</span>
-							{% else %}
-							<span>Recommend (on cooldown)</span>
-							{% endif %}
+						{% can_recommend post.id user as can %}
+						<button class="recommend-button cool-element btn {% if can %}btn-success{% else %}btn-danger{% endif %}" data-url="{% url 'video-recommend' post.id %}">
+							<span>
+								{% if can %}
+								Recommend
+								{% else %}
+								Unrecommend
+								{% endif %}
+							</span>
 						</button>
 						{% endif %}
 						{% if post.uploader.username == user or request.user.is_superuser %}

@@ -38,7 +38,7 @@ class Profile(models.Model):
     notifications = models.ManyToManyField("notifications.BaseNotification", blank=True, related_name='notifications')
     watched_videos = models.ManyToManyField("videos.Video", blank=True, related_name='watched_videos')
     chats = models.ManyToManyField("Chat", blank=True, related_name='chats')
-    recommendations_left = models.PositiveIntegerField(default=1)
+    ratings = models.JSONField(default=dict, blank=True, null=True)
     rating = models.FloatField(default=5, validators=[MinValueValidator(0), MaxValueValidator(5)])
     moderator = models.BooleanField(default=False)
     helper = models.BooleanField(default=False)

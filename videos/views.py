@@ -24,7 +24,7 @@ import subprocess
 from notifications.models import MilestoneNotification
 
 def get_recommended_videos(request, category):
-    videos = random.sample(list(Video.objects.all().filter(category=category).exclude(unlisted=True)), 3)
+    videos = random.sample(list(Video.objects.all().filter(category=category).exclude(unlisted=True).exclude(uploader__shadowbanned=True)), 3)
     rendered_html = render(request, 'videos/video_cards.html', {'object_list': videos})
     return JsonResponse({"html": rendered_html.content.decode('utf-8')})
 
@@ -522,28 +522,30 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
 
         video = Video.objects.get(id=hi)
         profile = Profile.objects.all().get(username=self.request.user)
-        
-        profile.recommendations_left -= 1
-        video.recommendations += 1
 
-        if (video.recommendations in MILESTONES) and video.recommendations > video.recommendation_milestones:
-            video.recommendation_milestones = video.recommendations
-            MilestoneNotification.objects.create(video=video, message=f'Your video "{video.title}" reached a recommendation milestone!')
+        has_recommended = True
+
+        if profile in video.recommendations.all():
+            has_recommended = False
+            video.recommendations.remove(profile)
+        else:
+            video.recommendations.add(profile)
+
+        if (video.recommendations.count() in MILESTONES) and video.recommendations.count() > video.recommendation_milestones:
+            video.recommendation_milestones = video.recommendations.count()
+            MilestoneNotification.objects.create(video=video, message=f'Your video "{video.title}" reached a recommendation milestone of {video.recommendations.count()} people!')
 
         video.save()
-        profile.save()
 
         score = video.score
 
-        return JsonResponse({'score': score, 'recommendations_left': profile.recommendations_left})
+        return JsonResponse({'score': score, 'has_recommended': has_recommended})
     
     def test_func(self):
         id = self.kwargs['id']
         video = Video.objects.get(id=id)
         if Profile.objects.all().filter(username=self.request.user).exists():
-            if Profile.objects.all().get(username=self.request.user) != video.uploader:
-                return Profile.objects.all().get(username=self.request.user).recommendations_left > 0
-            return False
+            return Profile.objects.all().get(username=self.request.user) != video.uploader
         return False
 
 class DownloadVideo(View):

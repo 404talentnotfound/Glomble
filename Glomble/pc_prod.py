@@ -29,7 +29,7 @@ SUPPORTER_IDS = open(os.path.join(BASE_DIR, "supporters.txt")).read().split("\n"
 MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 LOGIN_URL = 'login'
 
@@ -41,9 +41,10 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "media/"
 
+
 CRONJOBS = [
     ('0 13 * * MON', 'videos.cron.reset_recommendations'),
-    ('0 13 * * MON', 'profiles.cron.reset_recommendations_left')
+    ('0 */8 * * *', 'videos.cron.recalculate_score'),
 ]
 
 INSTALLED_APPS = [

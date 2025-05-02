@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import User
 from notifications.models import VideoNotification, CommentNotification
-from django.db.models.signals import post_delete, post_save, pre_save
+from django.db.models.signals import post_delete, post_save, m2m_changed
 from django.dispatch import receiver
 import os
 from django.core.exceptions import ValidationError
@@ -49,7 +49,7 @@ class Video(models.Model, object):
     duration = models.FloatField(null=True, blank=True)
     unlisted = models.BooleanField(default=False)
     id = models.SlugField(primary_key=True)
-    recommendations = models.PositiveIntegerField(default=0)
+    recommendations = models.ManyToManyField("profiles.Profile", blank=True, related_name='video_recommendations')
     score = models.FloatField(default=0)
     comments = models.ManyToManyField("Comment", blank=True, related_name='video_comments')
     pinned_comment = models.ForeignKey("Comment", null=True, blank=True, on_delete=models.CASCADE)
@@ -59,21 +59,25 @@ class Video(models.Model, object):
                   choices=CATAGORIES,
                   default=ENTERTAINMENT)
 
-@receiver(pre_save, sender=Video)
-def on_change(sender, instance: Video, **kwargs):
-    if instance.id is None:
-        pass
-    else:
-        previous = Video.objects.get(id=instance.id)
-        if previous.recommendations != instance.recommendations:
-            days = (timezone.now() - instance.date_posted).days
-            try:
-                likeratio = 100/(instance.likes.count() / instance.dislikes.count())
-            except ZeroDivisionError:
-                likeratio = 100 if instance.dislikes.count() == 0 else 0
-            likeratio += 1 if likeratio == 0 else 0
-            instance.score = round(instance.recommendations*(instance.uploader.rating+((days/30)*.25)) * likeratio, 1)
-    
+@receiver(m2m_changed, sender=Video.recommendations.through)
+def on_recommendation_change(sender, instance: Video, action, **kwargs):
+    if action in ['post_add', 'post_remove', 'post_clear']:
+        days = (timezone.now() - instance.date_posted).days
+        like_count = instance.likes.count()
+        dislike_count = instance.dislikes.count()
+        total_votes = like_count + dislike_count
+
+        likeratio = like_count / total_votes if total_votes > 0 else 100
+        if likeratio == 0:
+            likeratio += 1
+
+        if instance.duration > 180 and instance.category != "Meme":
+            instance.score = round((instance.recommendations.count() * (instance.uploader.rating + ((days / 30)*.25))) * likeratio, 1)
+        else:
+            instance.score = instance.recommendations.count()
+
+        instance.save(update_fields=["score"])
+
 @receiver(post_save, sender=Video)
 def video_created(sender, instance, created, **kwargs):
     if created:

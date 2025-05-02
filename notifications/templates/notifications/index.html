@@ -50,7 +50,15 @@
                     </div>
                 {% elif type == 4 %}
                     <h4><img class="circular_image" src="{% static 'videos/favicon.ico' %}">Glomble <i class='bx bxs-check-circle' ></i>: {{ object.milestone_notification.message }}</h4>
-                    <h6 class="text-muted text-center">{{ object.date_notified|naturaltime }}</h6>
+                    {% if object.milestone_notification.video != None %}
+                    <div class="col-md-3 col-sm-12">
+                        <a href="{% url 'video-detail' object.milestone_notification.video.id %}"><img style="display:block; margin:auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.milestone_notification.video.thumbnail }}" width="128" height="72"></a>
+                        <div class="card-body">
+                            <a class="link-text" href="{% url 'video-detail' object.milestone_notification.video.id %}"><h6 class="text-center shit">{{ object.milestone_notification.video.title }}</h6></a>
+                            <h6 class="text-muted text-center">{{ object.milestone_notification.video.date_posted|naturaltime }}</h6>
+                        </div>
+                    </div>
+                    {% endif %}
                 {% endif %}
             </div>
             {% endif %}
