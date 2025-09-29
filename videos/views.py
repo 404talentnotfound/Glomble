@@ -6,7 +6,6 @@ from django.views.generic.list import ListView
 from .models import Video, Comment
 from django.db.models import Q, Count
 from itertools import chain
-from moviepy.video.io.VideoFileClip import VideoFileClip
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from profiles.models import Profile
@@ -16,12 +15,14 @@ from django.views import View
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from datetime import datetime, timedelta
+from PIL import Image
 import tempfile
 import os
 import random
 from Glomble.pc_prod import *
 import subprocess
 from notifications.models import MilestoneNotification
+from django.http import JsonResponse
 
 def get_recommended_videos(request, category):
     videos = random.sample(list(Video.objects.all().filter(category=category).exclude(unlisted=True).exclude(uploader__shadowbanned=True)), 3)
@@ -72,6 +73,9 @@ def redirect_video(request, id):
 
 def mcdonalds(request):
     return redirect('https://mcdonalds.com')
+
+def tos_page(request):
+    return redirect('https://docs.google.com/document/d/1yLgjILLIyZ_wheT9Nf3y9j3u3kcGJua6phvBKHIcfJU')
 
 class Index(ListView):
     model = Video
@@ -147,22 +151,22 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
         form.instance.uploader = Profile.objects.get(username=self.request.user)
 
-        unique = False
         chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-        video_id = random.choice(chars)
-
-        while not unique:
-            video_id += "".join(random.choice(chars) for _ in range(10))
-            if not Video.objects.filter(id=video_id).exists():
-                unique = True
+        video_id = ""
+        
+        while True:
+            for _ in range(12):
+                video_id += random.choice(chars)
+            if not Profile.objects.filter(id=video_id).exists():
+                break
             else:
-                video_id = video_id[:1]
+                video_id = ""
 
         form.instance.id = video_id
 
         uploaded_video = self.request.FILES['video_file']
-        if not 1024 < uploaded_video.size < 5000000000:
-            form.add_error(None, "The video size must be between 1kb and 5gb.")
+        if not 1024 < uploaded_video.size < 100000000:
+            form.add_error(None, "The video size must be between 1kb and 100mb.")
             return self.form_invalid(form)
         
         temp_video_file = tempfile.NamedTemporaryFile(delete=False)
@@ -170,8 +174,8 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         
         try:
             uploaded_thumbnail = self.request.FILES['thumbnail']
-            if not 1024 < uploaded_thumbnail.size < 10000000:
-                form.add_error(None, "The thumbnail size must be between 1kb and 10mb.")
+            if not 1024 < uploaded_thumbnail.size < 5000000:
+                form.add_error(None, "The thumbnail size must be between 1kb and 5mb.")
                 return self.form_invalid(form)
             temp_thumbnail_file = tempfile.NamedTemporaryFile(delete=False)
             temp_thumbnail_file.write(uploaded_thumbnail.read())
@@ -179,23 +183,18 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             uploaded_thumbnail = False
 
         try:
-            vid = VideoFileClip(temp_video_file.name)
+            result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                             "format=duration", "-of",
+                             "default=noprint_wrappers=1:nokey=1", temp_video_file.name],
+            stdout = subprocess.PIPE,
+            stderr = subprocess.STDOUT)
+            duration = float(result.stdout)
 
-            if vid.duration > 7200 or vid.duration < 1:
+            if duration > 7200 or duration < 1:
                 form.add_error(None, "The video duration must be between 1 second and 2 hours.")
                 return self.form_invalid(form)
 
-            video_filename = os.path.join(BASE_DIR, f"media/uploads/video_files/{video_id}.mp4")
-            try:
-                gif = False
-                if uploaded_thumbnail.name[-3:] != "gif":
-                        thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
-                else:
-                        gif = True
-                        thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.gif")
-            except:
-                gif = False
-                thumbnail_filename = os.path.join(BASE_DIR, f"media/uploads/thumbnails/{video_id}.png")
+            video_filename = os.path.join(BASE_DIR, f"{video_id}.mp4")
 
             subprocess.run(
                 f"""ffmpeg -i {temp_video_file.name} -vf "scale='min(1920,iw)':-1" -c:v libx264 -crf 28 -c:a copy -preset fast {video_filename}""",
@@ -203,44 +202,93 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                 check=True,
             )
 
+            temp_video_file.close()
+
+            with open(video_filename) as video_file:
+                client.upload_fileobj(
+                    video_file.buffer,
+                    AWS_STORAGE_BUCKET_NAME,
+                    f"uploads/video_files/{video_id}.mp4",
+                    ExtraArgs={"ContentType": 'video/mp4'},
+                )
+
+            try:
+                gif = False
+                if uploaded_thumbnail.name[-3:] != "gif":
+                    thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.png")
+                else:
+                    gif = True
+                    thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.gif")
+            except:
+                gif = False
+                thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.png")
+            
             if uploaded_thumbnail:
+                ttsize = Image.open(temp_thumbnail_file.name).size
+                ttwidth, ttheight = ttsize
+                ffarg = '-vf scale=720:-1' if ttwidth > ttheight else '-vf scale=-1:720'
+                
                 subprocess.run(
-                    f"ffmpeg -i {temp_thumbnail_file.name} -vf scale=1280:-1 {thumbnail_filename}",
+                    f"ffmpeg -i {temp_thumbnail_file.name} {ffarg if max(ttsize) > 720 else ''} {thumbnail_filename}",
                     shell=True,
                     check=True,
                 )
-                if not gif:
-                    form.instance.thumbnail.name = f"{video_id}.png"
+                
+                if gif:
+                    form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.gif"
                 else:
-                    form.instance.thumbnail.name = f"{video_id}.gif"
+                    form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.png"
+            
             else:
-                form.instance.thumbnail.name = f"media/uploads/thumbnails/{video_id}.png"
-                vid.save_frame(thumbnail_filename, t=0)
+                result = subprocess.run(
+                    f"ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x {video_filename}",
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT
+                )
+                ttsize = tuple(map(int, result.stdout.decode("utf-8").split("x")))
+                ttwidth, ttheight = ttsize
+                ffarg = '-vf scale=720:-1' if ttwidth > ttheight else '-vf scale=-1:720'
+                form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.png"
+                subprocess.run(
+                    f"ffmpeg -i {video_filename} -frames:v 1 {ffarg if max(ttsize) > 720 else ''} {thumbnail_filename}",
+                    shell=True,
+                    check=True,
+                )
 
-            form.instance.video_file.name = f"{video_id}.mp4"
+            with open(thumbnail_filename) as thumbnail_file:
+                client.upload_fileobj(
+                    thumbnail_file.buffer,
+                    AWS_STORAGE_BUCKET_NAME,
+                    f"uploads/thumbnails/{video_id}.{'gif' if gif else 'png'}",
+                    ExtraArgs={"ContentType": 'image/gif' if gif else 'image/png'},
+                )
 
-            form.instance.duration = vid.duration
+            form.instance.video_file.name = f"uploads/video_files/{video_id}.mp4"
+
+            form.instance.duration = duration
 
             cache.set(f"last_upload_{self.request.user.id}", datetime.now(), timeout=None)
 
             return super().form_valid(form)
 
         except Exception as e:
-            form.add_error(None, f"An error occurred during processing.")
+            form.add_error(None, f"An error occurred during processing. {e}")
             return self.form_invalid(form)
 
         finally:
-            try:
+            if video_filename != None and os.path.exists(video_filename):
+                os.remove(video_filename)
+            if temp_video_file != None and os.path.exists(temp_video_file.name):
                 os.remove(temp_video_file.name)
-            except OSError:
-                pass
+            if thumbnail_filename != None and os.path.exists(thumbnail_filename):
+                os.remove(thumbnail_filename)
 
     def form_invalid(self, form):
         if hasattr(self, 'object') and self.object:
             try:
-                os.remove(f"media/uploads/video_files/{self.object.id}.mp4")
-                os.remove(f"media/uploads/thumbnails/{self.object.id}.png")
-            except OSError:
+                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{self.object.video_file.name}")
+                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{self.object.thumbnail.name}")
+            except:
                 pass
             self.object.delete()
 
@@ -278,10 +326,10 @@ class DetailVideo(DetailView):
             else:
                 is_following = False
 
-        replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
+        replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted').exclude(commenter__shadowbanned=True)
 
-        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
-        comment_count = pen.comments.count()
+        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes').exclude(commenter__shadowbanned=True)
+        comment_count = pen.comments.exclude(commenter__shadowbanned=True).count()
 
         context = {
             'e': e,
@@ -552,15 +600,8 @@ class DownloadVideo(View):
     def get(self, request, *args, **kwargs):
         e = self.kwargs['id']
         video = Video.objects.get(id=e)
-        if video.uploader.id != 5:
-            videothing = open(video.video_file.name, "rb")
-            videocontent = videothing.read()
-            videothing.close()
-
-            response = HttpResponse(videocontent, content_type='video/mp4')
-            response['Content-Disposition'] = 'attachment; filename="%s"' % f"{video.title}.mp4"
-
-            return response
+        if video.uploader.id != "5HKiuWuT12Bs":
+            return redirect(f'https://media.glomble.com/{video.video_file.name}')
         else:
             html_content = "<html><body><h1>no</h1></body></html>"
             return HttpResponse(html_content, content_type='text/html')

@@ -16,7 +16,7 @@
         </div>
         {% for object in object_list %}
         <div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
-            <a href="{% url 'profile-report-detail' object.pk %}" class="row justify-content-center"><img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.profile.profile_picture }}"></a>
+            <a href="{% url 'profile-report-detail' object.pk %}" class="row justify-content-center"><img class="circular_image" src="https://media.glomble.com/{{ object.profile.profile_picture }}"></a>
             <div class="card-body">
                 <p class="text-muted text-center">Summary: {{ object.brief_summary }}</p>
                 <p class="text-muted text-center">Reported profile username: {{ object.profile.username }}</p>

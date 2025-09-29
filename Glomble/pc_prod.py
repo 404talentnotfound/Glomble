@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 import os
 from pathlib import Path
+import boto3
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,12 +25,11 @@ SECRET_KEY = open(os.path.join(BASE_DIR, "secret_key.txt")).read()
 
 CREATOR_ID = open(os.path.join(BASE_DIR, "creator.txt")).read()
 DEVELOPER_IDS = open(os.path.join(BASE_DIR, "developers.txt")).read().split("\n")
-SUPPORTER_IDS = open(os.path.join(BASE_DIR, "supporters.txt")).read().split("\n")
 
-MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
+MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 LOGIN_URL = 'login'
 
@@ -38,8 +38,8 @@ CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-MEDIA_URL = "media/"
+# MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# MEDIA_URL = "media/"
 
 
 CRONJOBS = [
@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'reports',
     'crispy_forms',
     'crispy_bootstrap5',
+    "storages",
 
     'django.contrib.sites',
 
@@ -166,3 +167,26 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+AWS_S3_SECRET_ACCESS_KEY = open(os.path.join(BASE_DIR, "storage_secret_key.txt")).read()
+AWS_S3_ACCESS_KEY_ID = open(os.path.join(BASE_DIR, "storage_access_key.txt")).read()
+AWS_STORAGE_BUCKET_NAME  = "glomble"
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_S3_ENDPOINT_URL = "https://80dca6dc1ffe30ce65d7c4ea99650842.r2.cloudflarestorage.com"
+
+client = boto3.client(
+    "s3",
+    aws_access_key_id = open(os.path.join(BASE_DIR, "storage_access_key.txt")).read(),
+    aws_secret_access_key = open(os.path.join(BASE_DIR, "storage_secret_key.txt")).read(),
+    endpoint_url = "https://80dca6dc1ffe30ce65d7c4ea99650842.r2.cloudflarestorage.com"
+)
+

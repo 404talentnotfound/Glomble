@@ -8,11 +8,12 @@ from django.db.models.signals import post_delete, post_save, m2m_changed
 from django.dispatch import receiver
 import os
 from django.core.exceptions import ValidationError
+from Glomble.pc_prod import client, AWS_STORAGE_BUCKET_NAME
 
 def validate_characters(value: str):
     if len(value) > 500:
         raise ValidationError("Input is too long.")
-    if value.count('\n') > 10:
+    if value.count('\n') > 20:
         raise ValidationError("Too many newlines.")
         
 MEMES = "Memes"
@@ -40,8 +41,8 @@ class Video(models.Model, object):
     notification_message = models.CharField(max_length=50, default="new video", null=True)
     title = models.CharField(max_length=75)
     description = models.TextField(null=True, blank=True, validators=[validate_characters], help_text="(must be under 500 characters)")
-    video_file = models.FileField(upload_to='media/uploads/video_files/', validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])], help_text="(must be an mp4 or mov between 1kb and 5gb and be under 2 hours)")
-    thumbnail = models.FileField(upload_to='media/uploads/thumbnails/', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'gif'])], help_text="(must be a png or jpg between 1kb and 10mb)")
+    video_file = models.FileField(validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])], help_text="(must be an mp4 or mov between 1kb and 100mb and be under 2 hours)")
+    thumbnail = models.FileField(blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'gif'])], help_text="(must be a png or jpg between 1kb and 10mb)")
     date_posted = models.DateTimeField(default=timezone.now)
     likes = models.ManyToManyField(User, blank=True, related_name='video_likes')
     dislikes = models.ManyToManyField(User, blank=True, related_name='video_dislikes')
@@ -52,7 +53,7 @@ class Video(models.Model, object):
     recommendations = models.ManyToManyField("profiles.Profile", blank=True, related_name='video_recommendations')
     score = models.FloatField(default=0)
     comments = models.ManyToManyField("Comment", blank=True, related_name='video_comments')
-    pinned_comment = models.ForeignKey("Comment", null=True, blank=True, on_delete=models.CASCADE)
+    pinned_comment = models.ForeignKey("Comment", null=True, blank=True, on_delete=models.SET_NULL)
     push_notification = models.BooleanField(default=True)
     recommendation_milestones = models.PositiveIntegerField(default=0)
     category = models.CharField(max_length=13,
@@ -67,12 +68,12 @@ def on_recommendation_change(sender, instance: Video, action, **kwargs):
         dislike_count = instance.dislikes.count()
         total_votes = like_count + dislike_count
 
-        likeratio = like_count / total_votes if total_votes > 0 else 100
+        likeratio = like_count / total_votes if total_votes > 0 else 1
         if likeratio == 0:
-            likeratio += 1
+            likeratio = .1
 
         if instance.duration > 180 and instance.category != "Meme":
-            instance.score = round((instance.recommendations.count() * (instance.uploader.rating + ((days / 30)*.25))) * likeratio, 1)
+            instance.score = round((instance.recommendations.count() * instance.uploader.rating) * likeratio, 1)
         else:
             instance.score = instance.recommendations.count()
 
@@ -87,14 +88,8 @@ def video_created(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=Video)
 def delete_files(sender, instance, using, **kwargs):
-    try:
-        os.remove(instance.video_file.name)
-        os.remove(instance.thumbnail.name)
-    except:
-        try:
-            os.remove(instance.thumbnail.name)
-        except:
-            pass
+    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{instance.video_file.name}")
+    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{instance.thumbnail.name}")
 
 class Comment(models.Model):
     comment = models.TextField(validators=[validate_characters])

@@ -13,7 +13,7 @@
 			text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
 			{% endif %}
 			{% if post.uploader.customisation.banner_image %}
-			background-image: url({{ post.uploader.customisation.banner_image.url }});
+			background-image: url(https://media.glomble.com/{{ post.uploader.customisation.banner_image.name }});
 			{% endif %}
 			{% if post.uploader.customisation.background_color %}
 			background-color: {{ post.uploader.customisation.background_color }};
@@ -51,16 +51,16 @@
 	<head>
 		<meta property="og:title" content="{{ post.title }}">
 		<meta property="og:type" content="video.other">
-		<meta property="og:url" content="{{ request.scheme }}://{{ request.META.HTTP_HOST }}{% url 'video-detail' post.id %}">
-		<meta property="og:image" content="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.thumbnail }}">
-		<meta property="og:video" content="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.video_file }}">
+		<meta property="og:url" content="https://{{ request.META.HTTP_HOST }}{% url 'video-detail' post.id %}">
+		<meta property="og:image" content="https://media.glomble.com/{{ post.thumbnail }}">
+		<meta property="og:video" content="https://media.glomble.com/{{ post.video_file }}">
 		<meta property="og:video:type" content="video/mp4">
 	</head>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<div class="cool-div" style="min-height: 100vh;">
 		<div class="container" id="post-container">
 					<div class="row">
-								<video class="mt-5" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.video_file }}" type="video/mp4" style="max-height:40vw; background-color: black !important;" controls autoplay>
+								<video class="mt-5" src="https://media.glomble.com/{{ post.video_file }}" type="video/mp4" style="max-height:40vw; background-color: black !important;" controls autoplay>
 								</video>
 					</div>
 					<h5 class="mt-4">{{ post.title }}
@@ -81,7 +81,7 @@
 							<a style="float: right;" class="cool-element btn cool-element btn-outline-primary" href="{% url 'video-update' post.id %}">Edit</a>
 						{% endif %}
 					</h5>
-					<h6><a class="link-text cool-element" href="{% url 'detail-profile' post.uploader.id %}"><img class="rounded-circle" style="margin-right: 10px;" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ post.uploader.profile_picture }}">
+					<h6><a class="link-text cool-element" href="{% url 'detail-profile' post.uploader.id %}"><img class="rounded-circle" style="margin-right: 10px;" width="35" height="35" src="https://media.glomble.com/{{ post.uploader.profile_picture }}">
 						{{ post.uploader.username }}
 						{% if post.uploader.username != user and request.user.is_authenticated %}
 						<button class="follow-button {% if is_following %}following cool-element btn cool-element btn-outline-danger {% else %}cool-element btn cool-element btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
@@ -178,7 +178,7 @@
 						<div class="col-md-9">
 							<p>
 								<strong><a class="link-text cool-element" href="{% url 'detail-profile' comment.commenter.id %}">
-									<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ comment.commenter.profile_picture }}"> 
+									<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="https://media.glomble.com/{{ comment.commenter.profile_picture }}"> 
 									{{ comment.commenter.username }}
 									{% if comment.commenter.username.is_superuser %}
 									<i title="Admin" class='bx bxs-user-badge' ></i>
@@ -249,7 +249,7 @@
 												<p>
 													<strong>
 														<a class="link-text cool-element" href="{% url 'detail-profile' reply.commenter.id %}">
-															<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ reply.commenter.profile_picture }}">
+															<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="https://media.glomble.com/{{ reply.commenter.profile_picture }}">
 															{{ reply.commenter.username }}
 															{% if reply.commenter.username.is_superuser %}
 															<i title="Admin" class='bx bxs-user-badge' ></i>
@@ -394,10 +394,7 @@
 			video.addEventListener('ended', function() {
 				localStorage.removeItem(progressKey);
 			});
-		});
-
-
-		$(document).ready(function() {
+			
 			function expandParentReplies($comment) {
 				const parentContainers = $comment.parents('.reply-container');
 				parentContainers.each(function() {

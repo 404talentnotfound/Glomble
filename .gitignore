@@ -11,6 +11,8 @@ glomble.crt
 glomble.csr
 glomble.key
 db.sqlite3
+storage_access_key.txt
+storage_secret_key.txt
 GlombleEnv/
 .vscode/
 conf/

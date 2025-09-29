@@ -22,7 +22,7 @@
 		<div class="row justify-content-center mt-2 mb-5 border-bottom">
 			<div class="col-md-6 col-sm-12">
 				<p><a class="link-text" href="{% url 'detail-profile' message.sender.id %}">
-					<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ message.sender.profile_picture }}">
+					<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="https://media.glomble.com/{{ message.sender.profile_picture }}">
 					<b>{{ message.sender.username }}{% if message.sender.username.is_superuser %} <i title="Admin" class='bx bxs-user-badge' ></i>{% endif %}:</b></a>
 					<i style="max-width: 50ch; word-wrap: break-word;">{{ message.message|linebreaksbr }}</i>
 				</p>

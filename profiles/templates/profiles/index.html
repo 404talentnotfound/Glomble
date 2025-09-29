@@ -52,7 +52,7 @@
                 </div>
                 {% endif %}
                 <p><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' profile.id %}">
-                <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ profile.profile_picture }}">
+                <img class="circular_image" src="https://media.glomble.com/{{ profile.profile_picture }}">
                 <h5>{{ profile.username }}</h5></a></p>
                 <p>{{ profile.followers.all.count }} Followers</p>
                 <p>{{ profile.rating|floatformat:1 }} Stars</p>

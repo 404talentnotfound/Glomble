@@ -16,7 +16,7 @@
         </div>
         {% for object in object_list %}
         <div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
-            <a href="{% url 'video-report-detail' object.pk %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.post.thumbnail }}" width="256" height="144"></a>
+            <a href="{% url 'video-report-detail' object.pk %}"><img src="https://media.glomble.com/{{ object.post.thumbnail }}" width="256" height="144"></a>
             <div class="card-body">
                 <p class="text-muted text-center">Summary: {{ object.brief_summary }}</p>
                 <p class="text-muted text-center">Reported video title: {{ object.post.title }}</p>

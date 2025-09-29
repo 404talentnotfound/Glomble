@@ -6,11 +6,19 @@
 <div class="container mb-5">
 	<div class="row justify-content-center">
 		<div class="col-md-6 col-sm-12 col-xs-12">
-			<form method="POST" enctype="multipart/form-data" onsubmit="openLoader()">
+			<form method="POST" enctype="multipart/form-data" id="mainform">
 				{% csrf_token %}
 				<legend class="border-bottom mb-4">Upload Video</legend>
 				{{ form | crispy }}
-				<button class="btn btn-outline-info btn-block mt-3" type="submit">Submit</button>
+				<button class="btn btn-outline-info btn-block mt-3" type="submit" id="submitbutton">Submit</button>
+				<script>
+					var mf = document.getElementById("mainform");
+					var subbutton = document.getElementById("submitbutton");
+					mf.onsubmit = function() {
+						openLoader();
+						subbutton.remove(); // prevents users from pressing the button multiple times from getting impatient and accidentally uploading multiple times - arnthorrr
+					}
+				</script>
 				<h2>Glomble TOS:</h2>
 				<h4>Note that this list is subject to change</h4>
 

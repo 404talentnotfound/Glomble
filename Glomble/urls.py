@@ -29,6 +29,7 @@ urlpatterns = [
     path('accounts/profile/', video_views.redirect_index),
     path('', video_views.Index.as_view(), name='index'),
     path('mcdonalds', video_views.mcdonalds),
+    path('tos', video_views.tos_page),
     path('videos/', include('videos.urls')),
     path('notifications/', include('notifications.urls')),
     path('profiles/', include('profiles.urls')),

@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Avg
 from django.contrib import admin
 from django.utils import timezone
 from django.core.validators import FileExtensionValidator
@@ -8,11 +9,11 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 import magic
 
 def validate_characters(value):
-    if value.count('\n') > 10:
+    if value.count('\n') > 20:
         raise ValidationError("Too many newlines.")
 
 def validate_filesize(value):
-    if not 1024 < value.size < 10000000:
+    if not 1024 < value.size < 5000000:
         raise ValidationError("File is too big or too small.")
     
 def validate_image(value):
@@ -27,18 +28,17 @@ class ProfileRating(models.Model):
     class Meta:
         unique_together = ('rater', 'rated_profile')
 
-class Profile(models.Model):
+class Profile(models.Model): # hi
     username = models.ForeignKey(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500, default="hello, world!", validators=[validate_characters]) #hammed burger
-    profile_picture = models.FileField(default='profiles/pfps/default.png', blank=True, upload_to='media/profiles/pfps/', validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 10mb)")
+    profile_picture = models.FileField(default='profiles/pfps/default.png', blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])], help_text="(must be a png or jpg between 1kb and 5mb)")
     date_made = models.DateTimeField(default=timezone.now)
     follower_milestones = models.PositiveIntegerField(default=0)
-    followers = models.ManyToManyField(User, related_name='followers')
+    followers = models.ManyToManyField(User, blank=True, related_name='followers')
     id = models.SlugField(primary_key=True)
     notifications = models.ManyToManyField("notifications.BaseNotification", blank=True, related_name='notifications')
     watched_videos = models.ManyToManyField("videos.Video", blank=True, related_name='watched_videos')
     chats = models.ManyToManyField("Chat", blank=True, related_name='chats')
-    ratings = models.JSONField(default=dict, blank=True, null=True)
     rating = models.FloatField(default=5, validators=[MinValueValidator(0), MaxValueValidator(5)])
     moderator = models.BooleanField(default=False)
     helper = models.BooleanField(default=False)
@@ -46,10 +46,12 @@ class Profile(models.Model):
     shadowbanned = models.BooleanField(default=False)
     videos = models.ManyToManyField("videos.Video", blank=True, related_name='videos')
 
-    def update_rating(self):
-        ratings = self.profile_ratings.all().values_list('rating', flat=True)
-        self.rating = sum(ratings) / len(ratings) if ratings else 5
-        self.save()
+    def recalculate_rating(self):
+        avg = ProfileRating.objects.filter(rated_profile=self).aggregate(
+            Avg("rating")
+        )["rating__avg"]
+        self.rating = round(avg or 0, 2)
+        self.save(update_fields=["rating"])
 
     def __str__(self):
         return self.id
@@ -61,8 +63,8 @@ class ProfileCustomisation(models.Model):
     text_shadow_color = models.CharField(blank=True, max_length=7, default="#ffffff")
     video_card_text_color = models.CharField(blank=True, max_length=7, default="#000000")
     video_card_text_shadow_color = models.CharField(blank=True, max_length=7, default="#ffffff")
-    banner_image = models.FileField(blank=True, upload_to='profiles/banners/', validators=[validate_filesize, validate_image])
-    video_banner = models.FileField(blank=True, upload_to='profiles/video_banners/', validators=[validate_filesize, validate_image])
+    banner_image = models.FileField(blank=True, validators=[validate_filesize, validate_image])
+    video_banner = models.FileField(blank=True, validators=[validate_filesize, validate_image])
 
     def clean(self):
         cleaned_data = super().clean()

@@ -32,12 +32,6 @@ from notifications.models import MilestoneNotification
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.mail import EmailMessage
 
-def change(request):
-    email_body = render_to_string('profiles/email_update_4.html')
-    email = EmailMessage('Glomble Update #4', email_body, to=['phinnjamesbonte@gmail.com'])
-    email.content_subtype = "html"
-    email.send()
-
 @login_required
 def rate_profile(request, id):
     profile = get_object_or_404(Profile, id=id)
@@ -51,7 +45,7 @@ def rate_profile(request, id):
                 rated_profile=profile,
                 defaults={'rating': rating_value}
             )
-            profile.update_rating()
+            profile.recalculate_rating()
             return JsonResponse({"success": True, "new_rating": profile.rating}, status=200)
         return JsonResponse({"success": False, "errors": form.errors}, status=400)
     else:
@@ -69,44 +63,62 @@ def customise_profile(request, id):
         return redirect('detail-profile', id=id)
 
     chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+    random_id = "".join(random.choice(chars) for _ in range(5))
+
     customisation, created = ProfileCustomisation.objects.get_or_create(customised_profile=customised_profile)
     if request.method == "POST":
         form = ProfileCustomisationForm(request.POST, request.FILES, instance=customisation)
         if form.is_valid():
             if 'banner_image' in request.FILES:
                 try:
-                    os.remove('media/'+customised_profile.customisation.banner_image.name)
+                    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"profiles/banners/{customised_profile.customisation.banner_image.name}")
                 except:
                     pass
-                random_str = ''.join(random.choice(chars) for _ in range(10))
+
                 banner = request.FILES['banner_image']
                 form.save(commit=False)
                 temp_banner = tempfile.NamedTemporaryFile(delete=False)
                 for chunk in banner.chunks():
                     temp_banner.write(chunk)
-                form.instance.banner_image = f"profiles/banners/{customised_profile.id}-{random_str}.png"
+                form.instance.banner_image = f"profiles/banners/{customised_profile.id}-{random_id}.png"
 
-                subprocess.run(f"ffmpeg -y -i {temp_banner.name} media/profiles/banners/{customised_profile.id}-{random_str}.png", shell=True, check=True)
+                subprocess.run(f"ffmpeg -y -i {temp_banner.name} {customised_profile.id}.png", shell=True, check=True)
+
+                with open(f'{customised_profile.id}.png') as pfp_file:
+                    client.upload_fileobj(
+                        pfp_file.buffer,
+                        AWS_STORAGE_BUCKET_NAME,
+                        f"profiles/banners/{customised_profile.id}-{random_id}.png",
+                        ExtraArgs={"ContentType": 'image/png'},
+                    )
 
                 temp_banner.close()
 
+                os.remove(f"{customised_profile.id}.png")
                 os.remove(temp_banner.name)
                     
             if 'video_banner' in request.FILES:
                 try:
-                    os.remove('media/'+customised_profile.customisation.video_banner.name)
+                    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{customised_profile.customisation.video_banner.name}")
                 except:
                     pass
 
-                random_str = ''.join(random.choice(chars) for _ in range(10))
                 banner = request.FILES['video_banner']
                 form.save(commit=False)
                 temp_banner = tempfile.NamedTemporaryFile(delete=False)
                 for chunk in banner.chunks():
                     temp_banner.write(chunk)
-                form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}-{random_str}.png"
+                form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}-{random_id}.png"
 
-                subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 media/profiles/video_banners/{customised_profile.id}-{random_str}.png", shell=True, check=True)
+                subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 {customised_profile.id}.png", shell=True, check=True)
+
+                with open(f'{customised_profile.id}.png') as pfp_file:
+                    client.upload_fileobj(
+                        pfp_file.buffer,
+                        AWS_STORAGE_BUCKET_NAME,
+                        f"profiles/video_banners/{customised_profile.id}-{random_id}.png",
+                        ExtraArgs={"ContentType": 'image/png'},
+                    )
 
                 temp_banner.close()
 
@@ -270,6 +282,7 @@ def profile(request):
     }
     return render(request, 'profiles/detail_profile.html', context)
 
+# dear lord this shit sucks ass I really need to rewrite this
 @login_required
 def create_profile(request):
     user = request.user
@@ -295,20 +308,29 @@ def create_profile(request):
             form.instance.id = out
             if 'profile_picture' in request.FILES:
                 pfp = request.FILES['profile_picture']
-                if form.is_valid() and pfp.size < 10000000 and pfp.size > 1024:
+                if form.is_valid() and pfp.size < 5000000 and pfp.size > 1024:
                     mime_type = magic.Magic(mime=True).from_buffer(pfp.read(1024))
                     if mime_type in ['image/jpeg', 'image/png']:
                         form.save(commit=False)
                         temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                         for chunk in pfp.chunks():
                             temp_pfp.write(chunk)
-                        form.instance.profile_picture = f"media/profiles/pfps/{out}.png"
+                        form.instance.profile_picture = f"profiles/pfps/{out}.png"
 
-                        subprocess.run(f"sudo ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 'media/profiles/pfps/{profile.id}.png'", shell=True, check=True)
+                        subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 {profile.id}.png", shell=True, check=True)
 
-                        os.remove(temp_pfp.name)
+                        with open(f'{profile.id}.png') as pfp_file:
+                            client.upload_fileobj(
+                                pfp_file.buffer,
+                                AWS_STORAGE_BUCKET_NAME,
+                                f"profiles/pfps/{profile.id}.png",
+                                ExtraArgs={"ContentType": 'image/png'},
+                            )
 
                         temp_pfp.close()
+
+                        os.remove(f'{profile.id}.png')
+                        os.remove(temp_pfp.name)
 
                         form.save()
 
@@ -320,7 +342,7 @@ def create_profile(request):
                     form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under 10mb and over 1kb, then try again.")
                     return redirect('create-profile')
             else:
-                form.instance.profile_picture.name = "media/profiles/pfps/default.png"
+                form.instance.profile_picture.name = "profiles/pfps/default.png"
                 if form.is_valid():
                     form.save()
                     return redirect('profile-page')
@@ -358,14 +380,11 @@ class DetailProfileIndex(ListView):
         creator = False
         supporter = False
         developers = DEVELOPER_IDS
-        supporters = SUPPORTER_IDS
         creators = CREATOR_ID
         if poopie in developers:
             developer = True
         if poopie in creators:
             creator = True
-        if poopie in supporters:
-            supporter = True
 
         if follow_num == 0:
             is_following = False
@@ -410,30 +429,41 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             try:
                 if 'profile_picture' in self.request.FILES:
                     newpfp = self.request.FILES['profile_picture']
-                    if form.is_valid() and newpfp.size < 10000000 and newpfp.size > 1024:
+                    if form.is_valid() and newpfp.size < 5000000 and newpfp.size > 1024:
                         mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
                         if mime_type in ['image/jpeg', 'image/png']:
                             temp_pfp = tempfile.NamedTemporaryFile(delete=False)
                             for chunk in newpfp.chunks():
                                 temp_pfp.write(chunk)
                             try:
-                                if profile.profile_picture.name != "media/profiles/pfps/default.png":
-                                    os.remove(profile.profile_picture.name)
+                                if profile.profile_picture.name != "profiles/pfps/default.png":
+                                    try:
+                                        client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"profiles/banners/{profile.profile_picture.name}")
+                                    except:
+                                        pass
                             except Exception as e:
                                 pass
 
                             cache.set(f"last_profileupdate_{self.request.user.id}", datetime.now(), timeout=None)
 
+                            subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 {profile.id}.png", shell=True, check=True)
+
                             chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+                            random_id = "".join(random.choice(chars) for _ in range(5))
 
-                            random_str = ''.join(random.choice(chars) for _ in range(10))
+                            form.instance.profile_picture = f"profiles/pfps/{profile.id}-{random_id}.png"
 
-                            subprocess.run(f"sudo ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 media/profiles/pfps/{profile.id}-{random_str}.png", shell=True, check=True)
-
-                            form.instance.profile_picture = f"media/profiles/pfps/{profile.id}-{random_str}.png"
+                            with open(f'{profile.id}.png') as pfp_file:
+                                client.upload_fileobj(
+                                    pfp_file.buffer,
+                                    AWS_STORAGE_BUCKET_NAME,
+                                    f"profiles/pfps/{profile.id}-{random_id}.png",
+                                    ExtraArgs={"ContentType": 'image/png'},
+                                )
 
                             temp_pfp.close()
 
+                            os.remove(f"{profile.id}.png")
                             os.remove(temp_pfp.name)
 
                             return super().form_valid(form)
@@ -445,7 +475,7 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                         return super().form_invalid(form)
                 else:
                     if form.instance.profile_picture == "" or profile.profile_picture.name == "":
-                        form.instance.profile_picture = f"media/profiles/pfps/default.png"
+                        form.instance.profile_picture = f"profiles/pfps/default.png"
 
                     return super().form_valid(form)
 
@@ -474,12 +504,17 @@ class DeleteProfile(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def get_success_url(self):
         profile = self.get_object()
         try:
-            os.remove(Profile.objects.all().get(id=self.object.id).profile_picture.name)
+            if Profile.objects.all().get(id=self.object.id).profile_picture.name != "media/profiles/pfps/default.png":
+                try:
+                    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"profiles/banners/{profile.profile_picture.name}")
+                except:
+                    pass
         except:
             pass
         for video in Video.objects.filter(uploader=profile):
-            os.remove(video.video_file.name)
-        Video.objects.filter(uploader=profile).delete()
+            video.delete()
+
+        profile.username.delete()
         return reverse('index')
         
     def test_func(self):
@@ -608,8 +643,7 @@ class ChatIndex(ListView):
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = Chat.objects.all()
-
+        queryset = Chat.objects.all().annotate(num_members=Count("members")).filter(num_members=2)
         queryset = queryset.filter(members__in=[Profile.objects.get(username=self.request.user)]).distinct().alias(max_date_sent=Max('messages__date_sent'))
 
         if sort_by == 'date-desc':

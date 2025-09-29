@@ -18,7 +18,7 @@
         <div class="row justify-content-center mt-3">
             <div class="col-md-5 col-sm-12 border-bottom position-relative text-center">
 				<h3 class="text-center">€{{ object.1 }}</h3>
-                <a href="{% url 'video-detail' object.0.id %}"><img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.0.thumbnail }}" width="256" height="144"></a>
+                <a href="{% url 'video-detail' object.0.id %}"><img src="https://media.glomble.com/{{ object.0.thumbnail }}" width="256" height="144"></a>
 				<div class="card-body">
 					<a class="link-text" href="{% url 'video-detail' object.0.id %}"><h6 class="text-center">{{ object.0.title }}{% if object.0.unlisted %} <div style='display: inline-block; vertical-align: top;' title="Unlisted"><i class='bx bxs-low-vision'></i></div>{% endif %}</h6></a>
 					<h6 class="text-muted text-center"><a class="link-text" href="{% url 'detail-profile' object.0.uploader.id %}">{{ object.0.uploader.username }}</a></h6>

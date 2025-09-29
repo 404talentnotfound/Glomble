@@ -10,7 +10,7 @@
         text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
         {% endif %}
         {% if object.uploader.customisation.video_banner %}
-        background-image: url({{ object.uploader.customisation.video_banner.url }});
+        background-image: url(https://media.glomble.com/{{ object.uploader.customisation.video_banner.name }});
         {% endif %}
         {% if object.uploader.customisation.background_color %}
         background-color: {{ object.uploader.customisation.background_color }};
@@ -49,7 +49,7 @@
 <div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color:black;">
     <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
         <div style="background-color:black;width:100%">
-            <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.thumbnail }}" 
+            <img src="https://media.glomble.com/{{ object.thumbnail }}" 
                 class="position-absolute w-100 h-100" 
                 style="top:0;left:0;object-fit: contain;">
             <div class="text-center length-{{object.id}}" style="position: absolute; bottom: 8px; right: 16px; min-width: 50px;">{% duration_to_hms object.duration %}</div>
@@ -57,7 +57,7 @@
     </a>
     <div style="height: 220px" class="card-body div-{{object.id}}">
         <a class="link-text a-{{object.id}}" href="{% url 'video-detail' object.id %}"><h6 class="text-center shit">{{ object.title }}</h6></a>
-        <a class="link-text a-{{object.id}}" href="{% url 'detail-profile' object.uploader.id %}"><h6 class="text-center shit"><img class="rounded-circle" width="35" height="35" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ object.uploader.profile_picture }}">{{ object.uploader.username }}</h6></a>
+        <a class="link-text a-{{object.id}}" href="{% url 'detail-profile' object.uploader.id %}"><h6 class="text-center shit"><img class="rounded-circle" width="35" height="35" src="https://media.glomble.com/{{ object.uploader.profile_picture }}">{{ object.uploader.username }}</h6></a>
         <h6 class="text-center">Views: {{ object.views.count }}</h6>
         <h6 class="text-center">Score: {{ object.score }}</h6>
         <h6 class="text-center">{{ object.date_posted|naturaltime }}</h6>

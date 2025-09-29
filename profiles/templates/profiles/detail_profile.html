@@ -13,7 +13,7 @@
 		text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
 		{% endif %}
 		{% if profile.customisation.banner_image %}
-		background-image: url({{ profile.customisation.banner_image.url }});
+		background-image: url(https://media.glomble.com/{{ profile.customisation.banner_image.name }});
 		{% endif %}
 		{% if profile.customisation.background_color %}
 		background-color: {{ profile.customisation.background_color }};
@@ -40,7 +40,7 @@
 
 <div class="cool-div" style="min-height: 100vh;">
 		<br>
-        <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto;" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ pfp }}">
+        <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto;" src="https://media.glomble.com/{{ pfp }}">
         <h1 class="text-center">{{ username }}</h1>
 		<h4 class="text-center">
 			{% if username.is_superuser %}
@@ -113,26 +113,6 @@
 		</div>
 </div>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<script>
-		function updateFollowCount(videoId) {
-			// Send an AJAX request to update the view count
-			$.ajax({
-				type: "GET",
-				url: `${videoId}/update-follow-count/`, // Update the URL accordingly
-				success: function(data) {
-					// Update the view count on the page
-					$(".follow-count").text(data.follow_count + " followers");
-				},
-			});
-		}
-
-		$(document).ready(function() {
-			var videoId = $(".follow-count").attr('id');
-			var interval = setInterval(function() {
-				updateFollowCount(videoId);
-			}, 20000);
-		});
-	</script>
 	{% if username != user %}
 	<script>
 		document.getElementById('rating-form').addEventListener('submit', function (event) {

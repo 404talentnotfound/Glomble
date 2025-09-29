@@ -20,7 +20,7 @@
         {% P_reports as c %}
         {% V_reports as d %}
         {% if a or b or c or d %}
-        <a class="nav-link" href="{% url 'choice-page' %}">Check reports <img src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/media/notif.png" width="16" height="16"></a>
+        <a class="nav-link" href="{% url 'choice-page' %}">Check reports <img src="https://media.glomble.com/notif.png" width="16" height="16"></a>
         {% else %}
         <a class="nav-link" href="{% url 'choice-page' %}">Check reports</a>
         {% endif %}
@@ -56,7 +56,7 @@
       {% if test2 %}
       {% find request.user as obj %}
       <li class="nav-item">
-        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center nav-link"><img class="shot" width="35" height="35" style="margin-left: 15px; margin-top: -2px" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ obj.profile_picture }}"></a>
+        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center nav-link"><img class="shot" width="35" height="35" style="margin-left: 15px; margin-top: -2px" src="https://media.glomble.com/{{ obj.profile_picture }}"></a>
       </li>
       {% endif %}
       {% else %}

@@ -30,13 +30,13 @@ def has_notifications(user):
         return Profile.objects.all().get(username=user).notifications.filter(read=False).count() > 0
     else:
         return False
-    
+
 @register.simple_tag
 def can_recommend(video_id, user):
     if Profile.objects.all().filter(username=user).exists():
         return Profile.objects.all().get(username=user) not in Video.objects.all().get(id=video_id).recommendations.all()
     return False
-    
+
 @register.simple_tag
 def has_messages(user):
     profile = Profile.objects.get(username=user)
@@ -112,7 +112,7 @@ def most_liked_video(id):
 
 @register.simple_tag
 def has_videos(id):
-    if Profile.objects.all().get(id=id).videos.count() == 0:
+    if Profile.objects.all().get(id=id).videos.exclude(unlisted=True).count() == 0:
         return False
     return True
 

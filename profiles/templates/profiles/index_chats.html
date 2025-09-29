@@ -20,7 +20,7 @@
             <div class="col-md-5 col-sm-12 border-bottom position-relative text-center">
                 {% other_chatter chat request.user as chatter %}
                 <p><a style="text-decoration: none;" class="link-text" href="{% url 'chat-detail' chatter.id %}">
-                <img class="circular_image" src="{{ request.scheme }}://{{ request.META.HTTP_HOST }}/{{ chatter.profile_picture }}">
+                <img class="circular_image" src="https://media.glomble.com/{{ chatter.profile_picture }}">
                 <h5>{{ chatter.username }}</h5></a></p>
                 {% if unread_message_count > 0 %}
                 <h4 class="text-center" style="color: red;">{{ unread_message_count }} unread message(s)</h2>
