@@ -1,0 +1,36 @@
+{% extends 'videos/base.html' %}
+{% block content %}
+<style>
+    .gay-text {
+    background: #FF0000;
+    background: linear-gradient(90deg,rgba(255, 0, 0, 1) 0%, rgba(0, 0, 255, 1) 50%, rgba(0, 255, 0, 1) 100%);
+    background-clip: text;
+    color: transparent;
+    }
+
+    .🤑 {
+    background: #1e4a0d;
+    background: linear-gradient(90deg, rgba(30, 74, 13, 1) 0%, rgba(0, 255, 0, 1) 50%, rgba(30, 74, 13, 1) 100%);
+    background-clip: text;
+    color: transparent;
+    }
+</style>
+	<div class="container" id="post-container" style="text-align:center">
+        <br>
+        <h3>Here are some links you may find useful!</h3>
+        <br>
+        <h2><a class="gay-text" href="{% url 'tos' %}">Glomble TOS</a></h2>
+        <br>
+        <h2><a class="gay-text" href="https://discord.com/invite/cUymEnaqzc">Official Glomble Discord server</a></h2>
+        <br>
+        <h2><a class="gay-text" href="https://www.reddit.com/r/Glomble/">Official Glomble subreddit</a></h2>
+        <br>
+        <br>
+        <h2>Feeling generous? Your donations run Glomble!</h2>
+        <br>
+        <h2><a class="🤑" href="https://www.patreon.com/c/glomble">Glomble Patreon</a></h2>
+        <br>
+        <h2><a class="🤑" href="https://ko-fi.com/glomble">Glomble Ko-Fi</a></h2>
+        <br>
+    </div>
+{% endblock content %}

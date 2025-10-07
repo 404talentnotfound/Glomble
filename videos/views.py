@@ -65,6 +65,9 @@ def handler500(request, exception, template_name="500.html"):
     response.status_code = 500
     return response
 
+def related_links(request):
+    return render(request, "videos/related_links.html")
+
 def redirect_index(request):
     return redirect('/')
 
@@ -86,29 +89,14 @@ class Index(ListView):
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
         category = self.request.GET.get('category')
-        category = self.request.GET.get('category')
         query = self.request.GET.get('query')
         queryset = Video.objects.all().exclude(unlisted=True).exclude(uploader__shadowbanned=True)
 
         if query:
             queryset = queryset.filter(Q(title__icontains=query))
 
-        if category == 'memes':
-            queryset = queryset.filter(category="Memes")
-        elif category == 'gaming':
-            queryset = queryset.filter(category="Gaming")
-        elif category == 'education':
-            queryset = queryset.filter(category="Education")
-        elif category == 'animation':
-            queryset = queryset.filter(category="Animation")
-        elif category == 'entertainment':
-            queryset = queryset.filter(category="Entertainment")
-        elif category == 'music':
-            queryset = queryset.filter(category="Music")
-        elif category == 'discussion':
-            queryset = queryset.filter(category="Discussion")
-        elif category == 'miscellaneous':
-            queryset = queryset.filter(category="Miscellaneous")
+        if category != None and category != "all":
+            queryset = queryset.filter(category=category.capitalize())
 
         if sort_by == 'newest':
             queryset = queryset.order_by('-date_posted')

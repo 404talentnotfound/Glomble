@@ -511,9 +511,8 @@ class DeleteProfile(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
                     pass
         except:
             pass
-        for video in Video.objects.filter(uploader=profile):
-            video.delete()
 
+        Chat.objects.all().filter(members__in=[profile]).delete()
         profile.username.delete()
         return reverse('index')
         
@@ -643,8 +642,7 @@ class ChatIndex(ListView):
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = Chat.objects.all().annotate(num_members=Count("members")).filter(num_members=2)
-        queryset = queryset.filter(members__in=[Profile.objects.get(username=self.request.user)]).distinct().alias(max_date_sent=Max('messages__date_sent'))
+        queryset = Chat.objects.all().filter(members__in=[Profile.objects.get(username=self.request.user)]).distinct().alias(max_date_sent=Max('messages__date_sent'))
 
         if sort_by == 'date-desc':
             queryset = queryset.order_by("-max_date_sent")

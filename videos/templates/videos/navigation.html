@@ -1,8 +1,8 @@
 {% load static %}
 {% load count %}
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light" style="position: sticky; top: 0; z-index: 2;">
   <a class="navbar-brand" href="{% url 'index' %}"><img src="{% static 'videos/favico.png' %}" width="70" height="35"></a>
-  <a href="https://www.patreon.com/c/glomble" class="active">donate to help keep the site running!</a>
+  <a class="nav-link" href="{% url 'related-links' %}">Related links</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>

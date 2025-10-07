@@ -83,7 +83,7 @@
                             <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only">(current)</span></span></li>
                         {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                                <a class="page-link" href="?page={{ i }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ i }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}

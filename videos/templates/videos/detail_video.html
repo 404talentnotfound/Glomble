@@ -318,6 +318,19 @@
 			}
 		}
 
+                function updateViewCount(videoId) {
+			globalThis.viewed = false
+			$.ajax({
+				type: "GET",
+				url: `${videoId}/update-view-count/`,
+				success: function(data) {
+					$(".view-count").text(data.view_count);
+					globalThis.viewed = data.viewed;
+				},
+			});
+		}
+
+
 		function onClickRecommend(ele) {
 			const container = document.getElementById('recommended-videos');
 			if (container.style.display === 'none') {
@@ -488,5 +501,17 @@
 			}
 		});
 
+                $(document).ready(function() {
+			var videoId = $(".view-count").attr('id');
+			var interval = setInterval(function() {
+				if (globalThis.viewed == true) clearInterval(interval);
+				updateViewCount(videoId);
+				updateRecommendCount(videoId);
+			}, 1000);
+			var interval2 = setInterval(function() {
+				updateViewCount(videoId);
+				updateRecommendCount(videoId);
+			}, 20000);
+		});
 	</script>
 {% endblock content %}
