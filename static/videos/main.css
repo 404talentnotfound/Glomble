@@ -1,10 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Caveat&display=swap");
 .card {
-  width: 100%;
-  max-width: 256px;
-  margin: 15px;
+  width: 260px;
+  max-width: 100%;
+  margin-left: 3%;
+  margin-top: 0.2%;
   transition: transform 0.25s ease-in-out;
 }
+
 
 .card:hover {
   transform: scale(1.1);
