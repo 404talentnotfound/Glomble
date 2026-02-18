@@ -654,5 +654,6 @@ class DownloadVideo(View):
         if video.uploader.id != "5HKiuWuT12Bs":
             return redirect(f'https://media.glomble.com/{video.video_file.name}')
         else:
-            html_content = "<html><body><h1>no</h1></body></html>"
+            html_content = '<html><body style="overflow:hidden"><span style="font-size:100vh">no</span></body></html>'
             return HttpResponse(html_content, content_type='text/html')
+
