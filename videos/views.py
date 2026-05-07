@@ -188,7 +188,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             video_filename = os.path.join(BASE_DIR, f"{video_id}.mp4")
 
             subprocess.run(
-                f"""ffmpeg -i {temp_video_file.name} -vf "scale='min(1920,iw)':-1" -c:v libx264 -crf 28 -c:a copy -preset fast {video_filename}""",
+                f"""ffmpeg -i {temp_video_file.name} -vf "scale='min(1920,iw)':-1" -c:v libx264 -pix_fmt yuv420p -crf 28 -c:a copy -preset fast {video_filename}""",
                 shell=True,
                 check=True,
             )
