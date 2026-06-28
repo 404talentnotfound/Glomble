@@ -1,4 +1,5 @@
 {% extends 'videos/base.html' %}
+{% load crispy_forms_tags %}
 
 {% block content %}
 
@@ -11,7 +12,7 @@
 					<h5>Are You Sure?</h5>
 					<p>This will delete the comment forever. This action cannot be undone.</p>
 
-					{% if request.user.is_superuser %}
+					{% if request.user.is_superuser and comment.commenter.username != request.user %}
 					<div class="mb-4 mt-4" style="background-color: lightpink; padding: 2ch; border-radius: 5px;">
 						<h6>As an admin you can notify the commenter about why you are deleting this comment</h6>
 						<p>(your name will not be shown)</p>

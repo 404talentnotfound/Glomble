@@ -59,13 +59,15 @@ class DeleteComment(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 		return super().delete(request, *args, **kwargs)
         
 	def get(self, request, *args, **kwargs):
+		comment = self.get_object()
 		form = AdminDeleteObjectForm()
 
 		context = {
 		    "form": form,
+			"comment": comment,
 		}
 
-		return render(request, 'videos/delete_video.html', context)
+		return render(request, 'videos/comment_delete.html', context)
 	
 	def test_func(self):
 		comment = self.get_object()

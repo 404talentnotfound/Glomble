@@ -4,7 +4,7 @@ from .models import Comment
 # the idea here is when an admin deletes a video, comment, etc, they can notify the creator
 # without having to message them 
 class AdminDeleteObjectForm(forms.Form):
-    notify = forms.BooleanField()
+    notify = forms.BooleanField(required=False)
     notification_message = forms.CharField(
         label='',
         widget=forms.Textarea(attrs={

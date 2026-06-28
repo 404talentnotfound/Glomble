@@ -352,7 +352,7 @@
 			const comments = document.getElementById("comments");
 
 			if (!data.success) {
-				notification.innerHTML = "Comment failed to post due to cooldown.";
+				notification.innerHTML = "Comment failed to post due to cooldown (30s)";
 				notification.style.backgroundColor = "#c51717";
 
 				globalThis.timer = setTimeout(() => {

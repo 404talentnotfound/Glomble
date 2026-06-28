@@ -581,10 +581,13 @@ class DeleteVideo(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
         
     def get(self, request, *args, **kwargs):
+        video = self.get_object()
+
         form = AdminDeleteObjectForm()
 
         context = {
             "form": form,
+            "video": video,
         }
 
         return render(request, 'videos/delete_video.html', context)
