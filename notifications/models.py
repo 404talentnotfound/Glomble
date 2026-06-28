@@ -65,18 +65,14 @@ def video_notify(sender, instance, created, **kwargs):
 @receiver(post_save, sender=CommentNotification)
 def comment_notify(sender, instance, created, **kwargs):
     if created:
-        if instance.comment.commenter == instance.comment.post.uploader:
-            return
-
-        if instance.comment.replying_to == None:
+        notified_profile = None
+        if instance.comment.replying_to == None and instance.comment.commenter != instance.comment.post.uploader:
             BaseNotification.objects.create(comment_notification=instance, profile=instance.comment.post.uploader)
             notified_profile = instance.comment.post.uploader
-        else:
+        elif instance.comment.replying_to != None:
             if instance.comment.replying_to.commenter != instance.comment.commenter:
                 BaseNotification.objects.create(comment_notification=instance, profile=instance.comment.replying_to.commenter)
                 notified_profile = instance.comment.replying_to.commenter
-            else:
-                notified_profile = None
 
         mentions = re.findall(r'@([^(\n )]+)', instance.comment.comment)
 

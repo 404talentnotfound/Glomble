@@ -41,7 +41,13 @@ class NotificationsIndex(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['sort_by'] = self.request.GET.get('sort-by')
+        sort_by = self.request.GET.get('sort-by')
+        params = ""
+        if sort_by:
+            params += f"&sort-by={sort_by}"
+
+        context["sort_by"] = sort_by
+        context["params"] = params
         return context
     
     def test_func(self):

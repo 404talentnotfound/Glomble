@@ -39,7 +39,7 @@ class Video(models.Model):
     uploader = models.ForeignKey('profiles.Profile', on_delete=models.CASCADE, default=1)
     notification_message = models.CharField(max_length=50, default="new video", blank=True)
     title = models.CharField(max_length=75)
-    description = models.TextField(blank=True, validators=[validate_characters], help_text="(must be under 1000 characters)", max_length=1000)
+    description = models.TextField(blank=True, null=True, validators=[validate_characters], help_text="(must be under 1000 characters)", max_length=1000)
     video_file = models.FileField(validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])], help_text="(must be an mp4 or mov between 1kb and 100mb and be under 2 hours)")
     thumbnail = models.FileField(blank=True, validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'gif'])], help_text="(must be a png or jpg between 1kb and 5mb)")
     date_posted = models.DateTimeField(default=timezone.now)

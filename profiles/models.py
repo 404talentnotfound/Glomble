@@ -117,7 +117,7 @@ class ProfileCustomisation(models.Model):
         errors = []
         if not background_accent_contrast and self.use_accent:
             errors.append("Accent color must contrast with the background colour.")
-        if not background_text_contrast and (not text_shadow_contrast and self.use_text_shadow) or not self.use_text_shadow:
+        if not background_text_contrast and ((not text_shadow_contrast and self.use_text_shadow) or not self.use_text_shadow):
             errors.append("Text color must contrast with the background.")
         if not video_card_text_shadow_contrast and self.use_video_card_text_shadow:
             errors.append("Video card text shadow must contrast with the video card text color.")
