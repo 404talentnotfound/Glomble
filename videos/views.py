@@ -100,8 +100,6 @@ class Index(ListView):
         by = self.request.GET.get('by')
         query = self.request.GET.get('query')
 
-        remove_inactive_users()
-
         queryset = Video.objects.all().exclude(unlisted=True).exclude(uploader__shadowbanned=True).exclude(uploader__banned=True)
 
         profile = None

@@ -66,14 +66,6 @@ class Profile(models.Model): # hi
         self.followers.clear()
         self.following.clear()
 
-    def add_follows(self):
-        for i in Profile.objects.all():
-            if i == self:
-                continue
-
-            self.followers.add(i.username)
-            i.following.add(self)
-
     def delete_media(self):
         if self.profile_picture.name != "profiles/pfps/default.png":
             client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=self.profile_picture.name)
@@ -105,6 +97,7 @@ class ProfileCustomisation(models.Model):
     customised_profile = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True, blank=True)
     background_color = models.CharField(blank=True, max_length=7, default="#ffffff")
     accent_color = models.CharField(blank=True, max_length=7, default="#000000")
+    use_accent = models.BooleanField(default=True)
     text_color = models.CharField(blank=True, max_length=7, default="#000000")
     use_text_shadow = models.BooleanField(default=True)
     text_shadow_color = models.CharField(blank=True, max_length=7, default="#ffffff")
@@ -116,17 +109,17 @@ class ProfileCustomisation(models.Model):
 
     def clean(self):
         cleaned_data = super().clean()
-        background_text_contrast = self.is_contrast_good(self.background_color, self.text_color)
-        background_accent_contrast = self.is_contrast_good(self.background_color, self.accent_color)
+        background_text_contrast = self.is_contrast_good(self.background_color, self.text_color) or self.banner_image
+        background_accent_contrast = self.is_contrast_good(self.background_color, self.accent_color) or self.banner_image
         text_shadow_contrast = self.is_contrast_good(self.text_color, self.text_shadow_color)
         video_card_text_shadow_contrast = self.is_contrast_good(self.video_card_text_color, self.video_card_text_shadow_color)
 
         errors = []
-        if not background_accent_contrast:
-            errors.append("Accent color must constrast with the background colour.")
-        if not (background_text_contrast or text_shadow_contrast):
+        if not background_accent_contrast and self.use_accent:
+            errors.append("Accent color must contrast with the background colour.")
+        if not background_text_contrast and (not text_shadow_contrast and self.use_text_shadow) or not self.use_text_shadow:
             errors.append("Text color must contrast with the background.")
-        if not video_card_text_shadow_contrast:
+        if not video_card_text_shadow_contrast and self.use_video_card_text_shadow:
             errors.append("Video card text shadow must contrast with the video card text color.")
 
         if errors:

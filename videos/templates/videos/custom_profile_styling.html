@@ -3,7 +3,10 @@
 		:root {
 			--bg-color: {{ profile.customisation.background_color }};
 			--text-color: {{ profile.customisation.text_color }};
+
+			{% if profile.customisation.use_accent %}
 			--accent-color: {{ profile.customisation.accent_color }}90;
+			{% endif %}
 
 			{% if profile.customisation.banner_image %}
 			--bg-image: url({{media_url}}/{{ profile.customisation.banner_image.name }});

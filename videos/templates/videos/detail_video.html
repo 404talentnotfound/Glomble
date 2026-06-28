@@ -65,6 +65,7 @@
 						<i class="bx bx-like cool-element btn btn-outline-success"><span class="dislike-count"> {{ post.likes.all.count }}</span></i>
 						{% endif %}
 					</button>
+					{% if post.uploader.username != user and request.user.is_authenticated %}
 					<button style="float: right;" class="recommend-button cool-element btn {% if can %}btn-outline-success{% else %}btn-outline-danger{% endif %}" data-url="{% url 'video-recommend' post.id %}">
 						<span>
 							{% if can %}
@@ -74,6 +75,7 @@
 							{% endif %}
 						</span>
 					</button>
+					{% endif %}
 					{% if not user.is_anonymous and post.uploader.username != user %}
 					{% video_nomination user as nomination %}
 					{% now 'n' as month %}

@@ -3,7 +3,6 @@ from django.urls import reverse
 from .models import Profile, Ban
 from django.contrib.auth.models import User
 from .views import create_profile
-from ipware import get_client_ip
 
 class CheckProfileMiddleware:
     def __init__(self, get_response):

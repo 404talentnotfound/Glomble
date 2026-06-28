@@ -230,8 +230,6 @@ class ProfileIndex(ListView):
         query = self.request.GET.get('query')
         queryset = Profile.objects.all()
 
-        # migrate_changes()
-
         request_profile = None
 
         if not self.request.user.is_anonymous and Profile.objects.all().filter(username=self.request.user).exists():

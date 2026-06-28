@@ -1,7 +1,6 @@
 from django import template
 from reports.models import VideoReport, ProfileReport, BugReport, Suggestion
 from profiles.models import Profile, BanAppeal
-from creatorfund.models import Creator
 from videos.models import Comment, Video
 from django.db.models import Count
 from django.urls import reverse

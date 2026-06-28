@@ -70,7 +70,7 @@ class DeleteComment(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 	def test_func(self):
 		comment = self.get_object()
 		is_commenter = self.request.user == comment.commenter.username
-		is_uploader = self.request.user == comment.video.uploader.username
+		is_uploader = self.request.user == comment.post.uploader.username
 		return is_commenter or is_uploader or self.request.user.is_superuser
 
 class UpdateComment(LoginRequiredMixin, UserPassesTestMixin, UpdateView):

@@ -12,7 +12,7 @@ import re
 class ProfileCustomisationForm(forms.ModelForm):
     class Meta:
         model = ProfileCustomisation
-        fields = ['use_text_shadow', 'use_video_card_text_shadow', 'background_color', 'accent_color', 'text_color', 'text_shadow_color', 'video_card_text_color', 'video_card_text_shadow_color', 'banner_image', 'video_banner']
+        fields = ['use_accent', 'use_text_shadow', 'use_video_card_text_shadow', 'background_color', 'accent_color', 'text_color', 'text_shadow_color', 'video_card_text_color', 'video_card_text_shadow_color', 'banner_image', 'video_banner']
         widgets = {
             'background_color': forms.TextInput(attrs={'type': 'color'}),
             'accent_color': forms.TextInput(attrs={'type': 'color'}),
