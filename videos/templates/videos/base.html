@@ -1,4 +1,5 @@
 {% load static %}
+{% load count %}
 <!doctype html>
 <html lang="en">
 
@@ -21,8 +22,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
     </style>
-
-    <title>Glomble</title>
 </head>
 
 <body style="overflow-x: hidden;">
@@ -52,50 +51,8 @@
 
             alert("Copied the link: " + url)
         }
-
-        function formatText(className) {
-            const timestampRegex = /\b(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)\b/g
-            const boldRegex = /\*([^(\*)]+)\*/g
-            const italicsRegex = /\_([^(\_)]+)\_/g
-
-            $(`.${className}`).html(function (_, oldHtml) {
-                // made by yours falsely ArnthorrrArnthorrr!
-                // ^ The code he wrote has since been removed but I wanted to keep the comment here cause I like it ok bye
-
-                oldHtml = oldHtml.replace(boldRegex, function (match) {
-                    return String(Array.from(match.matchAll(boldRegex), m => m[1])).bold()
-                })
-
-                oldHtml = oldHtml.replace(italicsRegex, function (match) {
-                    return String(Array.from(match.matchAll(italicsRegex), m => m[1])).italics()
-                })
-                
-                oldHtml = oldHtml.replace(timestampRegex, function (match, hour, min, sec) {
-                    const seconds = (parseInt(hour || 0) * 3600) + (parseInt(min) * 60) + parseInt(sec);
-                    return `<a href="#" class="timestamp" data-seconds="${seconds}">${match}</a>`;
-                })
-
-
-                return oldHtml
-            })
-        }
-
-        function showmore() {
-            var dots = document.getElementById("dots")
-            var moreText = document.getElementById("more")
-            var btnText = document.getElementById("myBtn")
-
-            if (dots.style.display === "none") {
-                dots.style.display = "inline"
-                btnText.innerHTML = "Read more".bold().italics()
-                moreText.style.display = "none"
-            } else {
-                dots.style.display = "none"
-                btnText.innerHTML = "Read less".bold().italics()
-                moreText.style.display = "inline"
-            }
-        }
         $(document).ready(function () {
+            if (document.title.length == 0) document.title = "Glomble"
             $(".recommend-button").click(function (e) {
                 e.preventDefault()
 
@@ -295,7 +252,7 @@
                 var urlAdd = followButton.data("url-add")
                 var urlRemove = followButton.data("url-remove")
 
-                followButton.find("span").text(followButton.hasClass("following") ? "Follow" : "Following")
+                followButton.find("span").text(followButton.hasClass("following") ? "Follow" : "Unfollow")
                 followButton.toggleClass("following").toggleClass("btn btn-outline-danger btn btn-outline-success")
 
                 $.ajax({
@@ -308,7 +265,7 @@
                         $(".follow-count").text(data.follow_count + " followers")
                     },
                     error: function () {
-                        followButton.find("span").text(followButton.hasClass("following") ? "Following" : "Follow")
+                        followButton.find("span").text(followButton.hasClass("following") ? "Unfollow" : "Follow")
                         followButton.toggleClass("following").toggleClass("btn btn-outline-danger btn btn-outline-success")
                     },
                 })

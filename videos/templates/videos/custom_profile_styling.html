@@ -1,0 +1,59 @@
+<style>
+	{% if profile.customisation %}
+		:root {
+			--bg-color: {{ profile.customisation.background_color }};
+			--text-color: {{ profile.customisation.text_color }};
+			--accent-color: {{ profile.customisation.accent_color }}90;
+
+			{% if profile.customisation.banner_image %}
+			--bg-image: url({{media_url}}/{{ profile.customisation.banner_image.name }});
+			{% endif %}
+
+			{% if profile.customisation.use_text_shadow %}
+			--text-shadow: 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }};
+			{% endif %}
+		}
+
+	{% else %}
+
+		:root {
+			--bg-color: white;
+			--text-color: black;
+			--accent-color: #00000090;
+		}
+
+	{% endif %}
+
+	.remove-shadow {
+		text-shadow: none;
+	}
+
+    .cool-div {
+		text-shadow: var(--text-shadow);
+		background-image: var(--bg-image);
+		background-color: var(--bg-color);
+		color: var(--text-color);
+	}
+
+	/* B0 is the transparency */
+	.cool-container {
+		background-color: var(--accent-color);
+		border-radius: 10px;
+	}
+
+	.cool-video {
+		background-color: var(--accent-color);
+	}
+	
+	.cool-element {
+		text-shadow: var(--text-shadow);
+		color: var(--text-color);
+	}
+
+	.highlight {
+		background-color: var(--accent-color);
+		-webkit-filter: invert(100%);
+		transition: background-color 1s ease;
+	}
+    /* in my IDE syntax highlighting bugs out on this file, but this comment line fixes it... the fuck? */
+</style>

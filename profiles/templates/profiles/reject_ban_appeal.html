@@ -1,0 +1,20 @@
+{% extends 'videos/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="container mb-5">
+	<div class="row justify-content-center">
+		<div class="col-md-6 col-sm-12 col-xs-12 text-center">
+			<form method="POST" enctype="multipart/form-data">
+				{% csrf_token %}
+				<br>
+				<legend class="mb-4">Reject this ban appeal?</legend>
+				<button class="btn btn-outline-info btn-block mt-3" type="submit">Submit</button>
+				<br>
+			</form>
+		</div>
+	</div>
+</div>
+
+{% endblock content %}

@@ -1,0 +1,20 @@
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="container mb-5">
+	<div class="row">
+		<div class="col-md-6 col-sm-12 col-xs-12">
+			<form method="POST" enctype="multipart/form-data" style="text-align: center;">
+				{% csrf_token %}
+				<legend class="border-bottom mb-4">Create a ban appeal</legend>
+				<p>Please try to be civil and explain why you think you should be unbanned, be as detailed as you can be.<br> Be aware that you can only send a ban appeal once every <b>30 days</b>.</p>
+				{{ form | crispy }}
+				<button class="btn btn-outline-info btn-block mt-3" type="submit">Submit</button>
+				<br>
+			</form>
+		</div>
+	</div>
+</div>
+
+{% endblock content %}

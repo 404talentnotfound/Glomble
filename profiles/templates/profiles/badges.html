@@ -1,0 +1,22 @@
+{% load count %}
+
+{% is_developer profile as developer %}
+{% is_creator profile as creator %}
+
+{% if profile.username.is_superuser %}
+	<i title="Admin" class='bx bxs-user-badge' ></i>
+{% endif %}
+{% if developer %}
+	<i title="Developer" class='bx bxs-wrench' ></i>
+{% endif %}
+{% if creator %}
+	<i title="Creator" class='bx bxs-palette' ></i>
+{% endif %}
+{% if request.user.is_authenticated and request.user.is_superuser %}
+	{% if profile.shadowbanned %}
+		<i class='bx bx-ghost' title="Shadowbanned"></i>
+	{% endif %}
+	{% if profile.banned %}
+		<i class='bx bx-block' title="Banned"></i>
+	{% endif %}
+{% endif %}

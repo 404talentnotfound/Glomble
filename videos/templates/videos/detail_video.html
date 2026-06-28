@@ -6,80 +6,79 @@
 {% load tz %}
 
 {% block content %}
-	<style>
-		.cool-div {
-			{% if post.uploader.customisation.text_shadow_color %}
-			text-shadow: 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }};
-			{% else %}
-			text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
-			{% endif %}
-			{% if post.uploader.customisation.banner_image %}
-			background-image: url(https://media.glomble.com/{{ post.uploader.customisation.banner_image.name }});
-			{% endif %}
-			{% if post.uploader.customisation.background_color %}
-			background-color: {{ post.uploader.customisation.background_color }};
-			{% else %}background-color: white;
-			{% endif %}
-			{% if post.uploader.customisation.text_color %}
-			color: {{ post.uploader.customisation.text_color }};
-			{% else %}
-			color: #000000;
-			{% endif %}
-		}
-		
-		.cool-element {
-			{% if post.uploader.customisation.text_shadow_color %}
-			text-shadow: 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }}, 0 0 5px {{ post.uploader.customisation.text_shadow_color }};
-			{% else %}
-			text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
-			{% endif %}
-			{% if post.uploader.customisation.text_color %}
-			color: {{ post.uploader.customisation.text_color }};
-			{% endif %}
-		}
 
-		.highlight {
-			{% if post.uploader.customisation.background_color %}
-			background-color: {{ post.uploader.customisation.background_color }};
-			-webkit-filter: invert(100%);
-			{% else %}
-			background-color: #000000;
-			{% endif %}
-			transition: background-color 1s ease;
-		}
-		/* in my IDE syntax highlighting bugs out on this file, but this comment line fixes it... wtf */
-	</style>
+{% get_media_url as media_url %}
+
+{% include 'videos/custom_profile_styling.html' %}
 	<head>
 		<meta property="og:title" content="{{ post.title }}">
 		<meta property="og:type" content="video.other">
 		<meta property="og:url" content="https://{{ request.META.HTTP_HOST }}{% url 'video-detail' post.id %}">
-		<meta property="og:image" content="https://media.glomble.com/{{ post.thumbnail }}">
-		<meta property="og:video" content="https://media.glomble.com/{{ post.video_file }}">
+		<meta property="og:image" content="{{media_url}}/{{ post.thumbnail }}">
+		<meta property="og:video" content="{{media_url}}/{{ post.video_file }}">
 		<meta property="og:video:type" content="video/mp4">
+		<title>Glomble | "{{ post.title }}"</title>
 	</head>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<div class="cool-div" style="min-height: 100vh;">
+	<div class="cool-div" style="min-height: 100vh; padding-bottom: 10px;">
 		<div class="container" id="post-container">
-					<div class="row">
-								<video class="mt-5" src="https://media.glomble.com/{{ post.video_file }}" type="video/mp4" style="max-height:40vw; background-color: black !important;" controls autoplay>
-								</video>
-					</div>
-					<h5 class="mt-4">{{ post.title }} {% if post.unlisted %}<i class='bx bx-ghost' title="Unlisted"></i>{% endif %}
-						{% if not user.is_anonymous and post.uploader.username != user %}
-						{% can_recommend post.id user as can %}
-						<button class="recommend-button cool-element btn {% if can %}btn-outline-success{% else %}btn-outline-danger{% endif %}" data-url="{% url 'video-recommend' post.id %}">
-							<span>
-								{% if can %}
-								Recommend
-								{% else %}
-								Unrecommend
-								{% endif %}
-							</span>
+			<div class="row">
+				<video class="mt-5 cool-video" src="{{media_url}}/{{ post.video_file }}" type="video/mp4" style="max-height:40vw;" controls autoplay></video>
+			</div>
+		</div>
+       <div class="container cool-container" id="post-container" style="margin-top: 10px;">
+			<h5 class="mt-4 format text-center" style="padding-top: 1.5%; padding-bottom: 1.5%;">{{ post.title }} {% if post.unlisted %}<i class='bx bx-ghost' title="Unlisted"></i>{% endif %}
+				{% if not user.is_anonymous and post.uploader.username != user %}
+				{% can_recommend post.id user as can %}
+				{% endif %}
+			</h5>
+	   </div>
+       <div class="container cool-container" id="post-container">
+			<h6>
+				<!-- USERNAME AND FOLLOW BUTTON, RECOMMEND AND LIKE BUTTONS -->
+				<p style="margin-top: 10px; padding-top: 1.5%;">
+					<!-- username and follow -->
+					<a class="link-text cool-element" href="{% url 'detail-profile' post.uploader.id %}"><img class="rounded-circle" style="margin-right: 10px;" width="35" height="35" src="{{media_url}}/{{ post.uploader.profile_picture }}">
+					{{ post.uploader.username }}
+					</a>
+					{% if post.uploader.username != user and request.user.is_authenticated %}
+						<button class="follow-button {% if is_following %}following cool-element btn cool-element btn-outline-danger {% else %}cool-element btn cool-element btn-outline-success {% endif %}" style="margin-left: 10px;" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
+							{% if is_following %}
+									<span>Unfollow</span>
+							{% else %}
+							<span>Follow</span>
+							{% endif %}
 						</button>
-						{% video_nomination user as nomination %}
-						{% now 'n' as month %}
-						{% if month == '12' and can_nominate %}
-						<button class="nominate-button btn {% if nomination == None %}btn-success{% elif nomination != post %}btn-warning{% else %}btn-danger{% endif %}" style="text-shadow: 0 0 5px #FFFF00, 0 0 5px #FFFF00, 0 0 5px #FFFF00; color: white" data-url="{% url 'video-nominate' post.id %}">
+					{% endif %}
+					<!-- recommend and such -->
+					<button style="float: right; background-color: transparent; border: none; box-shadow: none;" class="dislike-button cool-element btn btn-outline-danger" data-url="{% url 'video-dislike' post.id %}">
+						{% if request.user in post.dislikes.all %}
+						<i class="bx bxs-dislike cool-element btn btn-outline-danger"><span>{{ post.dislikes.all.count }}</span></i>
+						{% else %}
+						<i class="bx bx-dislike cool-element btn btn-outline-danger"><span>{{ post.dislikes.all.count }}</span></i>
+						{% endif %}
+					</button>
+					<button style="float: right; background-color: transparent; border: none; box-shadow: none;" class="like-button cool-element btn btn-outline-success" data-url="{% url 'video-like' post.id %}">
+						{% if request.user in post.likes.all %}
+						<i class="bx bxs-like cool-element btn btn-outline-success"><span class="like-count"> {{ post.likes.all.count }}</span></i>
+						{% else %}
+						<i class="bx bx-like cool-element btn btn-outline-success"><span class="dislike-count"> {{ post.likes.all.count }}</span></i>
+						{% endif %}
+					</button>
+					<button style="float: right;" class="recommend-button cool-element btn {% if can %}btn-outline-success{% else %}btn-outline-danger{% endif %}" data-url="{% url 'video-recommend' post.id %}">
+						<span>
+							{% if can %}
+							Recommend
+							{% else %}
+							Unrecommend
+							{% endif %}
+						</span>
+					</button>
+					{% if not user.is_anonymous and post.uploader.username != user %}
+					{% video_nomination user as nomination %}
+					{% now 'n' as month %}
+					{% if month == '12' and can_nominate %}
+						<button class="nominate-button btn {% if nomination == None %}btn-success{% elif nomination != post %}btn-warning{% else %}btn-danger{% endif %}" style="float: right; text-shadow: 0 0 5px #FFFF00, 0 0 5px #FFFF00, 0 0 5px #FFFF00; color: white" data-url="{% url 'video-nominate' post.id %}">
 							<span>
 								{% if nomination == None %}
 								Nominate for video of the year
@@ -90,30 +89,12 @@
 								{% endif %}
 							</span>
 						</button>
-						{% endif %}
-						{% endif %}
-						{% if post.uploader.username == user %}
-							<a style="float: right;" class="cool-element btn cool-element btn-outline-danger" href="{% url 'video-delete' post.id %}">Delete</a>
-							<a style="float: right;" class="cool-element btn cool-element btn-outline-primary" href="{% url 'video-update' post.id %}">Edit</a>
-						{% elif request.user.is_superuser %}
-							<a style="float: right;" class="cool-element btn cool-element btn-outline-danger" href="{% url 'video-delete' post.id %}">Delete</a>
-						{% endif %}
-					</h5>
-					<h6>
-						<a class="link-text cool-element" href="{% url 'detail-profile' post.uploader.id %}"><img class="rounded-circle" style="margin-right: 10px;" width="35" height="35" src="https://media.glomble.com/{{ post.uploader.profile_picture }}">
-							{{ post.uploader.username }}
-						</a>
-						{% if post.uploader.username != user and request.user.is_authenticated %}
-							<button class="follow-button {% if is_following %}following cool-element btn cool-element btn-outline-danger {% else %}cool-element btn cool-element btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' post.uploader.id %}" data-url-remove="{% url 'remove-follower' post.uploader.id %}">
-								{% if is_following %}
-								<span>Following</span>
-								{% else %}
-								<span>Follow</span>
-								{% endif %}
-							</button>
-						{% endif %}
-					{% if has %}
-					<div class="lmao format">
+					{% endif %}
+					{% endif %}
+				</p>
+				<!-- DESCRIPTION BOX -->
+				{% if has %}
+					<div class="lmao format" style="padding-top: 1.5%;">
 						{% if desclen <= 250 %}
 						<p>
 							{% autoescape off %}
@@ -126,53 +107,48 @@
 						</p>
 						{% endif %}
 					</div>
-					{% endif %}
-					<p>Views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span><br>
+				{% endif %}
+				<!-- VIDEO INFO -->
+				<p>
+					Views: <span class="view-count" id="{{ post.id }}">{{ post.views.count }}</span><br>
 					Score: <span id="score">{{ post.score }}</span><br>
-					Category: <span>{{ post.category }}</span></p>
-					<p title="{{ post.date_posted }} (UTC)">{{ post.date_posted|naturaltime }}</p>
-				<div class="row mt-3 mb-5 border-bottom">
+					Category: <span>{{ post.category }}</span>
+				</p>
+				<p title="{{ post.date_posted }} (UTC)">{{ post.date_posted|naturaltime }}</p>
 					{% if request.user.is_authenticated %}
-					<button style="background-color: transparent; border: none; box-shadow: none;" class="like-button cool-element" data-url="{% url 'video-like' post.id %}">
-						{% if request.user in post.likes.all %}
-						<i class="bx bxs-like cool-element"><span class="like-count">{{ post.likes.all.count }}</span></i>
-						{% else %}
-						<i class="bx bx-like cool-element"><span class="dislike-count">{{ post.likes.all.count }}</span></i>
-						{% endif %}
-					</button>
-					<button style="background-color: transparent; border: none; box-shadow: none;" class="dislike-button cool-element" data-url="{% url 'video-dislike' post.id %}">
-						{% if request.user in post.dislikes.all %}
-						<i class="bx bxs-dislike cool-element"><span>{{ post.dislikes.all.count }}</span></i>
-						{% else %}
-						<i class="bx bx-dislike cool-element"><span>{{ post.dislikes.all.count }}</span></i>
-						{% endif %}
-					</button>
-					<div class="col-md-6">
-						<a class="video-icons icon-color" href="{% url 'video-download' post.id %}"><i class='bx bxs-download cool-element' ></i></a>
-						{% if post.uploader.username != request.user %}
-						<a class="video-icons icon-color" href="{% url 'video-report' post.id %}"><i class='bx bxs-flag-alt cool-element' ></i></a>
-						{% endif %}
+					<!-- BOTTOM ROW OF BUTTONS (DOWNLOAD AND REPORT) -->
+					<div class="row mt-3 mb-4">
+						<div class="col-md-6">
+							<a class="video-icons icon-color" href="{% url 'video-download' post.id %}"><i class='bx bxs-download cool-element' ></i></a>
+							{% if post.uploader.username != request.user %}
+							<a class="video-icons icon-color" href="{% url 'video-report' post.id %}"><i class='bx bxs-flag-alt cool-element' ></i></a>
+							{% endif %}
+						</div>
 					</div>
-					{% else %}
-					<button class="cool-element" style="background-color: transparent; border: none; box-shadow: none;">
-						<i class="bx bx-like cool-element"><span class="dislike-count">{{ post.likes.all.count }}</span></i>
-					</button>
-					<button class="cool-element" style="background-color: transparent; border: none; box-shadow: none;">
-						<i class="bx bx-dislike cool-element"><span>{{ post.dislikes.all.count }}</span></i>
-					</button>
+					<!-- DELETE AND EDIT BUTTONS -->
+					{% if post.uploader.username == user or request.user.is_superuser %}
+					<a class="cool-element btn cool-element btn-outline-primary" href="{% url 'video-update' post.id %}">Edit</a>
+						<a class="cool-element btn cool-element btn-outline-danger" href="{% url 'video-delete' post.id %}">Delete</a>
 					{% endif %}
-				</div>
+				{% endif %}
+
+				<div class="row mt-3 mb-5 border-bottom"></div>
+
+				<!--  recommendation space -->
 				<div class="row justify-content-center">
-					<button onclick="onClickRecommend(this);" class="cool-element btn cool-element btn-outline-success">Recommend more videos</button>
+					<button onclick="onClickRecommend(this);" class="cool-element btn cool-element btn-outline-success">Similar Videos</button>
 				</div>
 				<br>
-				<div style="display: none;" class="row justify-content-center" id="recommended-videos">
-				</div>
+				<div style="display: none;" class="row justify-content-center" id="recommended-videos"></div>
+
+				<div class="row mt-3 mb-5 border-top"></div>
+
+				<!-- COMMENT SECTION -->
 				<div class="row justify-content-center mt-3 mb-5">
-					<div class="col-md-5 col-sm-12">
+					<div class="col-md-5 col-sm-12 text-center">
 						<form id="comment-form" method="POST">
 							{% if request.user.is_authenticated %}
-							<legend id="cool" class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
+							<legend id="cool" class="mb-4">{{ comment_amount }} Comments</legend>
 							{% csrf_token %}
 							{{ form | crispy }}
 							<input type="hidden" name="form_type" value="comment">
@@ -180,20 +156,19 @@
 								<button type="submit" class="cool-element btn cool-element btn-success mt-3">Submit!</button>
 							</div>
 							{% else %}
-							<legend class="border-bottom mb-4">{{ comment_amount }} Comments</legend>
+							<legend class="mb-4">{{ comment_amount }} Comments</legend>
 							{% endif %}
 						</form>
 					</div>
 				</div>
-					<div id="comments">
-						{% include 'videos/comment.html' %}
-					</div>
-				</h6>
-				<br>
-			</div>
+				<div id="comments" class="justify-content-center">
+					{% include 'videos/comment.html' %}
+				</div>
+			</h6>
+			<br>
 		</div>
 	</div>
-	<div id="notification" class="text-center" style="position: sticky; bottom: 0px; background-color: #c51717; z-index: 2;"></div>
+<div id="notification" class="text-center" style="position: sticky; bottom: 0px; background-color: #c51717; z-index: 2;"></div>
 	<script>
 		function onClick(ele) {
 			if (document.getElementById('reply'+ele.id).style.display === 'none') {
@@ -276,7 +251,6 @@
 			const volumeKey = "video-volume";
 
 			handleReplyForms();
-			formatText("format");
 
 			$(document).on('click', '.timestamp', function(e) {
 				e.preventDefault()
@@ -399,7 +373,23 @@
 			comments.innerHTML = data.comments;
 
 			handleReplyForms();
-			formatText("format");
 		}
+
+		function showmore() {
+            var dots = document.getElementById("dots")
+            var moreText = document.getElementById("more")
+            var btnText = document.getElementById("myBtn")
+
+            if (dots.style.display === "none") {
+                dots.style.display = "inline"
+                btnText.innerHTML = "Read more".bold().italics()
+                moreText.style.display = "none"
+            } else {
+                dots.style.display = "none"
+                btnText.innerHTML = "Read less".bold().italics()
+                moreText.style.display = "inline"
+            }
+        }
 	</script>
-{% endblock content %}
+</div>
+	{% endblock content %}

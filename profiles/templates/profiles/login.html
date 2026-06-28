@@ -25,7 +25,7 @@
           <input type="submit" value="login" class="login-btn" />
         </form>
         {% if form.non_field_errors %}
-          <p class="error-message">Hint: have you verified your email yet?</p>
+          <h5 class="error-message text-center">Hint: have you verified your email yet? You need to verify your email to log in.<br>If you would like to resend the email verification <a href="{% url 'resend-email' %}">click here</a></h5>
         {% endif %}
         <div class="border-top pt-3">
           <small class="text-muted"
@@ -35,9 +35,17 @@
         </div>
         <div class="pt-3">
           <small class="text-muted"
-            >Forgot Password?
+            >Forgot password?
             <a class="ml-2" href="{% url 'password_reset' %}"
               >Reset Here</a
+            ></small
+          >
+        </div>
+        <div class="pt-3">
+          <small class="text-muted"
+            >Can't find activation email?
+            <a class="ml-2" href="{% url 'resend-email' %}"
+              >Resend Email Here</a
             ></small
           >
         </div>

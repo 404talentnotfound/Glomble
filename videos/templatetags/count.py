@@ -1,13 +1,15 @@
 from django import template
 from reports.models import VideoReport, ProfileReport, BugReport, Suggestion
-from profiles.models import Profile
+from profiles.models import Profile, BanAppeal
 from creatorfund.models import Creator
 from videos.models import Comment, Video
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.html import escape
+from django.utils import timezone
 import datetime
 import re
+from Glomble.pc_prod import LOCAL, DEVELOPER_IDS, CREATOR_ID
 
 register = template.Library()
 
@@ -26,6 +28,14 @@ def B_reports():
 @register.simple_tag
 def S_reports():
     return Suggestion.objects.all().count() > 0
+
+@register.simple_tag
+def any_reports():
+    return (V_reports() or P_reports() or B_reports() or S_reports())
+
+@register.simple_tag
+def any_appeals():
+    return BanAppeal.objects.all().exclude(rejected=True).count()
 
 @register.simple_tag
 def has_notifications(user_object):
@@ -140,3 +150,33 @@ def profile_nomination(user_object):
 @register.simple_tag
 def video_object_as_queryset(video_object):
     return Video.objects.filter(id=video_object.id)
+
+@register.simple_tag
+def get_media_url():
+    if not LOCAL:
+        return "https://media.glomble.com"
+    return "https://test-media.glomble.com"
+
+# returns True or the timestamp for when it's possible again
+@register.simple_tag
+def can_appeal(ban):
+    appeal_qs = ban.appeals
+    now = timezone.now()
+
+    if appeal_qs.exists():
+        earliest_allowed = appeal_qs.order_by('-date_made').first().date_made+datetime.timedelta(days=30)
+        if now > earliest_allowed:
+            return True
+        return earliest_allowed
+
+    return True
+
+@register.simple_tag
+def is_developer(profile):
+    developers = DEVELOPER_IDS
+    return profile.id in developers
+
+@register.simple_tag
+def is_creator(profile):
+    creator_id = 1
+    return profile.username.id == creator_id

@@ -1,13 +1,12 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ReportVideo, VideoReportIndex, DetailVideoReport, DeleteVideoReport, WarnVideoReport, ProfileReportIndex, DeleteProfileReport, DetailProfileReport, ReportProfile, BugReportIndex, DeleteBugReport, FixBugReport, DetailBugReport, ReportBug, Suggest, SuggestionIndex, DeleteSuggestion, FixSuggestion, DetailSuggestion, choice_page
+from .views import ReportVideo, VideoReportIndex, DetailVideoReport, DeleteVideoReport, ProfileReportIndex, DeleteProfileReport, DetailProfileReport, ReportProfile, BugReportIndex, DeleteBugReport, FixBugReport, DetailBugReport, ReportBug, Suggest, SuggestionIndex, DeleteSuggestion, FixSuggestion, DetailSuggestion, choice_page
 
 urlpatterns = [
     path('', choice_page, name='choice-page'),
     path('videos/index', VideoReportIndex.as_view(), name='video-report-index'),
     path('video/<int:pk>/view', DetailVideoReport.as_view(), name='video-report-detail'),
     path('video/<int:pk>/delete', DeleteVideoReport.as_view(), name='video-report-delete'),
-    # path('video/<int:pk>/warn', WarnVideoReport.as_view(), name='video-report-warn'),
     path('videos/<slug:id>/', ReportVideo.as_view(), name='video-report'),
     path('bug/index', BugReportIndex.as_view(), name='bug-report-index'),
     path('bug/<int:pk>/view', DetailBugReport.as_view(), name='bug-report-detail'),

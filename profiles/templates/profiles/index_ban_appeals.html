@@ -1,0 +1,82 @@
+{% extends 'videos/base.html' %}
+{% load humanize %}
+{% load count %}
+
+
+{% block content %}
+{% get_media_url as media_url %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-3 col-sm-12 mt-5 mb-3">
+            <form method="get">
+                <label for="sort-by">Sort by:</label>
+                <select name="sort-by" id="sort-by" onchange="this.form.submit()">
+                    <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
+                    <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
+                </select>
+            </form>
+            
+        </div>
+        {% for object in object_list %}
+        <div class="card col-md-3 col-sm-12 mr-md-2 mt-5 p-3 border-0">
+            <a href="{% url 'detail-appeal' object.ban.profile.id object.number %}" class="row justify-content-center"><img class="circular_image" src="{{ media_url }}/{{ object.ban.profile.profile_picture }}"></a>
+            <div class="card-body">
+                <p class="text-muted text-center">Ban for: {{ object.ban.profile.username }}</p>
+                <p class="text-muted text-center">Banned by: {% if object.ban.ban_giver %}{{ object.ban.ban_giver.username }}{% else %}[Deleted Profile]{% endif %}</p>
+                <p class="text-muted text-center">Status: {% if object.rejected %}<b style="color:red">Rejected</b>{% else %}Undecided{% endif %}</p>
+                <p class="text-muted text-center">Appeal #{{ object.number }}</p>
+                <p class="text-muted text-center" title="{{ object.date_made }} (UTC)">Time of appeal: {{ object.date_made|naturaltime }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if is_paginated %}
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-12 col-sm-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class='bx bxs-chevrons-left' ></i></a>
+                    </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-left' ></i></span></li>
+                    {% endif %}
+
+                    {% if page_obj.number|add:'-4' > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}">&hellip;</a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only">(current)</span></span></li>
+                        {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.paginator.num_pages > page_obj.number|add:'4' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}">&hellip;</a>
+                        </li>
+                    {% endif %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class='bx bxs-chevrons-right' ></i></a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-right' ></i></span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

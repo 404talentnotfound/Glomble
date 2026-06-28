@@ -4,6 +4,8 @@
 {% load humanize %}
 
 {% block content %}
+{% get_media_url as media_url %}
+
 <style>
     @media screen and (max-width: 980px) {
     .too_wide {
@@ -26,8 +28,22 @@
                 <option value="date-desc"{% if sort_by == 'date-desc' %} selected{% endif %}>Newest First</option>
                 <option value="date-asc"{% if sort_by == 'date-asc' %} selected{% endif %}>Oldest First</option>
             </select>
+            {% if not request.user.is_anonymous %}
+            <br>
+            <label for="filter">Filter:</label>
+            <select name="filter" id="filter" onchange="this.form.submit()">
+                <option value="all"{% if filter == 'all' %} selected{% else %} selected="selected"{% endif %}>All</option>
+                <option value="following"{% if filter == 'following' %} selected{% endif %}>Your Follows</option>
+                <option value="followers"{% if filter == 'followers' %} selected{% endif %}>Your Followers</option>
+                <option value="mutual"{% if filter == 'mutual' %} selected{% endif %}>Mutual Follows</option>
+                {% if request.user.is_superuser %}
+                <option value="hidden"{% if filter == 'hidden' %} selected{% endif %}>Hidden</option>
+                {% endif %}
+            </select>
+            {% endif %}
         </form>
     </div>
+    <br>
         {% for profile in profile_list %}
         <div class="row justify-content-center mt-3">
             {% has_videos profile.id as should %}
@@ -52,12 +68,15 @@
                 </div>
                 {% endif %}
                 <p><a style="text-decoration: none;" class="link-text" href="{% url 'detail-profile' profile.id %}">
-                <img class="circular_image" src="https://media.glomble.com/{{ profile.profile_picture }}">
-                <h5>{{ profile.username }}</h5></a></p>
+                <img class="circular_image" src="{{media_url}}/{{ profile.profile_picture }}">
+                <h5>{{ profile.username }} {% include 'profiles/badges.html' %}</h5></a></p>
                 <p>{{ profile.followers.all.count }} Followers</p>
                 <p>{{ profile.rating|floatformat:1 }} Stars</p>
-                {% if request.user.id == 1 and sort_by == "NUMBNOMB" %}
-                <p>Nominations: {{ profile.noms.count }}</p>
+
+                {% if not request.user.is_anonymous %}
+                    {% if request.user.id == 1 and sort_by == "NUMBNOMB" %}
+                    <p>Nominations: {{ profile.noms.count }}</p>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -69,7 +88,7 @@
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}"><i class='bx bxs-chevrons-left' ></i></a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ params }}"><i class='bx bxs-chevrons-left' ></i></a>
                     </li>
                     {% else %}
                         <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-left' ></i></span></li>
@@ -77,7 +96,7 @@
 
                     {% if page_obj.number|add:'-4' > 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">&hellip;</a>
+                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}{{ params }}">&hellip;</a>
                     </li>
                     {% endif %}
 
@@ -86,20 +105,20 @@
                             <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only">(current)</span></span></li>
                         {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">{{ i }}</a>
+                                <a class="page-link" href="?page={{ i }}{{ params }}">{{ i }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_obj.paginator.num_pages > page_obj.number|add:'4' %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}">&hellip;</a>
+                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}{{ params }}">&hellip;</a>
                         </li>
                     {% endif %}
 
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}"><i class='bx bxs-chevrons-right' ></i></a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ params }}"><i class='bx bxs-chevrons-right' ></i></a>
                         </li>
                     {% else %}
                         <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-right' ></i></span></li>

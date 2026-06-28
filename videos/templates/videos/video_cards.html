@@ -1,67 +1,67 @@
 {% load humanize %}
 {% load count %}
 
+{% get_media_url as media_url %}
+
 {% for object in object_list %}
+{% if object.uploader.customisation %}
 <style>
     .div-{{object.id}} {
-        {% if object.uploader.customisation.video_card_text_shadow_color %}
+        background-color: {{ object.uploader.customisation.background_color }};
+        color: {{ object.uploader.customisation.video_card_text_color }};
+        {% if object.uploader.customisation.use_video_card_text_shadow %}
         text-shadow: 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }};
-        {% else %}
-        text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
         {% endif %}
         {% if object.uploader.customisation.video_banner %}
-        background-image: url(https://media.glomble.com/{{ object.uploader.customisation.video_banner.name }});
-        {% endif %}
-        {% if object.uploader.customisation.background_color %}
-        background-color: {{ object.uploader.customisation.background_color }};
-        {% else %}background-color: white;
-        {% endif %}
-        {% if object.uploader.customisation.video_card_text_color %}
-        color: {{ object.uploader.customisation.video_card_text_color }};
-        {% else %}
-        color: #000000;
+        background-image: url({{media_url}}/{{ object.uploader.customisation.video_banner.name }});
         {% endif %}
     }
 
     .a-{{object.id}} {
-        {% if object.uploader.customisation.video_card_text_color %}
         color: {{ object.uploader.customisation.video_card_text_color }};
-        {% endif %}
     }
     .length-{{object.id}} {
-        {% if object.uploader.customisation.background_color %}
         background-color: {{ object.uploader.customisation.background_color }};
-        {% else %}
-        background-color: white;
-        {% endif %}
-        {% if object.uploader.customisation.video_card_text_color %}
         color: {{ object.uploader.customisation.video_card_text_color }};
-        {% else %}
-        color: #000000;
-        {% endif %}
-        {% if object.uploader.customisation.video_card_text_shadow_color %}
+
+        {% if object.uploader.customisation.use_video_card_text_shadow %}
         text-shadow: 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }}, 0 0 5px {{ object.uploader.customisation.video_card_text_shadow_color }};
-        {% else %}
-        text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
         {% endif %}
     }
 </style>
-<div class="card mb-3 border-0" style="margin-right: 30px; margin-bottom: 30px; background-color:black;">
+{% else %}
+<style>
+    .div-{{object.id}} {
+        background-color: white;
+        color: black;
+    }
+
+    .a-{{object.id}} {
+        color: black;
+    }
+    .length-{{object.id}} {
+        background-color: white;
+        color: black;
+    }
+</style>
+{% endif %}
+
+<div class="card mb-3 border-0" style="margin: 2ch; background-color:black;">
     <a href="{% url 'video-detail' object.id %}" class="position-relative" style="padding-top: 56.25%; overflow: hidden;">
         <div style="background-color:black;width:100%">
-            <img src="https://media.glomble.com/{{ object.thumbnail }}" 
+            <img src="{{media_url}}/{{ object.thumbnail }}" 
                 class="position-absolute w-100 h-100" 
                 style="top:0;left:0;object-fit: contain;">
             <div class="text-center length-{{object.id}} video-length" style="position: absolute; bottom: 8px; right: 16px; min-width: 50px;">{% duration_to_hms object.duration %}</div>
         </div>
     </a>
     <div style="height: 220px" class="card-body div-{{object.id}}">
-        <h6 class="text-center shit" title="{{ object.title }}"><a class="link-text a-{{object.id}}" href="{% url 'video-detail' object.id %}">{{ object.title }} {% if object.unlisted %}<i class='bx bx-ghost' title="Unlisted"></i>{% endif %}</a></h6>
-        <h6 class="text-center shit"><a class="link-text a-{{object.id}}" href="{% url 'detail-profile' object.uploader.id %}"><img class="rounded-circle" width="35" height="35" src="https://media.glomble.com/{{ object.uploader.profile_picture }}">{{ object.uploader.username }}</a></h6>
-        <h6 class="text-center">Views: {{ object.views.count }}</h6>
-        <h6 class="text-center">Score: {{ object.score }}</h6>
-        <h6 class="text-center" title="{{ object.date_posted }} (UTC)">{{ object.date_posted|naturaltime }}</h6>
+        <h6 class="text-center shit" title="{{ object.title }}"><a class="link-text a-{{object.id}}" href="{% url 'video-detail' object.id %}">{% if object.unlisted %}<i class='bx bx-ghost' title="Unlisted"></i>{% endif %} {{ object.title }}</a></h6>
+        <h6 class="text-center shit"><a class="link-text a-{{object.id}}" href="{% url 'detail-profile' object.uploader.id %}"><img class="rounded-circle" width="35" height="35" src="{{media_url}}/{{ object.uploader.profile_picture }}"> {{ object.uploader.username }}</a></h6>
+        <h6 class="text-center">Views: {{ object.views.count }} | Score: {{ object.score }}</h6>
         <h6 class="text-center">{{ object.likes.all.count }} likes, {{ object.dislikes.all.count }} dislikes</h6>
+        <h6 class="text-center">Category: {{ object.category }}</h6>
+        <h6 class="text-center" title="{{ object.date_posted }} (UTC)">{{ object.date_posted|naturaltime }}</h6>
         {% if request.user.id == 1 and sort_by == "NUMNOM" %}
         <h6 class="text-center">Nominations: {{ object.nominations.count }}</h6>
         {% endif %}

@@ -14,6 +14,9 @@ from notifications.models import MiscellaneousNotification, send_misc_notificati
 
 @staff_member_required
 def choice_page(request):
+    if not request.user.is_superuser:
+        return render(request, "403.html")
+
     username = request.GET.get('username', request.user)
     profile = Profile.objects.get(username=username)
     v_count = VideoReport.objects.all().count()
@@ -68,26 +71,6 @@ class DeleteVideoReport(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     
     def test_func(self):
         return self.request.user.is_superuser
-
-# unused for now
-class WarnVideoReport(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = VideoReport
-    template_name = 'reports/warn_video_report.html'
-    def get_redirect_url(self):
-        return reverse('video-report-detail', kwargs={'pk': self.object.pk})
-
-    def get_success_url(self):
-        post = VideoReport.objects.all().get(pk=self.kwargs['pk']).post
-
-        warning_notif = MiscellaneousNotification.objects.create(video=post, message="A moderator has warned you for the contents of your video:")
-        send_misc_notification(warning_notif, [post.uploader])
-        
-        VideoReport.objects.all().filter(post=post).delete()
-
-        return reverse('video-report-index')
-    
-    def test_func(self):
-        return self.request.user.is_superuser
     
 class ReportVideo(LoginRequiredMixin, CreateView):
     model = VideoReport
@@ -120,11 +103,6 @@ class ReportVideo(LoginRequiredMixin, CreateView):
             return render(self.request, 'reports/video_report_sent.html', context)
         else:
             return super().form_invalid(form)
-
-    def form_invalid(self, form):
-        VideoReport.objects.all().filter(pk=self.object.pk).delete()
-
-        return super().form_invalid(form)
 
 class DetailVideoReport(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def test_func(self):
@@ -216,11 +194,6 @@ class ReportProfile(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             return render(self.request, 'reports/profile_report_sent.html', context)
         else:
             return super().form_invalid(form)
-
-    def form_invalid(self, form):
-        ProfileReport.objects.all().filter(pk=self.object.pk).delete()
-
-        return super().form_invalid(form)
     
     def test_func(self):
         return Profile.objects.all().get(id=self.kwargs['id']) != Profile.objects.all().get(username=self.request.user)
@@ -291,8 +264,7 @@ class FixBugReport(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     
     def post(self, request, *args, **kwargs):
         report = self.get_object()
-        congrats_notif = MiscellaneousNotification.objects.create(message=f'Your bug report "{report.brief_summary}" has been fixed!')
-        send_misc_notification(congrats_notif, [Profile.objects.all().get(username=report.reporter)])
+        send_misc_notification([Profile.objects.all().get(username=report.reporter)], message=f'One of your bug reports has been fixed!')
 
         return super().delete(request, *args, **kwargs)
         
@@ -320,11 +292,6 @@ class ReportBug(LoginRequiredMixin, CreateView):
         cache.set(f"last_bug_report_{self.request.user.id}", datetime.now(), timeout=None)
         form.save()
         return render(self.request, 'reports/bug_report_sent.html')
-
-    def form_invalid(self, form):
-        BugReport.objects.all().filter(pk=self.object.pk).delete()
-
-        return super().form_invalid(form)
 
 class DetailBugReport(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def test_func(self):
@@ -392,8 +359,7 @@ class FixSuggestion(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     
     def post(self, request, *args, **kwargs):
         report = self.get_object()
-        congrats_notif = MiscellaneousNotification.objects.create(message=f'Your suggestion "{report.brief_summary}" has been added!')
-        send_misc_notification(congrats_notif, [Profile.objects.all().get(username=report.reporter)])
+        send_misc_notification([Profile.objects.all().get(username=report.reporter)], message=f'One of your suggestions has been implemented!')
 
         return super().delete(request, *args, **kwargs)
 

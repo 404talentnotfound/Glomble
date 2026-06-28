@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
-from django.urls import reverse
-from .models import Profile, Chat, Message, ProfileCustomisation, ProfileRating
-from videos.models import Video
+from django.urls import reverse, reverse_lazy
+from .models import Profile, Chat, Message, ProfileCustomisation, ProfileRating, BanAppeal, Ban
+from videos.models import Video, Comment
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import UpdateView, DeleteView
+from django.views.generic.edit import UpdateView, DeleteView, CreateView
 from django.contrib.auth.models import User
 from django.views import View
 from django.db.models import Q, Count, Max
-from .forms import UserRegisterForm, CreateProfileForm, MessageForm, ProfileCustomisationForm, ProfileRatingForm
+from .forms import UserRegisterForm, MessageForm, ProfileCustomisationForm, ProfileRatingForm, BanAppealForm, ResendEmailForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .decorators import user_not_authenticated
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -27,12 +27,13 @@ from django.core.cache import cache
 from notifications.models import MilestoneNotification
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.mail import EmailMessage
+from videos.templatetags.count import can_appeal
 import os
 import random
-import magic
 import tempfile
 import subprocess
 from reports.models import BugReport, Suggestion
+from operator import attrgetter
 
 @login_required
 def rate_profile(request, id):
@@ -72,59 +73,62 @@ def customise_profile(request, id):
         form = ProfileCustomisationForm(request.POST, request.FILES, instance=customisation)
         if form.is_valid():
             if 'banner_image' in request.FILES:
-                try:
-                    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"profiles/banners/{customised_profile.customisation.banner_image.name}")
-                except:
-                    pass
+                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=customised_profile.customisation.banner_image.name)
 
                 banner = request.FILES['banner_image']
                 form.save(commit=False)
                 temp_banner = tempfile.NamedTemporaryFile(delete=False)
                 for chunk in banner.chunks():
                     temp_banner.write(chunk)
-                form.instance.banner_image = f"profiles/banners/{customised_profile.id}-{random_id}.png"
+                form.instance.banner_image = f"profiles/banners/{customised_profile.id}-{random_id}.jpg"
 
-                subprocess.run(f"ffmpeg -y -i {temp_banner.name} {customised_profile.id}.png", shell=True, check=True)
+                try:
+                    subprocess.run(f"ffmpeg -y -i {temp_banner.name} {customised_profile.id}-banner.jpg", shell=True, check=True)
+                except:
+                    form.add_error("banner_image","An error occurred processing this file, please try another.")
+                    return render(request, 'profiles/customise_profile.html', {'form': form, 'customised_profile': customised_profile})
 
-                with open(f'{customised_profile.id}.png') as pfp_file:
+                with open(f'{customised_profile.id}-banner.jpg') as pfp_file:
                     client.upload_fileobj(
                         pfp_file.buffer,
                         AWS_STORAGE_BUCKET_NAME,
-                        f"profiles/banners/{customised_profile.id}-{random_id}.png",
-                        ExtraArgs={"ContentType": 'image/png'},
+                        f"profiles/banners/{customised_profile.id}-{random_id}.jpg",
+                        ExtraArgs={"ContentType": 'image/jpg'},
                     )
 
                 temp_banner.close()
 
-                os.remove(f"{customised_profile.id}.png")
+                os.remove(f"{customised_profile.id}-banner.jpg")
                 os.remove(temp_banner.name)
                     
             if 'video_banner' in request.FILES:
-                try:
-                    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{customised_profile.customisation.video_banner.name}")
-                except:
-                    pass
+                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=customised_profile.customisation.video_banner.name)
 
                 banner = request.FILES['video_banner']
                 form.save(commit=False)
-                temp_banner = tempfile.NamedTemporaryFile(delete=False)
+                temp_video_banner = tempfile.NamedTemporaryFile(delete=False)
                 for chunk in banner.chunks():
-                    temp_banner.write(chunk)
-                form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}-{random_id}.png"
+                    temp_video_banner.write(chunk)
+                form.instance.video_banner = f"profiles/video_banners/{customised_profile.id}-{random_id}.jpg"
 
-                subprocess.run(f"ffmpeg -y -i {temp_banner.name} -vf scale=256:220 {customised_profile.id}.png", shell=True, check=True)
+                try:
+                    subprocess.run(f"ffmpeg -y -i {temp_video_banner.name} -vf scale=256:220 {customised_profile.id}-videobanner.jpg", shell=True, check=True)
+                except:
+                    form.add_error("video_banner","An error occurred processing this file, please try another.")
+                    return render(request, 'profiles/customise_profile.html', {'form': form, 'customised_profile': customised_profile})
 
-                with open(f'{customised_profile.id}.png') as pfp_file:
+                with open(f'{customised_profile.id}-videobanner.jpg') as pfp_file:
                     client.upload_fileobj(
                         pfp_file.buffer,
                         AWS_STORAGE_BUCKET_NAME,
-                        f"profiles/video_banners/{customised_profile.id}-{random_id}.png",
-                        ExtraArgs={"ContentType": 'image/png'},
+                        f"profiles/video_banners/{customised_profile.id}-{random_id}.jpg",
+                        ExtraArgs={"ContentType": 'image/jpg'},
                     )
 
-                temp_banner.close()
+                temp_video_banner.close()
 
-                os.remove(temp_banner.name)
+                os.remove(f"{customised_profile.id}-videobanner.jpg")
+                os.remove(temp_video_banner.name)
                 
             form.save()
 
@@ -137,17 +141,81 @@ def customise_profile(request, id):
     
     return render(request, 'profiles/customise_profile.html', {'form': form, 'customised_profile': customised_profile})
 
+# creates a profile for a user if they don't yet have one
+# returns profile ID if created, otherwise returns false
+def create_profile(user):
+    if Profile.objects.filter(username=user).exists():
+        return False
+    
+    profile = Profile(username=user)
+    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+    out = ""
+    
+    while True:
+        for _ in range(12):
+            out += random.choice(chars)
+        if not Profile.objects.filter(id=out).exists():
+            break
+        else:
+            out = ""
+
+    profile.id = out
+    profile.profile_picture.name = "profiles/pfps/default.png"
+    profile.save()
+
+    return out
+
+# Temporary function, very inefficent but it only has to run once so it's fine
+def migrate_changes():
+    profiles = Profile.objects.all()
+
+    for i, profile in enumerate(profiles):
+        followed_creators = profiles.filter(followers__in=[profile.username])
+        profile.following.set(followed_creators)
+        profile.comments.set(Comment.objects.all().filter(commenter=profile))
 
 def update_profile_follow_count(request, id):
     follow_count = Profile.objects.get(id=id).followers.count()
     return JsonResponse({"follow_count": follow_count})
 
 @user_not_authenticated
-def resend_activation(req, id):
-    user = User.objects.all().get(id=id)
-    activateEmail(req, user, user.email)
-    return redirect("login")
+def resend_activation_page(request):
+    if request.method == "POST":
+        form = ResendEmailForm(request.POST)
+        
+        if form.is_valid():
+            data = form.cleaned_data
+            if data['username']:
+                user = User.objects.all().filter(username=data['username'])
+            elif data['email']:
+                user = User.objects.all().filter(email=data['email'])
 
+            should_send = True
+
+            if not user.exists():
+                form.add_error(None, "A user matching this email or username does not exist")
+                return render(request, "profiles/resend_email.html", {'form': form})
+
+            user = user.get()
+
+            last_email_time = cache.get(f"last_email_{user.id}")
+            if last_email_time and datetime.now() < last_email_time + timedelta(minutes=2):
+                form.add_error(None, "Email was not sent (2 minute cooldown)")
+                should_send = False
+
+            if user.is_active:
+                form.add_error(None, "The matching user's email has already been verified")
+                should_send = False
+            
+            if should_send:
+                activateEmail(request, user, user.email)
+                cache.set(f"last_email_{user.id}", datetime.now(), timeout=None)
+                messages.success(request, "Email sent! If you cannot find it try checking in your spam folder (it does actually end up there sometimes!)")
+                return render(request, "profiles/resend_email.html", {'form': form})
+    else:
+        form = ResendEmailForm()
+    return render(request, "profiles/resend_email.html", {'form': form})
+    
 def redirect_profile(request, id):
     return redirect(f"{reverse('detail-profile', kwargs={'id': id})}")
 
@@ -158,12 +226,34 @@ class ProfileIndex(ListView):
 
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
-        queryset = Profile.objects.all()
+        queryfilter = self.request.GET.get('filter')
         query = self.request.GET.get('query')
-        queryset = queryset.annotate(num_followers=Count('followers'))
+        queryset = Profile.objects.all()
+
+        # migrate_changes()
+
+        request_profile = None
+
+        if not self.request.user.is_anonymous and Profile.objects.all().filter(username=self.request.user).exists():
+            request_profile = Profile.objects.all().get(username=self.request.user)
+
+        hidden = False
+
+        if queryfilter and request_profile:
+            if queryfilter == "mutual":
+                queryset = request_profile.following.filter(username__in=request_profile.followers.all())
+            elif queryfilter == "following":
+                queryset = request_profile.following
+            elif queryfilter == "followers":
+                queryset = queryset.filter(username__in=request_profile.followers.all())
+            elif queryfilter == "hidden" and self.request.user.is_superuser:
+                queryset = queryset.filter(shadowbanned=True) | queryset.filter(banned=True)
+                hidden = True
 
         if query:
-            queryset = queryset.filter(Q(username__username__icontains=query))
+            queryset = queryset.filter(username__username__icontains=query)
+
+        queryset = queryset.annotate(num_followers=Count('followers'))
 
         if sort_by == 'date-desc':
             queryset = queryset.order_by('-date_made')
@@ -177,13 +267,30 @@ class ProfileIndex(ListView):
             queryset = queryset.annotate(num_nom=Count('noms')).order_by('-num_nom').exclude(num_nom=0)
         else:
             queryset = queryset.order_by('-num_followers')
-        queryset = queryset.exclude(shadowbanned=True)
+        
+        if not hidden:
+            queryset = queryset.exclude(shadowbanned=True).exclude(banned=True)
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['sort_by'] = self.request.GET.get('sort-by')
-        context['query'] = self.request.GET.get('query')
+        params = ""
+        sort_by = self.request.GET.get('sort-by')
+        if sort_by:
+            params += f"&sort-by={sort_by}"
+
+        filter = self.request.GET.get('filter')
+        if filter:
+            params += f"&filter={filter}"
+
+        query = self.request.GET.get('query')
+        if query:
+            params += f"&query={query}"
+
+        context['sort_by'] = sort_by
+        context['filter'] = filter
+        context['query'] = query
+        context['params'] = params
         return context
 
 def activate(request, uidb64, token):
@@ -198,10 +305,11 @@ def activate(request, uidb64, token):
         user.is_active = True
         user.save()
 
-        messages.success(request, "Thank you for your email confirmation. Now you can login your account.")
+        messages.success(request, "Thank you for your email confirmation. Now you can log into your account.")
         return redirect('login')
     else:
         messages.error(request, "Activation link is invalid!")
+        return redirect('login') 
 
 @user_not_authenticated
 def register(req):
@@ -214,6 +322,9 @@ def register(req):
             username = Form.cleaned_data.get("username")
             email = Form.cleaned_data.get("email")
             activateEmail(req, user, email)
+            messages.success(req, f"Hello {user}, please go to your email {email} inbox and click on \
+                the activation link to confirm and complete the registration. Note: If you can't find the email, check your spam folder.")
+            create_profile(user)
             return redirect("login")
     else:
         Form = UserRegisterForm()
@@ -247,88 +358,9 @@ def activateEmail(request, user, to_email):
     email_to_send = EmailMessage(mail_subject, message, to=[to_email])
     email_to_send.content_subtype = "html"
     email_to_send.send()
-    messages.success(request, f"Hello {user}, please go to your email {to_email} inbox and click on \
-        the activation link to confirm and complete the registration. Note: If you can't find the email, check your spam folder.")
 
 # dear lord this shit sucks ass I really need to rewrite this
-@login_required
-def create_profile(request):
-    user = request.user
-    
-    if request.method == "POST":
-        if Profile.objects.filter(username=user).exists():
-            return redirect('profile-page')
-        
-        profile = Profile(username=user)
-        form = CreateProfileForm(request.POST, request.FILES, instance=profile)
-        try:
-            chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-            out = ""
-            
-            while True:
-                for _ in range(12):
-                    out += random.choice(chars)
-                if not Profile.objects.filter(id=out).exists():
-                    break
-                else:
-                    out = ""
-
-            form.instance.id = out
-            if 'profile_picture' in request.FILES:
-                pfp = request.FILES['profile_picture']
-                if form.is_valid() and pfp.size < 5000000 and pfp.size > 1024:
-                    mime_type = magic.Magic(mime=True).from_buffer(pfp.read(1024))
-                    if mime_type in ['image/jpeg', 'image/png']:
-                        form.save(commit=False)
-                        temp_pfp = tempfile.NamedTemporaryFile(delete=False)
-                        for chunk in pfp.chunks():
-                            temp_pfp.write(chunk)
-                        form.instance.profile_picture = f"profiles/pfps/{out}.png"
-
-                        subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 {profile.id}.png", shell=True, check=True)
-
-                        with open(f'{profile.id}.png') as pfp_file:
-                            client.upload_fileobj(
-                                pfp_file.buffer,
-                                AWS_STORAGE_BUCKET_NAME,
-                                f"profiles/pfps/{profile.id}.png",
-                                ExtraArgs={"ContentType": 'image/png'},
-                            )
-
-                        temp_pfp.close()
-
-                        os.remove(f'{profile.id}.png')
-                        os.remove(temp_pfp.name)
-
-                        form.save()
-
-                        return redirect('profile-page')
-                    else:
-                        form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format (png or jpg) and try again.")
-                        return redirect('create-profile')
-                else:
-                    form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under 5mb and over 1kb, then try again.")
-                    return redirect('create-profile')
-            else:
-                form.instance.profile_picture.name = "profiles/pfps/default.png"
-                if form.is_valid():
-                    form.save()
-                    return redirect('profile-page')
-        except:
-            if form.is_valid():
-                form.save()
-                return redirect('profile-page')
-    else:
-        form = CreateProfileForm()
-    
-    context = {
-        'form': form
-    }
-    return render(request, "profiles/create_profile.html", context)
-
-def detail_profile_from_username(request, username):
-    profile = Profile.objects.all().get(username__username=username)
-    return reverse('detail-profile', kwargs={'id': profile.id})
+# note from the future: I did technically rewrite it in the sense that I replaced it with this comment line (not only was it bad but it was also completely unnecessary)
 
 class DetailProfileIndex(ListView):
     model = Profile
@@ -341,9 +373,13 @@ class DetailProfileIndex(ListView):
         if Profile.objects.filter(id=identity).exists():
             profile = Profile.objects.get(id=identity)
         elif Profile.objects.filter(username__username=identity).exists():
-            profile = Profile.objects.get(username__username=identity)
+            profile_id = Profile.objects.get(username__username=identity).id
+            return redirect(reverse("detail-profile", kwargs={"id": profile_id}))
         else:
             return
+        
+        if profile.banned:
+            return render(request, "profiles/banned_profile.html")
 
         info = profile.bio
         pfp = profile.profile_picture
@@ -354,25 +390,9 @@ class DetailProfileIndex(ListView):
             posts = profile.videos.all().exclude(unlisted=True).order_by("-date_posted")
         followers = profile.followers.all()
         follow_num = followers.count()
-        developer = False
-        creator = False
-        supporter = False
-        developers = DEVELOPER_IDS
-        creators = CREATOR_ID
-        if profile.id in developers:
-            developer = True
-        if profile.id in creators:
-            creator = True
+        following_num = profile.following.count()
 
-        if follow_num == 0:
-            is_following = False
-
-        for follower in followers:
-            if follower == request.user:
-                is_following = True
-                break
-            else:
-                is_following = False
+        is_following = request.user in followers
 
         context = {
             'info': info,
@@ -381,14 +401,13 @@ class DetailProfileIndex(ListView):
             'username': username,
             'object_list': posts,
             'follow_num': follow_num,
+            'following_num': following_num,
             'is_following': is_following,
-            'developer': developer,
-            'creator': creator,
-            'supporter': supporter,
             'profile': profile,
         }
         return render(request, 'profiles/detail_profile.html', context)
-
+    
+# I love it when code I wrote ages ago has 9 layers of indentation 🥰
 class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Profile
     slug_url_kwarg = "id"
@@ -407,50 +426,41 @@ class UpdateProfile(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             try:
                 if 'profile_picture' in self.request.FILES:
                     newpfp = self.request.FILES['profile_picture']
-                    if form.is_valid() and newpfp.size < 5000000 and newpfp.size > 1024:
-                        mime_type = magic.Magic(mime=True).from_buffer(newpfp.read(1024))
-                        if mime_type in ['image/jpeg', 'image/png']:
-                            temp_pfp = tempfile.NamedTemporaryFile(delete=False)
-                            for chunk in newpfp.chunks():
-                                temp_pfp.write(chunk)
+                    temp_pfp = tempfile.NamedTemporaryFile(delete=False)
+                    for chunk in newpfp.chunks():
+                        temp_pfp.write(chunk)
+                    try:
+                        if profile.profile_picture.name != "profiles/pfps/default.png":
                             try:
-                                if profile.profile_picture.name != "profiles/pfps/default.png":
-                                    try:
-                                        client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"profiles/pfps/{profile.profile_picture.name}")
-                                    except:
-                                        pass
+                                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=profile.profile_picture.name)
                             except Exception as e:
                                 pass
+                    except Exception as e:
+                        pass
 
-                            cache.set(f"last_profileupdate_{self.request.user.id}", datetime.now(), timeout=None)
+                    cache.set(f"last_profileupdate_{self.request.user.id}", datetime.now(), timeout=None)
 
-                            subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 {profile.id}.png", shell=True, check=True)
+                    subprocess.run(f"ffmpeg -y -i {temp_pfp.name} -vf scale=512:512 {profile.id}.jpg", shell=True, check=True)
 
-                            chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-                            random_id = "".join(random.choice(chars) for _ in range(5))
+                    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+                    random_id = "".join(random.choice(chars) for _ in range(5))
 
-                            form.instance.profile_picture = f"profiles/pfps/{profile.id}-{random_id}.png"
+                    form.instance.profile_picture = f"profiles/pfps/{profile.id}-{random_id}.jpg"
 
-                            with open(f'{profile.id}.png') as pfp_file:
-                                client.upload_fileobj(
-                                    pfp_file.buffer,
-                                    AWS_STORAGE_BUCKET_NAME,
-                                    f"profiles/pfps/{profile.id}-{random_id}.png",
-                                    ExtraArgs={"ContentType": 'image/png'},
-                                )
+                    with open(f'{profile.id}.jpg') as pfp_file:
+                        client.upload_fileobj(
+                            pfp_file.buffer,
+                            AWS_STORAGE_BUCKET_NAME,
+                            f"profiles/pfps/{profile.id}-{random_id}.jpg",
+                            ExtraArgs={"ContentType": 'image/jpg'},
+                        )
 
-                            temp_pfp.close()
+                    temp_pfp.close()
 
-                            os.remove(f"{profile.id}.png")
-                            os.remove(temp_pfp.name)
+                    os.remove(f"{profile.id}.jpg")
+                    os.remove(temp_pfp.name)
 
-                            return super().form_valid(form)
-                        else:
-                            form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture the correct format (png or jpg) and try again.")
-                            return super().form_invalid(form)
-                    else:
-                        form.add_error(None, "An error occurred while making your profile. Please make sure the profile picture is under 5mb and over 1kb, then try again.")
-                        return super().form_invalid(form)
+                    return super().form_valid(form)
                 else:
                     if form.instance.profile_picture == "" or profile.profile_picture.name == "":
                         form.instance.profile_picture = f"profiles/pfps/default.png"
@@ -481,14 +491,7 @@ class DeleteProfile(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def get_success_url(self):
         profile = self.get_object()
-        try:
-            if Profile.objects.all().get(id=self.object.id).profile_picture.name != "media/profiles/pfps/default.png":
-                try:
-                    client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"profiles/banners/{profile.profile_picture.name}")
-                except:
-                    pass
-        except:
-            pass
+        profile.delete_media()
 
         Chat.objects.all().filter(members__in=[profile]).delete()
         profile.username.delete()
@@ -505,9 +508,11 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, *args, **kwargs):
         hi = self.kwargs['id']
         profilething = Profile.objects.get(id=hi)
-        if request.user != profilething.username:
-            profilething.followers.add(request.user)
-        
+        currentprofile = Profile.objects.get(username=self.request.user)
+
+        profilething.followers.add(request.user)
+        currentprofile.following.add(profilething)
+
         followers_count = profilething.followers.count()
 
         if (followers_count in MILESTONES) and followers_count > profilething.follower_milestones:
@@ -520,8 +525,8 @@ class AddFollower(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         hi = self.kwargs['id']
         profilething = Profile.objects.get(id=hi)
-        currentprofile = Profile.objects.get(username=self.request.user)
-        return currentprofile != profilething
+        currentprofile = Profile.objects.filter(username=self.request.user)
+        return currentprofile.exists() and currentprofile.first() != profilething
     
 class Nominate(LoginRequiredMixin, UserPassesTestMixin, View):
     model = Profile
@@ -553,9 +558,8 @@ class Nominate(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         id = self.kwargs['id']
         profile_to_nominate = Profile.objects.get(id=id)
-        if Profile.objects.all().filter(username=self.request.user).exists():
-            return Profile.objects.all().get(username=self.request.user) != profile_to_nominate
-        return False
+        currentprofile = Profile.objects.filter(username=self.request.user)
+        return currentprofile.exists() and currentprofile.first() != profile_to_nominate
          
 class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
     def get_redirect_url(self):
@@ -564,24 +568,20 @@ class RemoveFollower(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, *args, **kwargs):
         hi = self.kwargs['id']
         profilething = Profile.objects.get(id=hi)
-        if profilething.id != 5:
-            if request.user != profilething.username:
-                profilething.followers.remove(request.user)
+        currentprofile = Profile.objects.get(username=self.request.user)
+
+        profilething.followers.remove(request.user)
+        currentprofile.following.remove(profilething)
     
         followers_count = profilething.followers.count()
-
-        profile = Profile.objects.get(username=request.user)
-
-        if profile.chats.filter(members__in=[profilething]).exists():
-            profile.chats.get(members__in=[profilething]).delete()
 
         return JsonResponse({'follow_count': followers_count})
     
     def test_func(self):
         hi = self.kwargs['id']
         profilething = Profile.objects.get(id=hi)
-        currentprofile = Profile.objects.get(username=self.request.user)
-        return currentprofile != profilething
+        currentprofile = Profile.objects.filter(username=self.request.user)
+        return currentprofile.exists() and currentprofile.first() != profilething
 
 class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     paginate_by = 20
@@ -608,10 +608,7 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             'messages': messages,
             'message_amount': chat_count,
         }
-        for i in messages.exclude(read=True):
-            if i.sender != Profile.objects.get(username=request.user):
-                i.read = True
-                i.save()
+        messages.filter(read=False).filter(sender=profile).update(read=True)
 
         return render(request, 'profiles/detail_chat.html', context)
 
@@ -621,12 +618,19 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         pen = profile.chats.filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
         form = MessageForm(request.POST)
 
-        if form.is_valid():
+        last_message_time = cache.get(f"last_message_{self.request.user.id}")
+
+        if last_message_time and datetime.now() < last_message_time + timedelta(seconds=15):
+            form.add_error(None, "Message didn't send due to 15 second cooldown")
+
+        elif form.is_valid():
             new_message = form.save(commit=False)
             new_message.sender = Profile.objects.get(username=request.user)
             new_message.chat = pen
             new_message.save()
             pen.messages.add(new_message)
+
+            cache.set(f"last_message_{self.request.user.id}", datetime.now(), timeout=None)
 
             return redirect(f'{reverse("chat-detail", kwargs={"id": e})}')
 
@@ -646,7 +650,7 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         currentprofile = Profile.objects.get(username=self.request.user)
         following_eachother = profilething.followers.contains(currentprofile.username) and currentprofile.followers.contains(profilething.username)
         return currentprofile != profilething and (following_eachother or currentprofile.username.is_superuser or profilething.chats.filter(members__in=[currentprofile]).exists())
-    
+
 class ChatIndex(ListView):
     model = Chat
     template_name = "profiles/index_chats.html"
@@ -669,3 +673,226 @@ class ChatIndex(ListView):
         context = super().get_context_data(**kwargs)
         context['sort_by'] = self.request.GET.get('sort-by')
         return context
+
+class ShadowBan(LoginRequiredMixin, UserPassesTestMixin, View):
+    def get_redirect_url(self):
+        return reverse('detail-profile', kwargs={'id': self.object.id})
+    
+    def get(self, request, *args, **kwargs):
+        hi = self.kwargs['id']
+        profile = Profile.objects.get(id=hi)
+        profile.shadowbanned = not profile.shadowbanned
+        profile.save()
+
+        return redirect(reverse('detail-profile', kwargs={'id': hi}))
+    
+    def test_func(self):
+        hi = self.kwargs['id']
+        profilething = Profile.objects.get(id=hi)
+        currentprofile = Profile.objects.get(username=self.request.user)
+        return (currentprofile != profilething) and currentprofile.username.is_superuser and not profilething.username.is_superuser
+
+class AppealBan(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = BanAppeal
+    fields = ['appeal_message']
+    template_name = 'profiles/ban_appeal_form.html'
+    is_valid = None
+    
+    def get(self, request, *args, **kwargs):
+        profile = Profile.objects.all().get(username=self.request.user)
+        ban = Ban.objects.all().get(profile=profile)
+        form = BanAppealForm()
+
+        return render(self.request, 'profiles/ban_appeal_form.html', {"form": form, "ban": ban})
+    
+    def post(self, request, *args, **kwargs):
+        profile = Profile.objects.all().get(username=self.request.user)
+        ban = Ban.objects.all().get(profile=profile)
+        form = BanAppealForm(request.POST)
+
+        appeal = form.save(commit=False)
+        appeal.number = ban.appeals.all().count() + 1
+        appeal.ban = ban
+        appeal.save()
+
+        ban.appeals.add(appeal)
+
+        return render(self.request, 'profiles/ban_appeal_sent.html', {"form": form, "ban": ban})
+    
+    def test_func(self):
+        profile = Profile.objects.all().get(username=self.request.user)
+        ban = Ban.objects.all().filter(profile=profile)
+
+        if not ban.exists():
+            return False
+
+        return can_appeal(ban.first()) == True
+    
+def ban_page(request):
+    profile = Profile.objects.all().get(username=request.user)
+    ban = Ban.objects.all().filter(profile=profile)
+
+    if not ban.exists():
+        return redirect('index')
+
+    context = {
+        "ban": ban.first()
+    }
+
+    return render(request, "profiles/ban_page.html", context)
+
+class CreateBan(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Ban
+    fields = ['given_reason', 'description', 'delete_all_creations']
+    template_name = 'profiles/create_ban.html'
+    is_valid = None
+    
+    def form_valid(self, form):
+        banned_profile = Profile.objects.all().get(id=self.kwargs["id"])
+
+        form.instance.ban_giver = Profile.objects.all().get(username=self.request.user)
+        form.instance.profile = banned_profile
+
+        banned_profile.banned = True
+
+        if "delete_all_creations" in form.data:
+            banned_profile.videos.all().delete()
+            banned_profile.comments.all().delete()
+            banned_profile.chats.all().delete()
+            banned_profile.delete_media()
+            banned_profile.remove_follows()
+            ProfileRating.objects.all().filter(rater=banned_profile.username).delete()
+            ProfileRating.objects.all().filter(rated_profile=banned_profile).delete()
+            ProfileCustomisation.objects.all().filter(customised_profile=banned_profile).delete()
+
+        form.instance.delete_all_creations = False
+
+        banned_profile.save()
+        form.save()
+
+        return super().form_valid(form)
+        
+    def test_func(self):
+        ban_profile = Profile.objects.all().filter(id=self.kwargs["id"])
+        profile = Profile.objects.all().filter(username=self.request.user)
+
+        if not profile.exists() or not ban_profile.exists():
+            return False
+        
+        ban_profile = ban_profile.first()
+        
+        return self.request.user != ban_profile.username and self.request.user.is_superuser and not ban_profile.username.is_superuser
+    
+    def get_success_url(self):
+        return reverse('index')
+    
+class RemoveBan(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Ban
+    template_name = 'profiles/remove_ban.html'
+    slug_url_kwarg = "id"
+    slug_field = "id"
+    def get_redirect_url(self):
+        return reverse('detail-profile', kwargs={'id': self.object.profile.id})
+
+    def get_success_url(self):
+        ban = self.get_object()
+
+        ban.profile.banned = False
+        ban.profile.save()
+
+        return reverse('detail-profile', kwargs={'id': ban.profile.id})
+        
+    def test_func(self):
+        return self.request.user.is_superuser
+    
+class RejectBanAppeal(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = BanAppeal
+
+    def get(self, request, *args, **kwargs):
+        id = self.kwargs['id']
+        num = self.kwargs['num']
+        appeal = BanAppeal.objects.filter(ban__profile__id=id).get(number=num)
+
+        context = {
+            'appeal': appeal,
+        }
+
+        return render(request, 'profiles/reject_ban_appeal.html', context)
+    
+    def post(self, request, *args, **kwargs):
+        id = self.kwargs['id']
+        num = self.kwargs['num']
+        appeal = BanAppeal.objects.filter(ban__profile__id=id).get(number=num)
+        appeal.rejected = True
+        appeal.save()
+
+        return redirect('ban-appeals')
+        
+    def test_func(self):
+        return self.request.user.is_superuser
+
+def admin_page(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html')
+    
+    profile = Profile.objects.all().get(username=request.user)
+
+    context = {
+        "profile": profile
+    }
+
+    return render(request, "profiles/admin_tools.html", context)
+
+class BanAppealIndex(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = BanAppeal
+    template_name = 'profiles/index_ban_appeals.html'
+    paginate_by = 9
+
+    def get_queryset(self):
+        sort_by = self.request.GET.get('sort-by')
+        
+        appeals = BanAppeal.objects.all()
+        queryset = appeals.filter(rejected=False) | appeals.filter(rejected=True)
+
+        if sort_by == 'date-desc':
+            queryset = sorted(
+                queryset,
+                key=attrgetter('date_made'),
+                reverse=True
+            )
+        elif sort_by == 'date-asc':
+            queryset = sorted(
+                queryset,
+                key=attrgetter('date_made'),
+            )
+        else:
+            queryset = sorted(
+                queryset,
+                key=attrgetter('date_made'),
+                reverse=True
+            )
+            
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['sort_by'] = self.request.GET.get('sort-by')
+        return context
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+    
+class DetailBanAppeal(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get(self, request, *args, **kwargs):
+        id = self.kwargs['id']
+        num = self.kwargs['num']
+        appeal = BanAppeal.objects.filter(ban__profile__id=id).get(number=num)
+
+        context = {
+            'appeal': appeal,
+        }
+
+        return render(request, 'profiles/detail_ban_appeal.html', context)

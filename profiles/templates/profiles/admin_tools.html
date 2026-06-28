@@ -1,0 +1,21 @@
+{% extends 'videos/base.html' %}
+{% load count %}
+
+{% block content %}
+{% get_media_url as media_url %}
+	<div class="container" id="post-container" style="text-align:center">
+        <br>
+        
+        <h3>Hello, {{ profile.username }}.<br>These are some useful tools you can use as admin.</h3>
+        <br>
+        <br>
+        
+        {% any_reports as reports %}
+        {% any_appeals as appeals %}
+        <h2><a class="text-muted" href="{% url 'choice-page' %}">Check reports{% if reports %} <img src="{{media_url}}/notif.png">{% endif %}</a></h2>
+        <br>
+        <h2><a class="text-muted" href="{% url 'ban-appeals' %}">Ban appeals{% if appeals %} <img src="{{media_url}}/notif.png">{% endif %}</a></h2>
+        <br>
+        <h2><a class="text-muted" href="/eb16f4a593b6fccbc1c8c92a53e2152ce738d9de251f8d60fdbb88789390e17a/">Django admin panel</a></h2>
+    </div>
+{% endblock content %}

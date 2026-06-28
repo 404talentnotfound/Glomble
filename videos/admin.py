@@ -3,10 +3,10 @@ from .models import Video, Comment
 
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'uploader', 'unlisted')
-    search_fields = ['id', 'title']
+    list_display = ('id', 'title', 'uploader', 'uploader__username', 'unlisted')
+    search_fields = ['id', 'title', 'uploader__username__username']
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'commenter', 'comment')
-    search_fields = ['pk']
+    list_display = ('id', 'commenter', 'commenter__username', 'comment')
+    search_fields = ['id', 'commenter__username__username']

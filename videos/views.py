@@ -3,19 +3,18 @@ from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
-from .models import Video, Comment
+from .models import Video, Comment, batch_calculate_score
 from django.db.models import Q, Count
 from itertools import chain
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from profiles.models import Profile
-from .forms import CommentForm, ReplyForm
+from .forms import CommentForm, ReplyForm, AdminDeleteObjectForm
 from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from notifications.models import MilestoneNotification, MiscellaneousNotification, send_misc_notification
-from django.http import JsonResponse
 from Glomble.pc_prod import *
 from datetime import datetime, timedelta
 from PIL import Image
@@ -23,9 +22,18 @@ import tempfile
 import os
 import random
 import subprocess
+from .templatetags.count import get_media_url
+from .cron import remove_inactive_users
+from django.core.files import File
+
+def glimble(request):
+    return render(request, "glimble.html")
 
 def get_recommended_videos(request, category):
-    videos = random.sample(list(Video.objects.all().filter(category=category).exclude(unlisted=True).exclude(uploader__shadowbanned=True)), 3)
+    try:
+        videos = Video.objects.all().filter(category=category).exclude(unlisted=True).exclude(uploader__shadowbanned=True).exclude(uploader__banned=True).order_by("?")[:3]
+    except:
+        videos = []
     rendered_html = render(request, 'videos/video_cards.html', {'object_list': videos})
     return JsonResponse({"html": rendered_html.content.decode('utf-8')})
 
@@ -89,14 +97,31 @@ class Index(ListView):
     def get_queryset(self):
         sort_by = self.request.GET.get('sort-by')
         category = self.request.GET.get('category')
+        by = self.request.GET.get('by')
         query = self.request.GET.get('query')
-        queryset = Video.objects.all().exclude(unlisted=True).exclude(uploader__shadowbanned=True)
+
+        remove_inactive_users()
+
+        queryset = Video.objects.all().exclude(unlisted=True).exclude(uploader__shadowbanned=True).exclude(uploader__banned=True)
+
+        profile = None
+
+        if self.request.user.is_authenticated:
+            profile = Profile.objects.all().get(username=self.request.user)
 
         if query:
             queryset = queryset.filter(Q(title__icontains=query))
 
-        if category != None and category != "all":
+        if category and category != "all":
             queryset = queryset.filter(category=category.capitalize())
+
+        if by and by != "all" and profile:
+            if by == "followers":
+                queryset = queryset.filter(uploader__username__in=profile.followers.all())
+            elif by == "following":
+                queryset = queryset.filter(uploader__in=profile.following.all())
+            elif by == "mutual":
+                queryset = queryset.filter(uploader__username__in=profile.followers.all()).filter(uploader__in=profile.following.all())
 
         if sort_by == 'newest':
             queryset = queryset.order_by('-date_posted')
@@ -108,6 +133,8 @@ class Index(ListView):
             queryset = queryset.annotate(num_views=Count('views')).order_by('-num_views')
         elif sort_by == "recommended":
             queryset = queryset.annotate(num_likes=Count('likes')).order_by("-score", '-num_likes')
+        elif sort_by == "random":
+            queryset = queryset.order_by("?")
         elif sort_by == 'NUMNOM' and self.request.user.id == 1:
             queryset = queryset.annotate(num_nom=Count('nominations')).order_by('-num_nom').exclude(num_nom=0)
         else:
@@ -117,27 +144,60 @@ class Index(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['sort_by'] = self.request.GET.get('sort-by')
-        context['category'] = self.request.GET.get('category')
-        context['query'] = self.request.GET.get('query')
+        params = ""
+        sort_by = self.request.GET.get('sort-by')
+        if sort_by:
+            params += f"&sort-by={sort_by}"
+
+        category = self.request.GET.get('category')
+        if category:
+            params += f"&category={category}"
+
+        query = self.request.GET.get('query')
+        if query:
+            params += f"&query={query}"
+
+        by = self.request.GET.get('by')
+        if by:
+            params += f"&by={by}"
+        
+        context['sort_by'] = sort_by
+        context['category'] = category
+        context['query'] = query
+        context['by'] = by
+        context['params'] = params
         return context
 
-class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class CreateVideo(LoginRequiredMixin, CreateView):
     model = Video
     fields = ['title', 'notification_message', 'description', 'category', 'video_file', 'thumbnail', 'unlisted', 'push_notification']
     template_name = 'videos/create_video.html'
     redirect_field_name = reverse_lazy('video-create')
     is_valid = None
 
-    def test_func(self):
-        return Profile.objects.all().filter(username=self.request.user).exists()
+    # not really necessary but it just looks so clunky doing it manually every time
+    def upload_error(self, form, msg):
+        form.add_error(None, msg)
+        return self.form_invalid(form)
+    
+    def get_video_length(self, filename):
+        result = subprocess.run(f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {filename}",
+            shell=True,
+            check=True,
+            stdout = subprocess.PIPE,
+            stderr = subprocess.STDOUT,
+        )
+
+        try:
+            return float(result.stdout)
+        except:
+            return None
 
     def form_valid(self, form):
         last_upload_time = cache.get(f"last_upload_{self.request.user.id}")
 
         if last_upload_time and datetime.now() < last_upload_time + timedelta(minutes=2):
-            form.add_error(None, "You can only upload one video every 2 minutes.")
-            return self.form_invalid(form)
+            self.upload_error(form, "You can only upload one video every 2 minutes.")
 
         form.instance.uploader = Profile.objects.get(username=self.request.user)
 
@@ -146,8 +206,8 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         
         while True:
             for _ in range(12):
-                video_id += random.choice(chars)
-            if not Profile.objects.filter(id=video_id).exists():
+                video_id += random.choice(chars)  # wonderful code
+            if not Video.objects.filter(id=video_id).exists():
                 break
             else:
                 video_id = ""
@@ -156,8 +216,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
         uploaded_video = self.request.FILES['video_file']
         if not 1024 < uploaded_video.size < 100000000:
-            form.add_error(None, "The video size must be between 1kb and 100mb.")
-            return self.form_invalid(form)
+            self.upload_error(form, "The video size must be between 1kb and 100mb.")
         
         temp_video_file = tempfile.NamedTemporaryFile(delete=False)
         temp_video_file.write(uploaded_video.read())
@@ -165,54 +224,51 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         try:
             uploaded_thumbnail = self.request.FILES['thumbnail']
             if not 1024 < uploaded_thumbnail.size < 5000000:
-                form.add_error(None, "The thumbnail size must be between 1kb and 5mb.")
-                return self.form_invalid(form)
+                self.upload_error(form, "The thumbnail size must be between 1kb and 5mb.")
             temp_thumbnail_file = tempfile.NamedTemporaryFile(delete=False)
             temp_thumbnail_file.write(uploaded_thumbnail.read())
         except:
             uploaded_thumbnail = False
 
         try:
-            result = subprocess.run(f"ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {temp_video_file.name}",
-            shell=True,
-            check=True,
-            stdout = subprocess.PIPE,
-            stderr = subprocess.STDOUT,
-            )
-            duration = float(result.stdout)
-
-            if duration > 7200 or duration < 1:
-                form.add_error(None, "The video duration must be between 1 second and 2 hours.")
-                return self.form_invalid(form)
+            duration = self.get_video_length(temp_video_file.name)
+            if duration != None and (duration > 7200 or duration < 1):
+                self.upload_error(form, "The video duration must be between 1 second and 2 hours.")
 
             video_filename = os.path.join(BASE_DIR, f"{video_id}.mp4")
 
             subprocess.run(
-                f"""ffmpeg -i {temp_video_file.name} -vf "scale='min(1920,iw)':-1" -c:v libx264 -crf 28 -c:a copy -preset fast {video_filename}""",
+                f"""ffmpeg -i {temp_video_file.name} -vf "scale='min(1920,iw)':-1" -c:v libx264 -pix_fmt yuv420p -crf 27 -preset faster {video_filename}""",
                 shell=True,
                 check=True,
             )
 
             temp_video_file.close()
+            
+            # this is a bit redundant but I want to prevent videos with doctored lengths from being uploaded
+            # while also not having to reencode them if they're unaltered
+            # there is probably a better way though
+            duration = self.get_video_length(video_filename)
+            if duration == None or duration > 7200 or duration < 1:
+                self.upload_error(form, "The video duration must be between 1 second and 2 hours.")
 
-            with open(video_filename) as video_file:
-                client.upload_fileobj(
-                    video_file.buffer,
-                    AWS_STORAGE_BUCKET_NAME,
+            with open(video_filename, "rb") as f:
+                form.instance.video_file.save(
                     f"uploads/video_files/{video_id}.mp4",
-                    ExtraArgs={"ContentType": 'video/mp4'},
+                    File(f),
+                    save=False
                 )
 
             try:
                 gif = False
                 if uploaded_thumbnail.name[-3:] != "gif":
-                    thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.png")
+                    thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.jpg")
                 else:
                     gif = True
                     thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.gif")
             except:
                 gif = False
-                thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.png")
+                thumbnail_filename = os.path.join(BASE_DIR, f"{video_id}.jpg")
             
             if uploaded_thumbnail:
                 ttsize = Image.open(temp_thumbnail_file.name).size
@@ -228,7 +284,7 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                 if gif:
                     form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.gif"
                 else:
-                    form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.png"
+                    form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.jpg"
             
             else:
                 result = subprocess.run(
@@ -241,19 +297,18 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                 ttsize = tuple(map(int, result.stdout.decode("utf-8").split("x")))
                 ttwidth, ttheight = ttsize
                 ffarg = '-vf scale=720:-1' if ttwidth > ttheight else '-vf scale=-1:720'
-                form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.png"
+                form.instance.thumbnail.name = f"uploads/thumbnails/{video_id}.jpg"
                 subprocess.run(
                     f"ffmpeg -i {video_filename} -frames:v 1 {ffarg if max(ttsize) > 720 else ''} {thumbnail_filename}",
                     shell=True,
                     check=True,
                 )
 
-            with open(thumbnail_filename) as thumbnail_file:
-                client.upload_fileobj(
-                    thumbnail_file.buffer,
-                    AWS_STORAGE_BUCKET_NAME,
-                    f"uploads/thumbnails/{video_id}.{'gif' if gif else 'png'}",
-                    ExtraArgs={"ContentType": 'image/gif' if gif else 'image/png'},
+            with open(thumbnail_filename, "rb") as f:
+                form.instance.thumbnail.save(
+                    f"uploads/thumbnails/{video_id}.{'gif' if gif else 'jpg'}",
+                    File(f),
+                    save=False
                 )
 
             form.instance.video_file.name = f"uploads/video_files/{video_id}.mp4"
@@ -279,8 +334,8 @@ class CreateVideo(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def form_invalid(self, form):
         if hasattr(self, 'object') and self.object:
             try:
-                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{self.object.video_file.name}")
-                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=f"{self.object.thumbnail.name}")
+                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=self.object.video_file.name)
+                client.delete_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=self.object.thumbnail.name)
             except:
                 pass
             self.object.delete()
@@ -300,7 +355,7 @@ class DetailVideo(DetailView):
         pre = None
         readmore = None
         can_nominate = pen.date_posted.year==timezone.now().year
-        if pen.description is not None:
+        if pen.description != "":
             has_desc = True
             desclen = len(pen.description)
             pre = pen.description[:250]
@@ -320,14 +375,17 @@ class DetailVideo(DetailView):
             else:
                 is_following = False
 
-        replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted').exclude(commenter__shadowbanned=True)
+        viewable_comments = pen.comments.all().exclude(commenter__shadowbanned=True).exclude(commenter__banned=True)
 
-        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes').exclude(commenter__shadowbanned=True)
-        comment_count = pen.comments.exclude(commenter__shadowbanned=True).count()
+        replies = viewable_comments.exclude(replying_to=None).order_by('date_posted')
+
+        comments = viewable_comments.filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comment_count = viewable_comments.count()
 
         context = {
             'e': e,
             'post': pen,
+            'profile': pen.uploader,
             'form': form,
             'replyform': replyform,
             'comments': comments,
@@ -351,6 +409,9 @@ class DetailVideo(DetailView):
 
     def post(self, request, *args, **kwargs):
         e = self.kwargs['id']
+        if not request.user.is_authenticated:
+            return reverse('video-detail', kwargs={'id': e})
+        
         pen = Video.objects.get(id=e)
         form = CommentForm(request.POST)
         replyform = ReplyForm(request.POST)
@@ -358,6 +419,8 @@ class DetailVideo(DetailView):
         desclen = None
         pre = None
         readmore = None
+
+        viewable_comments = pen.comments.all().exclude(commenter__shadowbanned=True).exclude(commenter__banned=True)
 
         if pen.description is not None:
             has_desc = True
@@ -367,27 +430,19 @@ class DetailVideo(DetailView):
         else:
             has_desc = False
 
-        is_following = False
+        profile = Profile.objects.all().get(username=request.user)
 
-        if pen.uploader.followers.all().count() == 0:
-            is_following = False
+        is_following = pen.uploader in profile.following.all()
 
-        for follower in pen.uploader.followers.all():
-            if follower == request.user:
-                is_following = True
-                break
-            else:
-                is_following = False
-
-        comments = pen.comments.all().filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
-        comment_count = pen.comments.count()
+        comments = viewable_comments.filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+        comment_count = viewable_comments.count()
 
         pinned_comment = pen.pinned_comment
         
         if pinned_comment != None:
             comments = [pinned_comment, comments]
 
-        replies = pen.comments.all().exclude(replying_to=None).order_by('date_posted')
+        replies = viewable_comments.exclude(replying_to=None).order_by('date_posted')
 
         context = {
             'e': e,
@@ -409,13 +464,13 @@ class DetailVideo(DetailView):
 
         last_comment_time = cache.get(f"last_comment_{self.request.user.id}")
 
-        if last_comment_time and datetime.now() < last_comment_time + timedelta(seconds=10):
+        if last_comment_time and datetime.now() < last_comment_time + timedelta(seconds=30):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 rendered_comments = render(request, 'videos/comment.html', context)
                 return JsonResponse({
                     "success": False,
                     "comments": rendered_comments.content.decode('utf-8'),
-                    "count": pen.comments.count(),
+                    "count": viewable_comments.count(),
                 })
             return render(request, 'videos/detail_video.html', context)
         
@@ -424,7 +479,7 @@ class DetailVideo(DetailView):
 
         if form_type == "comment":
             new_comment = form.save(commit=False)
-            new_comment.commenter = Profile.objects.get(username=request.user)
+            new_comment.commenter = profile
             new_comment.post = pen
             new_comment.save()
 
@@ -433,11 +488,11 @@ class DetailVideo(DetailView):
             cache.set(f"last_comment_{self.request.user.id}", datetime.now(), timeout=None)
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                all_comments = pen.comments.all().exclude(commenter__shadowbanned=True).filter(replying_to=None)
-                queryset = all_comments.filter(pk=new_comment.pk) | all_comments.exclude(pk=new_comment.pk)
+                all_replies = viewable_comments.filter(replying_to=None)
+                queryset = all_replies.filter(pk=new_comment.pk) | all_replies.exclude(pk=new_comment.pk)
 
                 if pinned_comment != None:
-                    queryset = all_comments.filter(pk=pinned_comment.pk) | queryset
+                    queryset = all_replies.filter(pk=pinned_comment.pk) | queryset
 
                 context.update({'comments': queryset})
                 rendered_comments = render(request, 'videos/comment.html', context)
@@ -445,7 +500,7 @@ class DetailVideo(DetailView):
                 return JsonResponse({
                     "success": True,
                     "comments": rendered_comments.content.decode('utf-8'),
-                    "count": pen.comments.count(),
+                    "count": viewable_comments.count(),
                 })
 
             return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
@@ -453,7 +508,15 @@ class DetailVideo(DetailView):
         elif form_type == "reply":
             new_reply = replyform.save(commit=False)
             new_reply.replying_to = Comment.objects.get(id=int(request.POST.get("comment_id")))
-            new_reply.commenter = Profile.objects.get(username=request.user)
+
+            if new_reply.replying_to.post != pen:
+                return JsonResponse({
+                    "success": False,
+                    "comments": rendered_comments.content.decode('utf-8'),
+                    "count": viewable_comments.count(),
+                })
+
+            new_reply.commenter = profile
             new_reply.post = pen
             new_reply.save()
 
@@ -463,14 +526,14 @@ class DetailVideo(DetailView):
             cache.set(f"last_comment_{self.request.user.id}", datetime.now(), timeout=None)
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                all_comments = pen.comments.all().exclude(commenter__shadowbanned=True).exclude(replying_to=None)
-                context.update({'replies': all_comments})
+                all_replies = pen.comments.all().exclude(commenter__shadowbanned=True).exclude(commenter__banned=True).exclude(replying_to=None)
+                context.update({'replies': all_replies})
                 rendered_comments = render(request, 'videos/comment.html', context)
 
                 return JsonResponse({
                     "success": True,
                     "comments": rendered_comments.content.decode('utf-8'),
-                    "count": pen.comments.count(),
+                    "count": viewable_comments.count(),
                 })
             
             return redirect(f'{reverse("video-detail", kwargs={"id": e})}')
@@ -508,9 +571,28 @@ class DeleteVideo(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user == video.uploader.username or self.request.user.is_superuser
 
     def post(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
+        video = self.get_object()
+        form = AdminDeleteObjectForm(request.POST)
 
-class AddLike(LoginRequiredMixin, UserPassesTestMixin, View):
+        if not request.user.is_superuser or request.user == video.uploader.username:
+            return super().delete(request, *args, **kwargs)
+        
+        if form.is_valid() and form.cleaned_data["notify"]:
+            send_misc_notification([video.uploader], message=f"Your comment was deleted \"{form.cleaned_data['notification_message']}\"")
+        
+        return super().delete(request, *args, **kwargs)
+        
+    def get(self, request, *args, **kwargs):
+        form = AdminDeleteObjectForm()
+
+        context = {
+            "form": form,
+        }
+
+        return render(request, 'videos/delete_video.html', context)
+        
+
+class AddLike(LoginRequiredMixin, View):
     def get_redirect_url(self):
         return reverse('video-detail', kwargs={'id': self.object.id})
 
@@ -520,8 +602,6 @@ class AddLike(LoginRequiredMixin, UserPassesTestMixin, View):
         is_dislike = False
         if request.user in video.dislikes.all():
             is_dislike = True
-
-        if is_dislike:
             video.dislikes.remove(request.user)
 
         is_like = False
@@ -539,11 +619,8 @@ class AddLike(LoginRequiredMixin, UserPassesTestMixin, View):
         dislikes_count = video.dislikes.count()
         
         return JsonResponse({'likes_count': likes_count, 'liked': not is_like, 'dislikes_count': dislikes_count, 'disliked': is_dislike})
-    
-    def test_func(self):
-        return Profile.objects.all().filter(username=self.request.user).exists()
         
-class Dislike(LoginRequiredMixin, UserPassesTestMixin, View):
+class Dislike(LoginRequiredMixin, View):
     def get_redirect_url(self):
         return reverse('video-detail', kwargs={'id': self.object.id})
 
@@ -553,8 +630,8 @@ class Dislike(LoginRequiredMixin, UserPassesTestMixin, View):
         is_like = False
         if request.user in video.likes.all():
             is_like = True
-        if is_like:
             video.likes.remove(request.user)
+
         is_dislike = False
 
         if request.user in video.dislikes.all():
@@ -570,9 +647,6 @@ class Dislike(LoginRequiredMixin, UserPassesTestMixin, View):
         dislikes_count = video.dislikes.count()
         
         return JsonResponse({'likes_count': likes_count, 'liked': is_like, 'dislikes_count': dislikes_count, 'disliked': is_dislike})
-    
-    def test_func(self):
-        return Profile.objects.all().filter(username=self.request.user).exists()
 
 class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
     model = Video
@@ -606,9 +680,7 @@ class Recommend(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         id = self.kwargs['id']
         video = Video.objects.get(id=id)
-        if Profile.objects.all().filter(username=self.request.user).exists():
-            return Profile.objects.all().get(username=self.request.user) != video.uploader
-        return False
+        return Profile.objects.all().get(username=self.request.user) != video.uploader
     
 # This is for glomble rewind and should only be available during december (i really hope i finish this update before that)
 # Hi i'm writing this on Nov 28, the odds of finishing every feature i have planned is not too looking good
@@ -643,16 +715,13 @@ class Nominate(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         id = self.kwargs['id']
         video = Video.objects.get(id=id)
-        if Profile.objects.all().filter(username=self.request.user).exists():
-            return Profile.objects.all().get(username=self.request.user) != video.uploader and video.date_posted.year == timezone.now().year and timezone.now().month == 12
-        return False
+        return Profile.objects.all().get(username=self.request.user) != video.uploader and video.date_posted.year == timezone.now().year and timezone.now().month == 12
 
 class DownloadVideo(View):
     def get(self, request, *args, **kwargs):
         e = self.kwargs['id']
         video = Video.objects.get(id=e)
         if video.uploader.id != "5HKiuWuT12Bs":
-            return redirect(f'https://media.glomble.com/{video.video_file.name}')
-        else:
-            html_content = "<html><body><h1>no</h1></body></html>"
-            return HttpResponse(html_content, content_type='text/html')
+            return redirect(f'{get_media_url()}/{video.video_file.name}')
+        html_content = "<html><body><h1 style='text-align: center;'>no</h1></body></html>"
+        return HttpResponse(html_content, content_type='text/html')

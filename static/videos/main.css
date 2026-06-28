@@ -2,16 +2,15 @@
 .card {
   width: 100%;
   max-width: 256px;
-  margin: 15px;
-  transition: transform 0.25s ease-in-out;
+  transition: transform 0.2s ease-in-out;
 }
 
 .video-length {
-    transition: opacity 0.25s linear;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .card:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
   .video-length {
     opacity: 50%;
   }

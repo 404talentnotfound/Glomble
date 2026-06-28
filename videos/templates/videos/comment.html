@@ -2,14 +2,16 @@
 {% load count %}
 {% load crispy_forms_tags %}
 
+{% get_media_url as media_url %}
+
 {% for comment in comments %}
-    <div class="lmao row justify-content-center border-bottom mt-4 comment-{{ comment.pk }}">
+    <div class="lmao row justify-content-center border-bottom mt-4 comment-{{ comment.pk }}" style="padding-bottom: 1ch">
         {% if pinned_comment == comment %}
         <h3><i title="Pinned" class='bx bxs-pin'></i></h3>
         {% endif %}
         <div class="col-md-9">
                 <strong><a class="link-text cool-element" href="{% url 'detail-profile' comment.commenter.id %}">
-                    <img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="https://media.glomble.com/{{ comment.commenter.profile_picture }}"> 
+                    <img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{media_url}}/{{ comment.commenter.profile_picture }}"> 
                     {{ comment.commenter.username }}
                     {% if comment.commenter.username.is_superuser %}
                     <i title="Admin" class='bx bxs-user-badge'></i>
@@ -65,7 +67,7 @@
                 <button id="{{ comment.pk }}-{{ count_replies }}" onclick="onShowReplies(this);" class="cool-element btn btn-outline-info">Show {{ count_replies }} {% if count_replies == 1 %}reply{% else %}replies{% endif %}</button>
                 {% endif %}
 
-                <div class="reply" style="display: none;" id="reply{{ comment.pk }}">
+                <div class="reply" style="display: none; padding-top: 1ch;" id="reply{{ comment.pk }}">
                     <form class="reply-form" method="POST">
                         {% csrf_token %}
                         <input type="hidden" name="form_type" value="reply">
@@ -85,7 +87,7 @@
                             <div class="col-md-9">
                                     <strong>
                                         <a class="link-text cool-element" href="{% url 'detail-profile' reply.commenter.id %}">
-                                            <img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="https://media.glomble.com/{{ reply.commenter.profile_picture }}">
+                                            <img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{media_url}}/{{ reply.commenter.profile_picture }}">
                                             {{ reply.commenter.username }}
                                             {% if reply.commenter.username.is_superuser %}
                                             <i title="Admin" class='bx bxs-user-badge' ></i>

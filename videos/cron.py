@@ -1,27 +1,31 @@
-from .models import Video
+from .models import Video, batch_calculate_score
+from profiles.models import Profile
+from notifications.models import BaseNotification 
 from django.utils import timezone
-from datetime import timedelta
+from Glomble.pc_prod import WEEK_TOMSTAMP, MONTH_TOMSTAMP
+from django.contrib.auth.models import User
+
+def recalculate_score():
+    batch_calculate_score(Video.objects.all())
 
 def reset_recommendations():
     Video.recommendations.through.objects.all().delete()
+    recalculate_score()
 
-def recalculate_score():
-    videos = Video.objects.select_related('uploader').prefetch_related('likes', 'dislikes')
-    now = timezone.now()
+# make this
+def remove_inactive_users():
+    inactive_threshold = WEEK_TOMSTAMP*2 # two (2) weeks (seven (7) days (twenty-four (24) hours (sixty (60) minutes (sixty (60) seconds))))
+    for user in User.objects.all().filter(is_active=False):
+        if timezone.now().timestamp() - user.date_joined.timestamp() > inactive_threshold:
+            user.delete()
 
-    for video in videos:
-        days = (now - video.date_posted).days
-        like_count = video.likes.count()
-        dislike_count = video.dislikes.count()
-        total_votes = like_count + dislike_count
+def remove_old_notifs():
+    inactive_threshold = MONTH_TOMSTAMP*6 # six (6) months (around four and a half (4.5) weeks (seven (7) days (twenty-four (24) hours (sixty (60) minutes (sixty (60) seconds)))))
+    for notification in BaseNotification.objects.all():
+        if timezone.now().timestamp() -notification.date_notified.timestamp() > inactive_threshold:
+            notification.delete()
 
-        likeratio = like_count / total_votes if total_votes > 0 else 1
-        if likeratio == 0:
-            likeratio += 1
-
-        if video.duration > 180 and video.category != "Meme":
-            video.score = round((video.recommendations.count() * (video.uploader.rating + (days / 30))) * (likeratio), 1)
-        else:
-            video.score = video.recommendations.count()
-
-    Video.objects.bulk_update(videos, ['score'])
+def remove_bad_things():
+    remove_inactive_users()
+    remove_old_notifs()
+    #remove_everything_else()

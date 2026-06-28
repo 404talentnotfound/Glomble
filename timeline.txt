@@ -1,4 +1,4 @@
-~symbol_explanation:
+~symbol_meanings:
     .importance:
         "!" - vital
         "*" - important
@@ -28,7 +28,6 @@
 ~reports:
     !-# send email and on-site warnings to reported accounts
     !-# notify reporter and reportee if action is taken
-    &=# send notification to user if their bug report gets fixed or suggestion gets added
 
 ~profiles:
     *|$ roles between normal account and superuser
@@ -40,10 +39,10 @@
 
 ~general:
     .code:
-        *-+ reformat code to be more readable
+        *|+ reformat code to be more readable
         *-$ make custom badges
         *-$ custom glomble emojis
-        *-# make badge template tag
+        *=# make badge template tag
 
     .external:
         *|$ make the README more helpful
@@ -55,11 +54,3 @@
 ----------THE FINISHED STUFF PILE----------
 / this just exists for motivation reasons lol
 
-hovering over upload timestamps shows precise time (i.e. hovering over "5 hours ago" shows precise date and time)
-added markup text (i.e. "*example* _text_" makes "example" bold and "text" italic)
-if you post a comment it now shows up at the top of the comment list 
-video length on video cards fades to a lower opacity when hovering so you can see thumbnails better
-added github repo to related links page
-comment sharing
-added video and profile nominations
-other random bullshit man idk

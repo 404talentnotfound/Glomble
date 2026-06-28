@@ -1,5 +1,7 @@
 {% load static %}
 {% load count %}
+
+{% get_media_url as media_url %}
 <nav class="navbar navbar-expand-lg navbar-light bg-light" style="position: sticky; top: 0; z-index: 2;">
   <a class="navbar-brand" href="{% url 'index' %}"><img src="{% static 'videos/favico.png' %}" width="70" height="35"></a>
   <a class="nav-link" href="{% url 'related-links' %}">Related links</a>
@@ -10,22 +12,14 @@
     <ul class="navbar-nav mr-auto">
     </ul>
     <ul class="navbar-nav">
+      {% if user.is_superuser %}
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'admin-tools' %}">Admin Tools</a>
+      </li>
+      {% endif %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'profile-index' %}">Profiles</a>
       </li>
-      {% if user.is_superuser %}
-      <li class="nav-item">
-        {% S_reports as a %}
-        {% B_reports as b %}
-        {% P_reports as c %}
-        {% V_reports as d %}
-        {% if a or b or c or d %}
-        <a class="nav-link" href="{% url 'choice-page' %}">Check reports <img src="https://media.glomble.com/notif.png" width="16" height="16"></a>
-        {% else %}
-        <a class="nav-link" href="{% url 'choice-page' %}">Check reports</a>
-        {% endif %}
-      </li>
-      {% endif %}
       {% if user.is_authenticated %}
       {% has_notifications user as test %}
       {% has_profile user as test2 %}
@@ -56,7 +50,7 @@
       {% if test2 %}
       {% find request.user as obj %}
       <li class="nav-item">
-        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center nav-link"><img class="shot" width="35" height="35" style="margin-left: 15px; margin-top: -2px" src="https://media.glomble.com/{{ obj.profile_picture }}"></a>
+        <a href="{% url 'detail-profile' obj.id %}" class="row justify-content-center nav-link"><img class="shot" width="35" height="35" style="margin-left: 15px; margin-top: -2px" src="{{media_url}}/{{ obj.profile_picture }}"></a>
       </li>
       {% endif %}
       {% else %}

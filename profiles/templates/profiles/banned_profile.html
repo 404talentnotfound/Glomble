@@ -1,0 +1,13 @@
+{% extends 'videos/base.html' %}
+{% load count %}
+
+{% block content %}
+
+<title>Banned user - Glomble</title>
+<div class="container text-center">
+	<h1><br>This user is banned from Glomble.<br><br>
+        <a href="{% url 'index' %}">Back to homepage</a>
+    </h1>
+</div>
+
+{% endblock content %}

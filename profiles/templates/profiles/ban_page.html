@@ -1,0 +1,20 @@
+{% load crispy_forms_tags %}
+{% load count %}
+
+{% block content %}
+
+<div class="container mb-5" style="text-align: center;">
+	<h1 class="border-bottom mb-4">You are banned from Glomble.<br><br>
+        {% can_appeal ban as can %}
+	    <p>given reason: {{ ban.given_reason }}<br><br></p>
+
+
+        {% if can == True %}
+        If you would like to make an appeal, click <a href="{% url 'ban-appeal' %}">here</a>
+        {% else %}
+        You have already appealed within the last month, the next time you can appeal is:<br>{{ can }} (UTC)
+        {% endif %}
+    </h1>
+</div>
+
+{% endblock content %}

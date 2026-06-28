@@ -7,8 +7,11 @@ admin.site.unregister(User)
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
+    list_display = ('username', 'is_superuser', 'email', 'id')
+    search_fields = ['id', 'username', 'email']
+
     def has_change_permission(self, request, obj=None):
-        return request.user.id == 1
+        return request.user.is_superuser
     
 @admin.register(LogEntry)
 class LogEntryAdmin(admin.ModelAdmin):

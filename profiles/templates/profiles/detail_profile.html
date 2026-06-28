@@ -5,133 +5,113 @@
 
 {% block content %}
 
-<style>
-	.cool-div {
-		{% if profile.customisation.text_shadow_color %}
-		text-shadow: 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }};
-		{% else %}
-		text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
-		{% endif %}
-		{% if profile.customisation.banner_image %}
-		background-image: url(https://media.glomble.com/{{ profile.customisation.banner_image.name }});
-		{% endif %}
-		{% if profile.customisation.background_color %}
-		background-color: {{ profile.customisation.background_color }};
-		{% else %}background-color: white;
-		{% endif %}
-		{% if profile.customisation.text_color %}
-		color: {{ profile.customisation.text_color }};
-		{% else %}
-		color: #000000;
-		{% endif %}
-	}
-	
-	.cool-element {
-		{% if profile.customisation.text_shadow_color %}
-		text-shadow: 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }}, 0 0 5px {{ profile.customisation.text_shadow_color }};
-		{% else %}
-		text-shadow: 0 0 5px #ffffff, 0 0 5px #ffffff, 0 0 5px #ffffff;
-		{% endif %}
-		{% if profile.customisation.text_color %}
-		color: {{ profile.customisation.text_color }};
-		{% endif %}
-	}
-</style>
+{% get_media_url as media_url %}
 
+{% include 'videos/custom_profile_styling.html' %}
+<title>Glomble | {{ username }}'s profile</title>
 <div class="cool-div" style="min-height: 100vh;">
 		<br>
-        <img class="circular_image" style="display: block; margin-left: auto; margin-right: auto;" src="https://media.glomble.com/{{ pfp }}">
-        <h1 class="text-center">{{ username }}</h1>
-		<h4 class="text-center">
-			{% if username.is_superuser %}
-				<i title="Admin" class='bx bxs-user-badge' ></i>
-			{% endif %}
-			{% if developer %}
-				<i title="Developer" class='bx bxs-wrench' ></i>
-			{% endif %}
-			{% if creator %}
-				<i title="Creator" class='bx bxs-palette' ></i>
-			{% endif %}
-			{% if supporter %}
-				<i title="Patreon supporter" class='bx bxl-patreon' ></i>
-			{% endif %}
-		</h4>
-        <h5 class="text-center">{{ info|linebreaksbr }}</h5>
-		<div class="text-center">
-			{% if username == user or user.is_superuser %}
-			<h6><a class="cool-element btn btn-outline-primary" href="{% url 'profile-update' id %}">Edit</a>
-			<a class="cool-element btn btn-outline-danger" href="{% url 'profile-delete' id %}">Delete</a></h6>
-			{% endif %}
-			{% if username == user %}
-			<a class="cool-element btn btn-outline-success" href="{% url 'customise-profile' id %}">Customise page</a>
-			{% endif %}
-			{% if username != request.user %}
-			<a class="video-icons icon-color cool-element" href="{% url 'profile-report' id %}"><i class='bx bxs-flag-alt' ></i></a>
-			{% endif %}
-			<p class="follow-count" id="{{ id }}">{{ follow_num }} followers</p>
-			{% if request.user.is_authenticated %}
-			{% if username != request.user %}
-			{% following_eachother request.user username as fe %}
-			{% following_you request.user username as fy %}
-			{% if fe %}
-			<b>(You are following each other)</b>
-			{% elif fy %}
-			<b>(Follows you)</b>
-			{% endif %}
-			<div class="follow-button-container">
-				<button class="follow-button {% if is_following %}following cool-element btn cool-element btn-outline-danger {% else %}cool-element btn cool-element btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' id %}" data-url-remove="{% url 'remove-follower' id %}">
-					{% if is_following %}
-					<span>Following</span>
-					{% else %}
-					<span>Follow</span>
+		<div class="container cool-container" style="padding-top: 10px;">
+			<img class="circular_image" style="display: block; margin-left: auto; margin-right: auto;" src="{{ media_url }}/{{ pfp }}">
+			<h1 class="text-center">{{ username }}</h1>
+			<h4 class="text-center">
+				{% include 'profiles/badges.html' %}
+			</h4>
+			<div class="text-center" style="word-wrap:break-word;">
+				<h5>{{ info|linebreaksbr }}</h5>
+			</div>
+			<div class="text-center">
+				{% if username == user or user.is_superuser %}
+				<div class="row justify-content-center" style="margin-bottom: 1ch;">
+					<button onclick="onClickManage()" class="cool-element btn cool-element btn-outline-success">Manage profile</button>
+				</div>
+				<div style="display: none; margin-top: 1ch;" class="row justify-content-center" id="manage-profile">
+					<h6>
+						<a class="cool-element btn btn-outline-primary" href="{% url 'profile-update' id %}">Edit</a>
+						<a class="cool-element btn btn-outline-danger" href="{% url 'profile-delete' id %}">Delete</a>
+						
+						{% if username == user %}
+						<a class="cool-element btn btn-outline-success" href="{% url 'customise-profile' id %}">Customise page</a>
+						{% endif %}
+
+						{% if username != user and user.is_superuser %}
+						<a class="cool-element btn btn-{% if profile.shadowbanned %}success{% else %}danger{% endif %}" href="{% url 'shadowban' id %}">{% if profile.shadowbanned %}Undo shadowban{% else %}Shadowban{% endif %}</a>
+						<a class="cool-element btn btn-danger" href="{% url 'create-ban' id %}">Ban</a>
+						{% endif %}
+					</h6>
+				</div>
+				{% endif %}
+
+				{% if username != request.user %}
+				<a class="video-icons icon-color cool-element" href="{% url 'profile-report' id %}"><i class='bx bxs-flag-alt' ></i></a>
+				{% endif %}
+
+				<p><b class="follow-count" id="{{ id }}">{{ follow_num }} followers</b><b> | {{ following_num }} following</b></p>
+				<p class="text-center">Date joined:<br>{{ profile.date_made }} (UTC)</p>
+				{% if request.user.is_authenticated %}
+				{% if username != request.user %}
+				{% following_eachother request.user username as fe %}
+				{% following_you request.user username as fy %}
+				{% if fe %}
+				<b>(You are following each other)</b>
+				{% elif fy %}
+				<b>(Follows you)</b>
+				{% endif %}
+				<div class="follow-button-container">
+					<button class="follow-button {% if is_following %}following cool-element btn cool-element btn-outline-danger {% else %}cool-element btn cool-element btn-outline-success {% endif %}" data-url-add="{% url 'add-follower' id %}" data-url-remove="{% url 'remove-follower' id %}">
+						{% if is_following %}
+						<span>Unfollow</span>
+						{% else %}
+						<span>Follow</span>
+						{% endif %}
+					</button>
+					{% if fe or request.user.is_superuser %}
+						<a class="cool-element btn cool-element btn-outline-success" href="{% url 'chat-detail' id %}">Message</a>
 					{% endif %}
-				</button>
-				{% if fe or request.user.is_superuser %}
-					<a class="cool-element btn cool-element btn-outline-success" href="{% url 'chat-detail' id %}">Message</a>
+				</div>
+				{% endif %}
 				{% endif %}
 			</div>
+			<br>
+			<h3 class="text-center">Profile Rating: <span id="rating">{{ profile.rating|floatformat:1 }}</span></h3>
+			{% if username != request.user %}
+			<form id="rating-form" class="text-center" method="POST">
+				{% csrf_token %}
+				<select id="rating-select" name="rating">
+					{% for i in '12345'|make_list %}
+						<option value="{{ i }}" {% if i == current_user_rating %}selected{% endif %}>{{ i }} Star{% if i != '1' %}s{% endif %}</option>
+					{% endfor %}
+				</select>
+				<button type="submit" class="cool-element btn cool-element btn-success">Submit Rating</button>
+			</form>
 			{% endif %}
+			{% now 'n' as month %}
+			{% if not request.user.is_anonymous and request.user != profile.username and month == '12' %}
+			<br>
+			<div class="text-center">
+				{% profile_nomination user as nomination %}
+				<button class="nominate-button btn {% if nomination == None %}btn-success{% elif nomination != profile %}btn-warning{% else %}btn-danger{% endif %}" style="text-shadow: 0 0 5px #FFFF00, 0 0 5px #FFFF00, 0 0 5px #FFFF00; color: white" data-url="{% url 'profile-nominate' id %}">
+					<span>
+						{% if nomination == None %}
+						Nominate for profile of the year
+						{% elif nomination != profile %}
+						Replace current nomination
+						{% else %}
+						Remove nomination
+						{% endif %}
+					</span>
+				</button>
+			</div>
 			{% endif %}
-		</div>
-		<br>
-		<h3 class="text-center">Profile Rating: <span id="rating">{{ profile.rating|floatformat:1 }}</span></h3>
-		{% if username != request.user %}
-		<form id="rating-form" class="text-center" method="POST">
-			{% csrf_token %}
-			<select id="rating-select" name="rating">
-				{% for i in '12345'|make_list %}
-					<option value="{{ i }}" {% if i == current_user_rating %}selected{% endif %}>{{ i }} Star{% if i != '1' %}s{% endif %}</option>
-				{% endfor %}
-			</select>
-			<button type="submit" class="cool-element btn cool-element btn-success">Submit Rating</button>
-		</form>
-		{% endif %}
-		{% now 'n' as month %}
-		{% if not request.user.is_anonymous and request.user != profile.username and month == '12' %}
-		<br>
-		<div class="text-center">
-			{% profile_nomination user as nomination %}
-			<button class="nominate-button btn {% if nomination == None %}btn-success{% elif nomination != profile %}btn-warning{% else %}btn-danger{% endif %}" style="text-shadow: 0 0 5px #FFFF00, 0 0 5px #FFFF00, 0 0 5px #FFFF00; color: white" data-url="{% url 'profile-nominate' id %}">
-				<span>
-					{% if nomination == None %}
-					Nominate for profile of the year
-					{% elif nomination != profile %}
-					Replace current nomination
-					{% else %}
-					Remove nomination
-					{% endif %}
-				</span>
-			</button>
-		</div>
-		{% endif %}
 
-		<div class="row justify-content-center mt-5">
-			{% include 'videos/video_cards.html' %}
+			<div class="row justify-content-center mt-5 remove-shadow">
+				{% include 'videos/video_cards.html' %}
+			</div>
 		</div>
-</div>
+	</div>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	{% if username != user %}
 	<script>
+		{% if username != user %}
 		document.getElementById('rating-form').addEventListener('submit', function (event) {
 			event.preventDefault();
 			const formData = new FormData(this);
@@ -150,6 +130,13 @@
 				}
 			});
 		});
+		{% endif %}
+
+		function onClickManage(ele) {
+			const container = document.getElementById('manage-profile');
+
+			if (container.style.display === 'none') container.style.display = 'flex';
+			else container.style.display = 'none';
+		}
 	</script>
-	{% endif %}
 {% endblock content %}

@@ -2,10 +2,12 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% load humanize %}
+{% load count %}
 
 {% block content %}
     <legend class="border-bottom mb-4 text-center">{{ message_amount }} messages</legend>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	{% get_media_url as media_url %}
 	<div class="container" id="post-container">
 		<div class="row justify-content-center mt-3 mb-5">
 			<div class="col-md-5 col-sm-12">
@@ -22,8 +24,10 @@
 		<div class="row justify-content-center mt-2 mb-5 border-bottom">
 			<div class="col-md-6 col-sm-12">
 				<p><a class="link-text" href="{% url 'detail-profile' message.sender.id %}">
-					<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="https://media.glomble.com/{{ message.sender.profile_picture }}">
-					<b>{{ message.sender.username }}{% if message.sender.username.is_superuser %} <i title="Admin" class='bx bxs-user-badge' ></i>{% endif %}:</b></a>
+					<img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{media_url}}/{{ message.sender.profile_picture }}">
+					{% with message.sender as profile %}
+					<b>{{ message.sender.username }}{% if message.sender.username.is_superuser %} {% include 'profiles/badges.html' %}{% endif %}:</b></a>
+					{% endwith %}
 					<i style="max-width: 50ch; word-wrap: break-word;">{{ message.message|linebreaksbr }}</i>
 				</p>
                 <br>

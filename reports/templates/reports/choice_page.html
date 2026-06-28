@@ -1,32 +1,35 @@
 {% extends 'videos/base.html' %}
+{% load count %}
+
 {% block content %}
+{% get_media_url as media_url %}
 	<div class="container" id="post-container" style="text-align:center">
         <br>
-        <h3>Hello, {{ profile.username }}. This is an admin page for reviewing reports with the new report feature.</h3>
+        <h3>Hello, {{ profile.username }}.<br>This is an admin page for reviewing reports.</h3>
         <br>
         <br>
         {% if p_count != 0 %}
-        <h2><a class="link-text" href="{% url 'profile-report-index' %}">Profile reports <img src="https://media.glomble.com/notif.png"></a></h2>
+        <h2><a class="text-muted" href="{% url 'profile-report-index' %}">Profile reports <img src="{{media_url}}/notif.png"></a></h2>
         {% else %}
-        <h2><a class="link-text" href="{% url 'profile-report-index' %}">Profile reports</a></h2>
+        <h2><a class="text-muted" href="{% url 'profile-report-index' %}">Profile reports</a></h2>
         {% endif %}
         <br>
         {% if v_count != 0 %}
-        <h2><a class="link-text" href="{% url 'video-report-index' %}">Video reports <img src="https://media.glomble.com/notif.png"></a></h2>
+        <h2><a class="text-muted" href="{% url 'video-report-index' %}">Video reports <img src="{{media_url}}/notif.png"></a></h2>
         {% else %}
-        <h2><a class="link-text" href="{% url 'video-report-index' %}">Video reports</a></h2>
+        <h2><a class="text-muted" href="{% url 'video-report-index' %}">Video reports</a></h2>
         {% endif %}
         <br>
         {% if b_count != 0 %}
-        <h2><a class="link-text" href="{% url 'bug-report-index' %}">Bug reports <img src="https://media.glomble.com/notif.png"></a></h2>
+        <h2><a class="text-muted" href="{% url 'bug-report-index' %}">Bug reports <img src="{{media_url}}/notif.png"></a></h2>
         {% else %}
-        <h2><a class="link-text" href="{% url 'bug-report-index' %}">Bug reports</a></h2>
+        <h2><a class="text-muted" href="{% url 'bug-report-index' %}">Bug reports</a></h2>
         {% endif %}
         <br>
         {% if s_count != 0 %}
-        <h2><a class="link-text" href="{% url 'suggestion-index' %}">Suggestions <img src="https://media.glomble.com/notif.png"></a></h2>
+        <h2><a class="text-muted" href="{% url 'suggestion-index' %}">Suggestions <img src="{{media_url}}/notif.png"></a></h2>
         {% else %}
-        <h2><a class="link-text" href="{% url 'suggestion-index' %}">Suggestions</a></h2>
+        <h2><a class="text-muted" href="{% url 'suggestion-index' %}">Suggestions</a></h2>
         {% endif %}
     </div>
 {% endblock content %}

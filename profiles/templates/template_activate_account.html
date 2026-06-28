@@ -1,7 +1,7 @@
 {% autoescape off %}
-Hi {{ user }},
+Hello {{ user }}! Thank you for registering an account on glomble!
 
-Please click on the link below to confirm your registration:
+Please click on the link below to complete your registration:
 
 {{ protocol }}://{{ domain }}{% url 'activate' uidb64=uid token=token %}
 {% endautoescape %}

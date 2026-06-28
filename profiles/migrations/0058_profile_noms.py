@@ -10,11 +10,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="profile",
-            name="noms",
-            field=models.ManyToManyField(
-                blank=True, related_name="profile_nominations", to="profiles.profile"
-            ),
-        ),
+        # migrations.AddField(
+        #     model_name="profile",
+        #     name="noms",
+        #     field=models.ManyToManyField(
+        #         blank=True, related_name="profile_nominations", to="profiles.profile"
+        #     ),
+        # ),
     ]

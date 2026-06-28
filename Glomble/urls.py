@@ -31,6 +31,7 @@ urlpatterns = [
     path('mcdonalds', video_views.mcdonalds),
     path('tos', video_views.tos_page, name="tos"),
     path('links', video_views.related_links, name="related-links"),
+    path('glimble', video_views.glimble, name="glimble"),
     path('videos/', include('videos.urls')),
     path('notifications/', include('notifications.urls')),
     path('profiles/', include('profiles.urls')),
@@ -39,6 +40,10 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(template_name="profiles/login.html"), name="login"),
     path("logout/", auth_views.LogoutView.as_view(template_name="profiles/logout.html"), name="logout"),
     path('report/', include('reports.urls')),
+    path('appeal', user_views.AppealBan.as_view(), name='ban-appeal'),
+    path('banned', user_views.ban_page, name='ban-page'),
+    path('ban-appeals', user_views.BanAppealIndex.as_view(), name='ban-appeals'),
+    path('admin-tools', user_views.admin_page, name='admin-tools'),
     # path('creatorfund/', include('creatorfund.urls')),
 
     path("password-reset/", CustomPasswordResetView.as_view(
@@ -55,7 +60,7 @@ urlpatterns = [
     path("password-reset-complete", auth_views.PasswordResetCompleteView.as_view(
         template_name="profiles/password_reset_complete.html"), name="password_reset_complete"),
 
-    path('resend_activation/<slug:id>', user_views.resend_activation, name='resend_activation'),
+    path('resend-email', user_views.resend_activation_page, name='resend-email'),
         
     path('activate/<uidb64>/<token>', user_views.activate, name='activate'),
 

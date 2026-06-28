@@ -10,6 +10,14 @@
 					<legend class="border-bottom mb-4">Delete Comment</legend>
 					<h5>Are You Sure?</h5>
 					<p>This will delete the comment forever. This action cannot be undone.</p>
+
+					{% if request.user.is_superuser %}
+					<div class="mb-4 mt-4" style="background-color: lightpink; padding: 2ch; border-radius: 5px;">
+						<h6>As an admin you can notify the commenter about why you are deleting this comment</h6>
+						<p>(your name will not be shown)</p>
+						{{ form | crispy }}
+					</div>
+					{% endif %}
 					<button class="btn btn-outline-danger btn-block" type="submit">Delete</button>
 				</form>
 			</div>

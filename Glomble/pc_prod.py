@@ -30,13 +30,19 @@ MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 5000
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
+LOCAL = False
 
 LOGIN_URL = 'login'
 
-ALLOWED_HOSTS = ['glomble.com', 'localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com']
+ALLOWED_HOSTS = ['glomble.com', 'localhost', '127.0.0.1', 'una-pommae-jacquie.ngrok-free.dev']
+CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com', 'https://*.una-pommae-jacquie.ngrok-free.dev']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
+
+# This is so stupid
+DAY_TOMSTAMP = 86400
+WEEK_TOMSTAMP = DAY_TOMSTAMP*7
+MONTH_TOMSTAMP = DAY_TOMSTAMP*31
 
 # MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # MEDIA_URL = "media/"
@@ -44,6 +50,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 CRONJOBS = [
     ('0 13 * * MON', 'videos.cron.reset_recommendations'),
+    ('0 13 * * MON', 'videos.cron.remove_bad_things'),
     ('0 */8 * * *', 'videos.cron.recalculate_score'),
 ]
 
@@ -56,6 +63,7 @@ INSTALLED_APPS = [
     'profiles',
     'comments',
     'reports',
+    'feedback',
     'crispy_forms',
     'crispy_bootstrap5',
     "storages",
@@ -122,7 +130,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
@@ -177,16 +184,29 @@ STORAGES = {
     },
 }
 
-AWS_S3_SECRET_ACCESS_KEY = open(os.path.join(BASE_DIR, "storage_secret_key.txt")).read()
-AWS_S3_ACCESS_KEY_ID = open(os.path.join(BASE_DIR, "storage_access_key.txt")).read()
-AWS_STORAGE_BUCKET_NAME  = "glomble"
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_S3_ENDPOINT_URL = "https://80dca6dc1ffe30ce65d7c4ea99650842.r2.cloudflarestorage.com"
+if not LOCAL:
+    AWS_S3_SECRET_ACCESS_KEY = open(os.path.join(BASE_DIR, "storage_secret_key.txt")).read()
+    AWS_S3_ACCESS_KEY_ID = open(os.path.join(BASE_DIR, "storage_access_key.txt")).read()
+    AWS_STORAGE_BUCKET_NAME  = "glomble"
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_ENDPOINT_URL = "https://80dca6dc1ffe30ce65d7c4ea99650842.r2.cloudflarestorage.com"
 
-client = boto3.client(
-    "s3",
-    aws_access_key_id = open(os.path.join(BASE_DIR, "storage_access_key.txt")).read(),
-    aws_secret_access_key = open(os.path.join(BASE_DIR, "storage_secret_key.txt")).read(),
-    endpoint_url = "https://80dca6dc1ffe30ce65d7c4ea99650842.r2.cloudflarestorage.com"
-)
+    client = boto3.client(
+        "s3",
+        aws_access_key_id = AWS_S3_ACCESS_KEY_ID,
+        aws_secret_access_key = AWS_S3_SECRET_ACCESS_KEY,
+        endpoint_url = AWS_S3_ENDPOINT_URL
+    )
+else:
+    AWS_S3_SECRET_ACCESS_KEY = open(os.path.join(BASE_DIR, "testing_storage_secret_key.txt")).read()
+    AWS_S3_ACCESS_KEY_ID = open(os.path.join(BASE_DIR, "testing_storage_access_key.txt")).read()
+    AWS_STORAGE_BUCKET_NAME  = "glomble-testing"
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_ENDPOINT_URL = "https://80dca6dc1ffe30ce65d7c4ea99650842.r2.cloudflarestorage.com"
 
+    client = boto3.client(
+        "s3",
+        aws_access_key_id = AWS_S3_ACCESS_KEY_ID,
+        aws_secret_access_key = AWS_S3_SECRET_ACCESS_KEY,
+        endpoint_url = AWS_S3_ENDPOINT_URL
+    )

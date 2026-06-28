@@ -1,10 +1,15 @@
 from django.contrib import admin
-from .models import Profile, Chat, ProfileCustomisation, ProfileRating
+from .models import Profile, Chat, ProfileCustomisation, ProfileRating, Ban, BanAppeal
+
+@admin.action(description="Mark as shadowbanned")
+def make_shadowbanned(modeladmin, request, queryset):
+    queryset.update(shadowbanned=True)
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['id', 'username', 'shadowbanned', 'username__is_superuser', 'username__email']
+    list_display = ['username', 'shadowbanned', 'banned', 'username__is_superuser', 'moderator', 'username__email', 'rating', 'id']
     search_fields = ['id', 'username__username', 'username__email']
+    actions = [make_shadowbanned]
 
 @admin.register(ProfileRating)
 class ProfileRatingAdmin(admin.ModelAdmin):
@@ -20,3 +25,13 @@ class ChatAdmin(admin.ModelAdmin):
 class ProfileCustomisationAdmin(admin.ModelAdmin):
     list_display = ['customised_profile', 'customised_profile__username']
     search_fields = ['customised_profile__id', 'customised_profile__username__username']
+
+@admin.register(Ban)
+class BanAdmin(admin.ModelAdmin):
+    list_display = ['profile__username', 'description', 'id']
+    search_fields = ['profile__username__username', 'description']
+
+@admin.register(BanAppeal)
+class BanAppealAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'ban__profile__username']
+    search_fields = ['pk', 'ban__profile__username']

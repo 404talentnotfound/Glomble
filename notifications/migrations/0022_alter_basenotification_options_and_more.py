@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("notifications", "0021_alter_milestonenotification_video"),
-        ("profiles", "0055_alter_profile_followers_and_more"),
+        # ("profiles", "0055_alter_profile_followers_and_more"),
     ]
 
     operations = [

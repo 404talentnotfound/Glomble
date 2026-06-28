@@ -1,0 +1,32 @@
+{% extends 'videos/base.html' %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+	<div class="container" id="post-container" style="text-align:center; min-width:80vw">
+        <br>
+        <h4 style="word-wrap:break-word;">Written appeal: <br> {{ appeal.appeal_message }}</h4>
+        <br>
+        <h4 style="word-wrap:break-word;">Reason for ban: <br> {{ appeal.ban.given_reason }}</h4>
+        <br>
+		<h4 style="word-wrap:break-word;">Admin description: <br> {{ appeal.ban.description }}</h4>
+        <br>
+
+        <h5>Profile username: {{ appeal.ban.profile.username }}</h5>
+        <h5 style="word-wrap:break-word;">Profile bio: {{ appeal.ban.profile.bio }}</h5>
+        <br>
+        <h5 title="{{ appeal.date_made }}">Time of appeal: {{ appeal.date_made|naturaltime }}</h5>
+        <h5 title="{{ appeal.ban.date_made }}">Time of ban: {{ appeal.ban.date_made|naturaltime }}</h5>
+        <br>
+        <br>
+    </div>
+    <div class="text-center">
+		<div class="d-grid gap-2">
+            <a href="{% url 'reject-ban-appeal' appeal.ban.profile.id appeal.number %}"><button type="submit" class="cool-element btn cool-element btn-danger mt-3">Reject ban appeal</button></a>
+		</div>
+        
+		<div class="d-grid gap-2">
+            <a href="{% url 'remove-ban' appeal.ban.id %}"><button type="submit" class="cool-element btn cool-element btn-success mt-3">Unban this profile</button></a>
+		</div>
+    </div>
+{% endblock content %}

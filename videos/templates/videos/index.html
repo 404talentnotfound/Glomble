@@ -3,9 +3,12 @@
 {% load count %}
 
 {% block content %}
-<div class="container">
+<title>Glomble</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<div class="container" style="width:65%; max-width: 66%;">
+    <br>
     <div class="row justify-content-center" style="width:150%; margin-left: -25%;">
-        <div class="mt-5 ml-5 mb-3">
+        <div class="mt-5 ml-5 mb-3" style="padding-right: 2ch;">
             <form method="get">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Search" aria-describedby="basic-addon1" name="query" value="{% if query != None %}{{ query }}{% endif %}">
@@ -19,25 +22,38 @@
                     <option value="views"{% if sort_by == 'views' %} selected{% endif %}>Most Popular</option>
                     <option value="newest"{% if sort_by == 'newest' %} selected{% endif %}>Newest First</option>
                     <option value="oldest"{% if sort_by == 'oldest' %} selected{% endif %}>Oldest First</option>
+                    <option value="random"{% if sort_by == 'random' %} selected{% endif %}>Random</option>
                 </select>
                 <br>
                 <label for="category">Category:</label>
                 <select name="category" id="category" onchange="this.form.submit()">
                     <option value="all"{% if category == 'all' %} selected{% else %} selected="selected"{% endif %}>All</option>
-                    <option value="entertainment"{% if category == 'entertainment' %} selected{% endif %}>Entertainment</option>
-                    <option value="memes"{% if category == 'memes' %} selected{% endif %}>Memes</option>
-                    <option value="gaming"{% if category == 'gaming' %} selected{% endif %}>Gaming</option>
-                    <option value="education"{% if category == 'education' %} selected{% endif %}>Education</option>
+                    <option value="art"{% if category == 'art' %} selected{% endif %}>Art</option>
                     <option value="animation"{% if category == 'animation' %} selected{% endif %}>Animation</option>
-                    <option value="music"{% if category == 'music' %} selected{% endif %}>Music</option>
                     <option value="discussion"{% if category == 'discussion' %} selected{% endif %}>Discussion</option>
+                    <option value="education"{% if category == 'education' %} selected{% endif %}>Education</option>
+                    <option value="entertainment"{% if category == 'entertainment' %} selected{% endif %}>Entertainment</option>
+                    <option value="gaming"{% if category == 'gaming' %} selected{% endif %}>Gaming</option>
+                    <option value="memes"{% if category == 'memes' %} selected{% endif %}>Memes</option>
+                    <option value="music"{% if category == 'music' %} selected{% endif %}>Music</option>
                     <option value="miscellaneous"{% if category == 'miscellaneous' %} selected{% endif %}>Miscellaneous</option>
                 </select>
+
+                {% if request.user.is_authenticated %}
+                <br>
+                <label for="by">By:</label>
+                <select name="by" id="by" onchange="this.form.submit()">
+                    <option value="all"{% if by == 'all' %} selected{% else %} selected="selected"{% endif %}>All</option>
+                    <option value="following"{% if by == 'following' %} selected{% endif %}>Your Follows</option>
+                    <option value="followers"{% if by == 'followers' %} selected{% endif %}>Your Followers</option>
+                    <option value="mutual"{% if by == 'mutual' %} selected{% endif %}>Mutual Follows</option>
+                </select>
+                {% endif %}
             </form>
         </div>
         {% include 'videos/video_cards.html' %}
     </div>
-    
+
     {% if is_paginated %}
     <div class="row justify-content-center mt-5">
         <div class="col-md-12 col-sm-12">
@@ -45,7 +61,7 @@
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}"><i class='bx bxs-chevrons-left' ></i></a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ params }}"><i class='bx bxs-chevrons-left' ></i></a>
                     </li>
                     {% else %}
                         <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-left' ></i></span></li>
@@ -53,7 +69,7 @@
 
                     {% if page_obj.number|add:'-4' > 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}">&hellip;</a>
+                        <a class="page-link" href="?page={{ page_obj.number|add:'-5' }}{{ params }}">&hellip;</a>
                     </li>
                     {% endif %}
 
@@ -62,20 +78,20 @@
                             <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only">(current)</span></span></li>
                         {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}">{{ i }}</a>
+                                <a class="page-link" href="?page={{ i }}{{ params }}">{{ i }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_obj.paginator.num_pages > page_obj.number|add:'4' %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if query %}&query={{ query }}{% endif %}">&hellip;</a>
+                            <a class="page-link" href="?page={{ page_obj.number|add:'5' }}{{ params }}">&hellip;</a>
                         </li>
                     {% endif %}
 
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort-by={{ sort_by }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if query %}&query={{ query }}{% endif %}"><i class='bx bxs-chevrons-right' ></i></a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ params }}"><i class='bx bxs-chevrons-right' ></i></a>
                         </li>
                     {% else %}
                         <li class="page-item disabled"><span class="page-link"><i class='bx bxs-chevrons-right' ></i></span></li>
@@ -86,4 +102,5 @@
     </div>
     {% endif %}
 </div>
+
 {% endblock content %}
