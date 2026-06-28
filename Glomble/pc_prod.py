@@ -34,8 +34,8 @@ LOCAL = False
 
 LOGIN_URL = 'login'
 
-ALLOWED_HOSTS = ['glomble.com', 'localhost', '127.0.0.1', 'una-pommae-jacquie.ngrok-free.dev']
-CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com', 'https://*.una-pommae-jacquie.ngrok-free.dev']
+ALLOWED_HOSTS = ['glomble.com', 'localhost', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://*.glomble.com']
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
@@ -57,7 +57,7 @@ CRONJOBS = [
 INSTALLED_APPS = [
     'dumbshit',
 
-    'creatorfund',
+    # 'creatorfund',
     'notifications',
     'videos',
     'profiles',
