@@ -13,8 +13,15 @@ glomble.key
 db.sqlite3
 storage_access_key.txt
 storage_secret_key.txt
+testing_storage_secret_key.txt
+testing_storage_access_key.txt
+thing_what_is_this.txt
+banned_ips.txt
+db.sqlite3.bak
+timeline.txt
 GlombleEnv/
 .vscode/
 conf/
 media/
 config/
+stuff/
