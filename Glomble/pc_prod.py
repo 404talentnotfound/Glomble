@@ -29,7 +29,7 @@ DEVELOPER_IDS = open(os.path.join(BASE_DIR, "developers.txt")).read().split("\n"
 MILESTONES = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 LOCAL = False
 
 LOGIN_URL = 'login'
