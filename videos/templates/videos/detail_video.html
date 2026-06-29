@@ -27,7 +27,7 @@
 			</div>
 		</div>
        <div class="container cool-container" id="post-container" style="margin-top: 10px;">
-			<h5 class="mt-4 format text-center" style="padding-top: 1.5%; padding-bottom: 1.5%;">{{ post.title }} {% if post.unlisted %}<i class='bx bx-ghost' title="Unlisted"></i>{% endif %}
+			<h5 class="mt-4 format text-center" style="padding-top: 1.5%; padding-bottom: 1.5%; word-wrap: break-word;">{{ post.title }} {% if post.unlisted %}<i class='bx bx-ghost' title="Unlisted"></i>{% endif %}
 				{% if not user.is_anonymous and post.uploader.username != user %}
 				{% can_recommend post.id user as can %}
 				{% endif %}

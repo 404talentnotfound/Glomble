@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Caveat&display=swap");
 .card {
   width: 100%;
-  max-width: 256px;
+  max-width: 20em;
   transition: transform 0.2s ease-in-out;
 }
 
@@ -384,7 +384,7 @@ a.login:hover {
   background-color:#ca3d00d5
 }
 .shit {
-  width: 13em;
+  width: 100%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
