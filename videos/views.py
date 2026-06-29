@@ -417,7 +417,7 @@ class DetailVideo(DetailView):
         desclen = None
         pre = None
         readmore = None
-
+        can_nominate = pen.date_posted.year==timezone.now().year
         viewable_comments = pen.comments.all().exclude(commenter__shadowbanned=True).exclude(commenter__banned=True)
 
         if pen.description is not None:
@@ -436,26 +436,29 @@ class DetailVideo(DetailView):
         comment_count = viewable_comments.count()
 
         pinned_comment = pen.pinned_comment
-        
-        if pinned_comment != None:
-            comments = [pinned_comment, comments]
 
         replies = viewable_comments.exclude(replying_to=None).order_by('date_posted')
+
+        if pinned_comment != None:
+            pinned_comment_qs = pen.comments.filter(pk=pinned_comment.pk)
+            comments = chain(pinned_comment_qs, comments.exclude(pk=pinned_comment.pk))
 
         context = {
             'e': e,
             'post': pen,
-            'form': CommentForm(),
-            'replyform': ReplyForm(),
+            'profile': pen.uploader,
+            'form': form,
+            'replyform': replyform,
             'comments': comments,
-            'pinned_comment': pinned_comment,
+            'comment_amount': comment_count,
             'pre': pre,
             'readmore': readmore,
             'desclen': desclen,
             'has': has_desc,
             'is_following': is_following,
-            'comment_amount': comment_count,
-            'replies': replies
+            'replies': replies,
+            'can_nominate': can_nominate,
+            'pinned_comment': pinned_comment,
         }
         
         form_type = request.POST.get("form_type")
@@ -524,8 +527,12 @@ class DetailVideo(DetailView):
             cache.set(f"last_comment_{self.request.user.id}", datetime.now(), timeout=None)
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                all_replies = pen.comments.all().exclude(commenter__shadowbanned=True).exclude(commenter__banned=True).exclude(replying_to=None)
-                context.update({'replies': all_replies})
+                all_replies = viewable_comments.exclude(replying_to=None).order_by('date_posted')
+                all_comments = viewable_comments.filter(replying_to=None).annotate(num_likes=Count('likes')).order_by('-num_likes')
+                if pinned_comment != None:
+                    all_comments = chain(all_comments.filter(pk=pinned_comment.pk), all_comments.exclude(id=pinned_comment.id))
+                
+                context.update({'replies': all_replies, 'comments': all_comments})
                 rendered_comments = render(request, 'videos/comment.html', context)
 
                 return JsonResponse({
