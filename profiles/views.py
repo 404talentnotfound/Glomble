@@ -586,16 +586,17 @@ class DetailChat(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def get(self, request, *args, **kwargs):
         e = self.kwargs['id']
         form = MessageForm()
-        profile = Profile.objects.all().get(username=request.user)
-        if profile.chats.filter(members__in=[Profile.objects.get(id=e)]).exists():
-            pen = profile.chats.filter(members__in=[Profile.objects.get(id=e)]).latest("date_made")
+        requestprofile = Profile.objects.all().get(username=request.user)
+        profile = Profile.objects.all().get(id=e)
+        if requestprofile.chats.filter(members__in=[profile]).exists():
+            pen = requestprofile.chats.filter(members__in=[profile]).latest("date_made")
         else:
             pen = Chat.objects.create()
             pen.save()
-            pen.members.add(Profile.objects.get(username=request.user))
-            pen.members.add(Profile.objects.get(id=e))
-            Profile.objects.get(id=e).chats.add(pen)
-            Profile.objects.get(username=request.user).chats.add(pen)
+            pen.members.add(requestprofile)
+            pen.members.add(profile)
+            profile.chats.add(pen)
+            requestprofile.chats.add(pen)
 
         messages = Message.objects.filter(chat=pen).order_by('-date_sent')
         chat_count = messages.count()

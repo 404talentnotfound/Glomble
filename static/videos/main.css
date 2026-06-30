@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Caveat&display=swap");
 .card {
   width: 100%;
-  max-width: 20em;
+  max-width: 17em;
   transition: transform 0.2s ease-in-out;
 }
 

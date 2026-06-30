@@ -13,9 +13,9 @@
                 <strong><a class="link-text cool-element" href="{% url 'detail-profile' comment.commenter.id %}">
                     <img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{media_url}}/{{ comment.commenter.profile_picture }}"> 
                     {{ comment.commenter.username }}
-                    {% if comment.commenter.username.is_superuser %}
-                    <i title="Admin" class='bx bxs-user-badge'></i>
-                    {% endif %}</a></strong>
+                    {% with comment.commenter as profile %}
+                    {% include 'profiles/badges.html' %}
+                    {% endwith %}</a></strong>
                 <i style="margin-left: 1%;" title="{{ comment.date_posted }} (UTC)">{{ comment.date_posted|naturaltime }}</i>
                 {% if request.user == comment.commenter.username %}
                     <a class="cool-element btn cool-element btn-outline-primary" href="{% url 'comments:comment-update' comment.pk %}">Edit</a>
@@ -89,9 +89,9 @@
                                         <a class="link-text cool-element" href="{% url 'detail-profile' reply.commenter.id %}">
                                             <img class="rounded-circle" style="margin-left: -15px" width="35" height="35" src="{{media_url}}/{{ reply.commenter.profile_picture }}">
                                             {{ reply.commenter.username }}
-                                            {% if reply.commenter.username.is_superuser %}
-                                            <i title="Admin" class='bx bxs-user-badge' ></i>
-                                            {% endif %}</a></strong>
+                                            {% with reply.commenter as profile %}
+                                            {% include 'profiles/badges.html' %}
+                                            {% endwith %}</a></strong>
                                         </a>
                                     </strong> 
                                     <i title="{{ reply.date_posted }}">{{ reply.date_posted|naturaltime }}</i>
