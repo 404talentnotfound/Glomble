@@ -19,6 +19,8 @@ thing_what_is_this.txt
 banned_ips.txt
 db.sqlite3.bak
 timeline.txt
+*.pyc
+_pycache_/
 GlombleEnv/
 .vscode/
 conf/
