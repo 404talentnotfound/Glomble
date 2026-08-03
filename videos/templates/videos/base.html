@@ -178,7 +178,7 @@
                     },
                 })
             })
-            $(".comment-like-button").click(function (e) {
+            $(document).on("click", ".comment-like-button", function (e) {
                 e.preventDefault()
 
                 var likeButton = $(this)
@@ -212,7 +212,7 @@
                 })
             })
 
-            $(".comment-dislike-button").click(function (e) {
+            $(document).on("click", ".comment-dislike-button", function (e) {
                 e.preventDefault()
 
                 var dislikeButton = $(this)
