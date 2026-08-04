@@ -1,0 +1,24 @@
+---
+name: Blank issue
+description: Create a new issue from scratch
+body:
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Please confirm following
+      options:
+        - label: This issue does not fit into any of the predefined categories, which is why I am making a blank issue from scratch.
+          required: true
+        - label: I have searched existing issues and am confident that this issue is unique.
+          required: true
+  - type: textarea
+    id: issue-details
+    attributes:
+      label: Issue details
+      description: Describe what is going on.
+      placeholder: | 
+        I have a question about '...'
+        There is a problem with '...'
+        Here is a suggestion for '...'
+    validations:
+      required: true

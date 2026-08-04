@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an idea
+labels: ["feat", "pending"]
+title: "[FR]: "
+body:
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Please confirm following
+      options:
+        - label: I have searched existing issues and am confident that this feature request is unique.
+          required: true
+  - type: input
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description (in one line) of what your suggestion is
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Who's implementing?
+      options:
+        - label: I'm willing to implement this feature myself
+  - type: textarea
+    id: prob
+    attributes:
+      label: The problem
+      description: Please describe the problem you are solving or new feature you're suggesting
+      placeholder: | 
+        I would like to see '...'
+        I'm always frustrated when '...' happens
+        '...' would be better if '...'
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context about the feature request here
